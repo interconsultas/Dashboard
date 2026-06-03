@@ -2,7 +2,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY dashboard/package.json dashboard/package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # ── Stage 2: build Next.js ──────────────────
 FROM node:20-alpine AS builder
