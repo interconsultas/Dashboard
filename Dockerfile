@@ -9,6 +9,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY dashboard/ ./
+
+# Variables dummy para que Next.js pueda pre-renderizar sin BD real
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+ENV NEXTAUTH_SECRET=build-secret-placeholder-not-used-in-runtime
+
 RUN npm run build
 
 # ── Stage 3: runtime (Node.js + Python) ─────
