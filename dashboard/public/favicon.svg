@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Figura izquierda (verde oscuro) -->
+  <circle cx="20" cy="16" r="5.5" fill="#3a7e1e"/>
+  <path d="M20 23c-6 0-11 4-11 10v4a2 2 0 002 2h18a2 2 0 002-2v-4c0-6-5-10-11-10z" fill="#3a7e1e"/>
+
+  <!-- Figura derecha (verde medio) -->
+  <circle cx="38" cy="14" r="5.5" fill="#5db02a"/>
+  <path d="M38 21c-6 0-11 4-11 10v4a2 2 0 002 2h18a2 2 0 002-2v-4c0-6-5-10-11-10z" fill="#5db02a"/>
+
+  <!-- Figura centro arriba (verde claro) -->
+  <circle cx="29" cy="8" r="5" fill="#78c83a"/>
+  <path d="M29 14c-5.5 0-10 3.8-10 9.2v3.5a1.8 1.8 0 001.8 1.8h16.4a1.8 1.8 0 001.8-1.8v-3.5c0-5.4-4.5-9.2-10-9.2z" fill="#78c83a"/>
+
+  <!-- Texto IPS -->
+  <text
+    x="32" y="54"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="14"
+    font-weight="900"
+    fill="#1A3F72"
+    text-anchor="middle"
+    letter-spacing="1.5"
+  >IPS</text>
+</svg>

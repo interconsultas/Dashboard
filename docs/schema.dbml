@@ -1,0 +1,140 @@
+// Dashboard de Autorizaciones y Gestión Médica
+// IPS Manizales — v1.0
+
+// ─────────────────────────────────────────────
+// CATÁLOGOS
+// ─────────────────────────────────────────────
+
+Table medicos {
+  usuario_txt             varchar(20)   [pk, note: 'Código de login del médico (ej: AUTNOPOS)']
+  identificacion          bigint        [unique, note: 'Cédula — llave de cruce con autorizaciones y citas']
+  nombre                  varchar(150)
+  estado                  varchar(20)   [note: 'ACTIVO / INACTIVO']
+  programa_especialidad   varchar(100)
+  area                    varchar(50)   [note: 'MEDICINA, SALUD ORAL, etc.']
+}
+
+Table usuarios {
+  id            bigserial    [pk]
+  email         varchar(150) [unique, not null]
+  password_hash varchar(255) [not null]
+  nombre        varchar(150) [not null]
+  rol           varchar(30)  [not null, note: 'admin | direccion_medica | coordinador']
+  regional      varchar(60)  [null, note: 'Solo aplica para rol coordinador']
+  activo        boolean      [default: true]
+  created_at    timestamptz  [default: 'now()']
+  last_login    timestamptz  [null]
+}
+
+// ─────────────────────────────────────────────
+// HECHOS
+// ─────────────────────────────────────────────
+
+Table autorizaciones {
+  id                              bigserial    [pk]
+
+  // Afiliado
+  afiliado_id                     bigint
+  codigo_tipo_documento           varchar(5)
+  numero_documento                bigint
+  fecha_nacimiento                date
+  edad                            smallint
+  primer_apellido                 varchar(60)
+  segundo_apellido                varchar(60)
+  primer_nombre                   varchar(60)
+  segundo_nombre                  varchar(60)
+  cod_regional_afiliado           smallint
+  desc_regional_afiliado          varchar(60)
+  ciudad_afiliado                 varchar(60)
+  sexo                            char(1)
+  ind_cotizante                   char(1)
+  codigo_nivel_ingreso            varchar(5)
+  codigo_sucursal_afiliado        int
+  descripcion_sucursal_afiliado   varchar(100)
+  cod_regional_ips_afiliado       smallint
+  desc_regional_ips_afiliado      varchar(60)
+
+  // Orden / Autorización
+  numero_consec_orden_serie       varchar(30)
+  numero_consec_evento            int
+
+  // Prestación
+  codigo_prestacion               varchar(20)
+  descripcion_prestacion          varchar(200)
+  agrup_salud_prest_desc          varchar(100)
+  orden_agrup_prest_desc          varchar(100)
+
+  // Fechas
+  periodo                         int          [note: 'Formato YYYYMM']
+  fecha_digitacion                date
+  fecha_emision                   date
+  fecha_atencion_ivr              date         [null]
+  fecha_programacion              date         [null]
+  fecha_atencion                  date         [null]
+
+  // Diagnóstico
+  codigo_diagnostico              varchar(10)
+  diagnostico_desc                varchar(200)
+
+  // Sucursal que emite
+  codigo_sucursal_emite           int
+  descripcion_sucursal_emite      varchar(100)
+
+  // Médico ordenador (remite)
+  tipo_remite                     varchar(5)
+  numero_remite                   bigint       [note: 'Cédula del médico — cruce con medicos.identificacion']
+  prestador_remite                varchar(150)
+  codigo_especialidad_remite      varchar(20)  [null]
+  especialidad_desc_remite        varchar(100) [null]
+  usuario_txt                     varchar(20)  [ref: > medicos.usuario_txt, null]
+
+  // Prestador que atiende
+  codigo_sucursal_atiende         int
+  descripcion_sucursal_atiende    varchar(100)
+  codigo_tipo_ident_atiende       varchar(5)
+  num_ident_prestador_atiende     bigint
+  descripcion_prestador_atiende   varchar(150)
+
+  // Catálogos (solo descripciones)
+  tipo_prestacion_desc            varchar(100)
+  origen_servicio_desc            varchar(100)
+  producto_pac_eps_desc           varchar(100)
+  estado_autorizacion_desc        varchar(60)
+  tipo_convenio_desc              varchar(100)
+  origen_autorizacion_desc        varchar(100)
+  tipo_evento_desc                varchar(100)
+  tipo_cobro_desc                 varchar(100)
+
+  // Cantidad y valores
+  cantidad_autorizada             smallint
+  valor_autorizado_prestacion     numeric(15,2) [null]
+  valor_provision                 numeric(15,2) [null]
+
+  indexes {
+    (usuario_txt, periodo)                                    [name: 'idx_medico_periodo']
+    (periodo, tipo_prestacion_desc)                           [name: 'idx_periodo_tipo']
+    (descripcion_prestador_atiende, periodo)                  [name: 'idx_ips_atiende_periodo']
+    (codigo_diagnostico, periodo)                             [name: 'idx_diagnostico_periodo']
+    (desc_regional_afiliado, periodo, tipo_prestacion_desc)   [name: 'idx_regional_periodo_tipo']
+    (estado_autorizacion_desc, periodo)                       [name: 'idx_estado_periodo']
+  }
+}
+
+Table citas_atendidas {
+  id              bigserial    [pk]
+  documento       bigint       [not null, note: 'Cédula del médico — cruce con medicos.identificacion y autorizaciones.numero_remite']
+  nombre_medico   varchar(150)
+  tipo_medico     varchar(30)  [note: 'MEDICO DE FAMILIA | ESPECIALISTA']
+  especialidad    varchar(100) [null, note: 'Solo para especialistas']
+  periodo         int          [not null, note: 'Formato YYYYMM — convertido desde ene-26, feb-26, etc.']
+  cantidad_citas  int
+
+  indexes {
+    (documento, periodo)  [name: 'idx_citas_documento_periodo']
+    (periodo)             [name: 'idx_citas_periodo']
+  }
+}
+
+Ref: citas_atendidas.documento > medicos.identificacion
+Ref: autorizaciones.numero_remite > medicos.identificacion
+

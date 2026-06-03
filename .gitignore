@@ -1,0 +1,50 @@
+# ── Dependencias ──────────────────────────────
+**/node_modules/
+etl/venv/
+
+# ── Build artifacts ──────────────────────────
+dashboard/.next/
+dashboard/out/
+**/__pycache__/
+*.pyc
+*.pyo
+*.tsbuildinfo
+
+# ── Variables de entorno ─────────────────────
+.env
+.env.local
+.env.production
+**/.env*.local
+etl/.env
+
+# ── Archivos temporales ─────────────────────
+tmp_uploads/
+logs/
+
+# ── OS ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+
+# ── IDE / Herramientas ──────────────────────
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+
+# ── Datos sensibles / pesados ────────────────
+docs/DETALLADOS EPS/
+docs/DETALLADOS AJUSTADOS/
+docs/*.png
+*.xlsx
+!docs/schema.dbml
+
+# ── Pytest / Jest ────────────────────────────
+.pytest_cache/
+etl/.pytest_cache/
+dashboard/coverage/
+
+# ── Docker (volumes locales) ─────────────────
+pgdata/
