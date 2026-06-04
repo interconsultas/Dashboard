@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
   const body: FiltrosBody = await req.json().catch(() => ({}));
   const view = resolveView(body.view);
   const viewFilters = getViewFilters(view);
-  const merged: FiltrosBody = { ...viewFilters, ...body };
+
+  // Los filtros de la vista siempre tienen prioridad (son las condiciones fijas)
+  const merged: FiltrosBody = { ...body, ...viewFilters };
   const p = parseBody(merged);
   const reg = regionalClause(user, 1, "r");
 
@@ -70,7 +72,9 @@ export async function POST(req: NextRequest) {
   const selectCols = EXPORT_COLUMNS.map((c) => `${c.sql} AS ${c.alias}`).join(", ");
   const sql = `SELECT ${selectCols} FROM autorizaciones r ${toW(b)} ORDER BY periodo, nombre_medico LIMIT ${MAX_ROWS}`;
 
-  const filename = `autorizaciones_${p.desde ?? "todos"}_${p.hasta ?? "todos"}.csv`;
+  // Nombre del archivo incluye la vista para identificar la exportación
+  const viewLabel = view === "vm_filtros_dashboard" ? "general" : view.replace("vm_dash_", "");
+  const filename = `autorizaciones_${viewLabel}_${p.desde ?? "todos"}_${p.hasta ?? "todos"}.csv`;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
