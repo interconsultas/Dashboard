@@ -32,6 +32,7 @@ services:
       DATABASE_URL: postgresql://${APP_DB_USER:-ips_user}:${APP_DB_PASSWORD}@db:5432/${APP_DB_NAME:-interconsultas}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
       SEMAFORO_VERDE_MIN: ${SEMAFORO_VERDE_MIN:-80}
       SEMAFORO_AMARILLO_MIN: ${SEMAFORO_AMARILLO_MIN:-60}
     healthcheck:
