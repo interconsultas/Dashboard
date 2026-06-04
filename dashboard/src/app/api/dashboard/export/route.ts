@@ -37,6 +37,7 @@ const EXPORT_COLUMNS = [
 ];
 
 const MAX_ROWS = 500_000;
+const CHUNK_SIZE = 2_000;
 
 /* ── CSV helpers ─────────────────────────────── */
 
@@ -67,36 +68,51 @@ export async function POST(req: NextRequest) {
   buildAll(b, p, reg);
 
   const selectCols = EXPORT_COLUMNS.map((c) => `${c.sql} AS ${c.alias}`).join(", ");
-  const sql = `SELECT ${selectCols} FROM autorizaciones r ${toW(b)} ORDER BY periodo, nombre_medico LIMIT ${MAX_ROWS + 1}`;
+  const sql = `SELECT ${selectCols} FROM autorizaciones r ${toW(b)} ORDER BY periodo, nombre_medico LIMIT ${MAX_ROWS}`;
 
-  const client = await pool.connect();
-  try {
-    const result = await client.query(sql, b.params);
-    const rows = result.rows;
+  const filename = `autorizaciones_${p.desde ?? "todos"}_${p.hasta ?? "todos"}.csv`;
+  const encoder = new TextEncoder();
 
-    const truncated = rows.length > MAX_ROWS;
-    if (truncated) rows.length = MAX_ROWS;
+  const stream = new ReadableStream({
+    async start(controller) {
+      const client = await pool.connect();
+      try {
+        // Sin timeout para consultas de exportación
+        await client.query("SET statement_timeout = 0");
 
-    // Construir CSV
-    const lines: string[] = [];
-    lines.push(EXPORT_COLUMNS.map((c) => escapeCsv(c.header)).join(","));
-    for (const row of rows) {
-      lines.push(EXPORT_COLUMNS.map((c) => escapeCsv(row[c.alias])).join(","));
-    }
+        // Enviar BOM + encabezados inmediatamente
+        const header = "﻿" + EXPORT_COLUMNS.map((c) => escapeCsv(c.header)).join(",") + "\r\n";
+        controller.enqueue(encoder.encode(header));
 
-    const csv = "﻿" + lines.join("\r\n"); // BOM para Excel
+        // Ejecutar consulta
+        const result = await client.query(sql, b.params);
 
-    const filename = `autorizaciones_${p.desde ?? "todos"}_${p.hasta ?? "todos"}.csv`;
+        // Enviar filas en chunks para no saturar memoria
+        for (let i = 0; i < result.rows.length; i += CHUNK_SIZE) {
+          const chunk = result.rows.slice(i, i + CHUNK_SIZE);
+          const lines = chunk
+            .map((row) => EXPORT_COLUMNS.map((c) => escapeCsv(row[c.alias])).join(","))
+            .join("\r\n") + "\r\n";
+          controller.enqueue(encoder.encode(lines));
+        }
 
-    return new NextResponse(csv, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        ...(truncated ? { "X-Truncated": "true", "X-Max-Rows": String(MAX_ROWS) } : {}),
-      },
-    });
-  } finally {
-    client.release();
-  }
+        controller.close();
+      } catch (err) {
+        console.error("Export error:", err);
+        controller.error(err);
+      } finally {
+        await client.query("SET statement_timeout = DEFAULT").catch(() => {});
+        client.release();
+      }
+    },
+  });
+
+  return new NextResponse(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-cache",
+    },
+  });
 }
