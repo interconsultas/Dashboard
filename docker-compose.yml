@@ -35,6 +35,12 @@ services:
       AUTH_TRUST_HOST: "true"
       SEMAFORO_VERDE_MIN: ${SEMAFORO_VERDE_MIN:-80}
       SEMAFORO_AMARILLO_MIN: ${SEMAFORO_AMARILLO_MIN:-60}
+      # Variables para el ETL de Python
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${APP_DB_NAME:-interconsultas}
+      DB_USER: ${APP_DB_USER:-ips_user}
+      DB_PASSWORD: ${APP_DB_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
