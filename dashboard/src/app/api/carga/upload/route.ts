@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Solo se aceptan archivos .xlsx" }, { status: 400 });
   }
 
-  const MAX_FILE_SIZE = 150 * 1024 * 1024; // 150 MB
+  const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250 MB
   if (archivo.size > MAX_FILE_SIZE) {
     return NextResponse.json(
-      { error: `El archivo excede el límite de 150 MB (${(archivo.size / 1024 / 1024).toFixed(1)} MB)` },
+      { error: `El archivo excede el límite de 250 MB (${(archivo.size / 1024 / 1024).toFixed(1)} MB)` },
       { status: 400 }
     );
   }
