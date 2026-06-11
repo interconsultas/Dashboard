@@ -1033,6 +1033,28 @@ def modo_confirm(job_id: str) -> dict:
     cur.execute("DELETE FROM staging_autorizaciones WHERE job_id = %s", (job_id,))
     conn.commit()
 
+    # Refrescar vistas materializadas para que el dashboard refleje los datos nuevos
+    print("[INFO] Refrescando vistas materializadas...")
+    vistas = [
+        "vm_filtros_dashboard",
+        "vm_dash_laboratorios",
+        "vm_dash_rx",
+        "vm_dash_ecografias",
+        "vm_dash_remisiones_cap",
+        "vm_dash_medicamentos",
+        "vm_dash_remisiones_ext",
+        "vm_dash_proc_dx",
+    ]
+    for vista in vistas:
+        try:
+            cur.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {vista}")
+            conn.commit()
+            print(f"[OK]   {vista}")
+        except Exception as e:
+            conn.rollback()
+            print(f"[WARN] No se pudo refrescar {vista}: {e}")
+    print("[INFO] Vistas materializadas actualizadas")
+
     t_total = time.time() - t0
 
     # Actualizar log
