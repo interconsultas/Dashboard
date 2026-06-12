@@ -2,7 +2,7 @@
 
 import { useReducer, useRef, useMemo, useCallback, useState, useEffect } from "react";
 import useSWR, { useSWRConfig } from "swr";
-import { postFetcher } from "@/lib/fetcher";
+import { postFetcher, FetchError } from "@/lib/fetcher";
 import { type FiltrosBody } from "@/lib/dashboard-filters";
 import CheckDropdown from "@/components/ui/CheckDropdown";
 import { estadoLabel } from "@/lib/estado";
@@ -170,6 +170,13 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
     {
       keepPreviousData: true,
       revalidateOnFocus: false,
+      errorRetryCount: 5,
+      onErrorRetry(err, _key, _config, revalidate, { retryCount }) {
+        if (err instanceof FetchError && err.status === 503 && retryCount < 5) {
+          setTimeout(() => revalidate({ retryCount }), 3000 * (retryCount + 1));
+          return;
+        }
+      },
       onSuccess(d) {
         if (!defaultsApplied.current && d.periodos.length > 0) {
           defaultsApplied.current = true;
@@ -447,12 +454,22 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
 
       {/* Error */}
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 flex items-center gap-3">
-          <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm text-red-700">
-            No se pudieron cargar los datos. {error.message || "Intenta de nuevo más tarde."}
+        <div className={`rounded-2xl border px-5 py-4 flex items-center gap-3 ${
+          error instanceof FetchError && error.status === 503
+            ? "border-amber-200 bg-amber-50"
+            : "border-red-200 bg-red-50"
+        }`}>
+          {error instanceof FetchError && error.status === 503 ? (
+            <Spinner className="h-5 w-5 text-amber-500 shrink-0" />
+          ) : (
+            <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          <p className={`text-sm ${error instanceof FetchError && error.status === 503 ? "text-amber-700" : "text-red-700"}`}>
+            {error instanceof FetchError && error.status === 503
+              ? "Los datos se están actualizando tras la última carga. Reintentando automáticamente..."
+              : `No se pudieron cargar los datos. ${error.message || "Intenta de nuevo más tarde."}`}
           </p>
         </div>
       )}

@@ -173,9 +173,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR] = await Promise.all([
-    periodosQ, estadosQ, profQ, progQ, tcQ, oaQ, asQ, diagQ, prestQ, kpisQ, serieActualQ, serieAnteriorQ, topProfQ, topPrestQ, topDiagQ,
-  ]);
+  let periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR;
+  try {
+    [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR] = await Promise.all([
+      periodosQ, estadosQ, profQ, progQ, tcQ, oaQ, asQ, diagQ, prestQ, kpisQ, serieActualQ, serieAnteriorQ, topProfQ, topPrestQ, topDiagQ,
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isRefresh = /timeout|lock|concurrent|materialized/i.test(msg);
+    console.error("[filtros] Query failed:", msg);
+    if (isRefresh) {
+      return NextResponse.json(
+        { error: "Los datos se están actualizando, reintente en unos segundos", retryable: true },
+        { status: 503, headers: { "Retry-After": "5" } }
+      );
+    }
+    return NextResponse.json(
+      { error: "Error al consultar los datos" },
+      { status: 500 }
+    );
+  }
 
   const notNull = (rows: { v: string | null }[]) => rows.filter((r) => r.v != null).map((r) => r.v as string);
 
