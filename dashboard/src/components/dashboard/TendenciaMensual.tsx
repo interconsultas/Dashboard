@@ -110,7 +110,11 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
     const data: ChartPoint[] = serieActual.map((s, i) => {
       const prevPeriodo = s.periodo - 100;
       const ant = anteriorMap.get(prevPeriodo) ?? null;
-      const vPct = ant != null && ant > 0 ? ((s.total - ant) / ant) * 100 : null;
+      const mesAnterior = i > 0 ? actValues[i - 1] : null;
+      const vPct =
+        mesAnterior != null && mesAnterior > 0
+          ? ((s.total - mesAnterior) / mesAnterior) * 100
+          : null;
       return {
         fullLabel: periodoFull(s.periodo),
         label: periodoShort(s.periodo),
@@ -122,9 +126,9 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
     });
 
     const n = actValues.length;
-    const trendStart = intercept;
-    const trendEnd = intercept + slope * (n - 1);
-    const tVar = trendStart > 0 ? ((trendEnd - trendStart) / trendStart) * 100 : null;
+    const firstVal = actValues[0];
+    const lastVal = actValues[n - 1];
+    const tVar = firstVal > 0 ? ((lastVal - firstVal) / firstVal) * 100 : null;
 
     return {
       chartData: data,
@@ -148,7 +152,7 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
     const dx = isFirst ? 6 : isLast ? -6 : 0;
 
     return (
-      <text x={x + dx} y={y - 12} textAnchor={anchor} fontSize={10} fontWeight={600} fill={NAVY}>
+      <text x={x + dx} y={y - 12} textAnchor={anchor} fontSize={13} fontWeight={700} fill={NAVY}>
         {fmtNum(value)}
       </text>
     );
@@ -196,7 +200,7 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
                 d={isPositive ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
               />
             </svg>
-            {absVar!.toFixed(1)}% tendencia
+            {absVar!.toFixed(1)}% variación
           </div>
         )}
       </div>
