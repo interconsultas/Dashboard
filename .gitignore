@@ -16,6 +16,7 @@ dashboard/out/
 .env.production
 **/.env*.local
 etl/.env
+env.download
 
 # ── Archivos temporales ─────────────────────
 tmp_uploads/
