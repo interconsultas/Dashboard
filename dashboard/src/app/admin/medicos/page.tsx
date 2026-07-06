@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 
@@ -15,6 +15,7 @@ interface Medico {
 
 const ESTADOS = ["ACTIVO", "INACTIVO"];
 
+// Listas base; se combinan con los valores existentes en la BD
 const PROGRAMAS = [
   "MÉDICO GENERAL INTEGRADOR",
   "ODONTÓLOGO",
@@ -68,6 +69,22 @@ export default function MedicosPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+
+  const programas = useMemo(() => {
+    const set = new Set(PROGRAMAS);
+    medicos?.forEach((m) => {
+      if (m.programa_especialidad) set.add(m.programa_especialidad);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+  }, [medicos]);
+
+  const areas = useMemo(() => {
+    const set = new Set(AREAS);
+    medicos?.forEach((m) => {
+      if (m.area) set.add(m.area);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+  }, [medicos]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -230,7 +247,7 @@ export default function MedicosPage() {
               }
             >
               <option value="">— Seleccionar —</option>
-              {PROGRAMAS.map((p) => (
+              {programas.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
@@ -247,7 +264,7 @@ export default function MedicosPage() {
               }
             >
               <option value="">— Seleccionar —</option>
-              {AREAS.map((a) => (
+              {areas.map((a) => (
                 <option key={a} value={a}>
                   {a}
                 </option>
