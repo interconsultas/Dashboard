@@ -6,11 +6,20 @@ import pytest
 import etl_autorizaciones as ea
 
 
-def _conn_con_fila(fila):
-    """MagicMock de conexión cuyo cursor().fetchone() retorna `fila`."""
+def _conn_con_fila(fila, periodos_reales=None):
+    """MagicMock de conexión cuyo cursor().fetchone() retorna `fila` (la fila
+    de log_cargas) y cuyo fetchall() retorna `periodos_reales` (los periodos
+    reales presentes en autorizaciones para ese archivo_fuente). Por defecto,
+    si no se pasa `periodos_reales`, se usa el periodo de `fila` como unico
+    periodo real (mantiene el comportamiento de los tests existentes que no
+    involucran multiples periodos).
+    """
     conn = MagicMock()
     cur = conn.cursor.return_value
     cur.fetchone.return_value = fila
+    if periodos_reales is None:
+        periodos_reales = [(fila[1],)] if fila and fila[1] is not None else []
+    cur.fetchall.return_value = periodos_reales
     cur.rowcount = 42
     return conn, cur
 
@@ -30,11 +39,66 @@ class TestModoEliminar:
             with pytest.raises(SystemExit):
                 ea.modo_eliminar("job-1")
 
-    def test_sale_con_error_si_no_hay_periodo_detectado(self):
-        conn, _ = _conn_con_fila(("archivo.xlsx", None, "exitoso"))
-        with patch.object(ea, "get_db_conn", return_value=conn):
-            with pytest.raises(SystemExit):
-                ea.modo_eliminar("job-1")
+    def test_elimina_correctamente_aunque_no_haya_periodo_detectado_en_log(self):
+        """periodo_detectado en NULL ya no bloquea el borrado: se usan los
+        periodos reales de autorizaciones, no el valor guardado en el log."""
+        conn, cur = _conn_con_fila(
+            ("archivo.xlsx", None, "exitoso"), periodos_reales=[(202602,)]
+        )
+        with patch.object(ea, "get_db_conn", return_value=conn), \
+             patch.object(ea, "refrescar_vistas_materializadas"):
+            resultado = ea.modo_eliminar("job-1")
+
+        delete_calls = [
+            c for c in cur.execute.call_args_list
+            if c.args[0].strip().startswith("DELETE FROM autorizaciones")
+        ]
+        assert len(delete_calls) == 1
+        assert delete_calls[0].args[1] == (202602, "archivo.xlsx")
+        assert resultado["filas_eliminadas"] == 42
+
+    def test_elimina_todos_los_periodos_reales_no_solo_el_detectado(self):
+        """Regresion: un archivo que abarca dos periodos (ej. semanal que
+        cruza fin de mes) dejaba el segundo periodo huerfano al eliminar,
+        porque log_cargas.periodo_detectado solo guarda el primero. El
+        borrado debe basarse en los periodos reales de autorizaciones."""
+        conn, cur = _conn_con_fila(
+            ("archivo_multi.xlsx", 202602, "exitoso"),
+            periodos_reales=[(202602,), (202603,)],
+        )
+        with patch.object(ea, "get_db_conn", return_value=conn), \
+             patch.object(ea, "refrescar_vistas_materializadas"):
+            resultado = ea.modo_eliminar("job-1")
+
+        delete_calls = [
+            c for c in cur.execute.call_args_list
+            if c.args[0].strip().startswith("DELETE FROM autorizaciones")
+        ]
+        assert len(delete_calls) == 2
+        periodos_borrados = {c.args[1][0] for c in delete_calls}
+        assert periodos_borrados == {202602, 202603}
+        assert all(c.args[1][1] == "archivo_multi.xlsx" for c in delete_calls)
+        assert resultado["filas_eliminadas"] == 84
+        assert resultado["periodos"] == [202602, 202603]
+
+    def test_no_falla_si_no_quedan_filas_reales_para_el_archivo(self):
+        """Si autorizaciones ya no tiene filas para ese archivo_fuente (ej.
+        se elimino antes por otra via), no es un error: se marca eliminado
+        con 0 filas en vez de abortar."""
+        conn, cur = _conn_con_fila(
+            ("archivo.xlsx", 202602, "exitoso"), periodos_reales=[]
+        )
+        with patch.object(ea, "get_db_conn", return_value=conn), \
+             patch.object(ea, "refrescar_vistas_materializadas"):
+            resultado = ea.modo_eliminar("job-1")
+
+        delete_calls = [
+            c for c in cur.execute.call_args_list
+            if c.args[0].strip().startswith("DELETE FROM autorizaciones")
+        ]
+        assert len(delete_calls) == 0
+        assert resultado["filas_eliminadas"] == 0
+        assert resultado["estado"] == "eliminado"
 
     @pytest.mark.parametrize("estado", ["exitoso", "exitoso_con_advertencias", "eliminando"])
     def test_elimina_filas_de_autorizaciones_por_periodo_y_archivo(self, estado):
