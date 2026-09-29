@@ -331,6 +331,50 @@ def _parsear_fecha(serie: pd.Series) -> pd.Series:
     )
 
 
+def _parsear_columnas_fecha(df: pd.DataFrame, contadores: dict) -> pd.DataFrame:
+    """
+    Parsea in-place todas las columnas de COLS_FECHA presentes en df.
+
+    Actualiza contadores:
+      - "columnas_faltantes": columnas de COLS_FECHA ausentes del archivo
+        (antes se perdían en silencio: la columna quedaba en None para
+        todas las filas sin quedar registrado en ningún lado).
+      - "fechas_invalidas": cuenta solo celdas que tenían un valor y no
+        pudieron parsearse (no las que ya venían vacías).
+      - "ejemplos_fechas_invalidas": hasta 5 ejemplos POR COLUMNA (antes
+        el tope de 5 era compartido entre las 6 columnas), incluyendo el
+        valor original que falló (antes solo se guardaba el consecutivo
+        de orden, imposible de diagnosticar sin volver al Excel).
+    """
+    for col in COLS_FECHA:
+        if col not in df.columns:
+            contadores["columnas_faltantes"].append(col)
+            df[col] = None
+            continue
+
+        original = df[col].copy()
+        nulos_antes_mask = original.isna()
+        df[col] = _parsear_fecha(df[col])
+        nuevos_invalidos_mask = df[col].isna() & ~nulos_antes_mask
+        nuevos_nulos = int(nuevos_invalidos_mask.sum())
+
+        if nuevos_nulos > 0:
+            contadores["fechas_invalidas"] += nuevos_nulos
+            ejemplos = contadores["ejemplos_fechas_invalidas"]
+            ejemplos_columna = sum(1 for e in ejemplos if e["columna"] == col)
+            cupo = 5 - ejemplos_columna
+            if cupo > 0:
+                malos_idx = df.index[nuevos_invalidos_mask][:cupo]
+                for idx in malos_idx:
+                    fila = df.loc[idx]
+                    ejemplos.append({
+                        "columna":        col,
+                        "consec_orden":   str(fila.get("Numero_Consec_Orden_Serie")),
+                        "valor_original": str(original.loc[idx]),
+                    })
+    return df
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Detección de periodo desde nombre del archivo
 # ─────────────────────────────────────────────────────────────────────────────
@@ -401,6 +445,7 @@ def leer_y_limpiar(
         "filas_en_archivo":             0,
         "fechas_invalidas":             0,
         "ejemplos_fechas_invalidas":    [],
+        "columnas_faltantes":           [],
         "valores_invalidos":            0,
         "periodo_detectado":            None,
     }
@@ -472,22 +517,7 @@ def leer_y_limpiar(
         print(f"[INFO] Filtro CODIGO_SUCURSAL_AFILIADO (1712): {filas_antes:,} -> {len(df):,} filas")
 
     # ── Parseo de fechas ──────────────────────────────────────────────────────
-    for col in COLS_FECHA:
-        if col not in df.columns:
-            df[col] = None
-            continue
-        nulos_antes = df[col].isna().sum()
-        df[col] = _parsear_fecha(df[col])
-        nuevos_nulos = int(df[col].isna().sum() - nulos_antes)
-        if nuevos_nulos > 0:
-            contadores["fechas_invalidas"] += nuevos_nulos
-            if len(contadores["ejemplos_fechas_invalidas"]) < 5:
-                malos = df[df[col].isna()].head(3)
-                for _, fila in malos.iterrows():
-                    contadores["ejemplos_fechas_invalidas"].append({
-                        "columna":      col,
-                        "consec_orden": str(fila.get("Numero_Consec_Orden_Serie")),
-                    })
+    df = _parsear_columnas_fecha(df, contadores)
 
     # ── Parseo numérico float ─────────────────────────────────────────────────
     for col in COLS_NUMERICAS_FLOAT:
@@ -928,6 +958,7 @@ def modo_preview(
         filas_con_error_bd=result_st["errores"],
         fechas_invalidas=contadores["fechas_invalidas"],
         ejemplos_fechas_invalidas=contadores["ejemplos_fechas_invalidas"],
+        columnas_faltantes=contadores["columnas_faltantes"],
         valores_numericos_invalidos=contadores["valores_invalidos"],
         medicos_no_encontrados=medicos_stat,
         distribucion_estados=stats_preview.get("distribucion_estados", {}),

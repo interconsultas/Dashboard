@@ -65,6 +65,13 @@ class TestValidarColumnas:
         assert resultado["ok"] is False
         assert len(resultado["faltantes"]) == len(COLUMNAS_REQUERIDAS)
 
+    def test_fecha_atencion_no_es_columna_requerida(self):
+        """FECHA_ATENCION no llega de forma confiable ni siquiera en el archivo
+        AJUSTADOS; es una columna de fecha opcional, igual que Fecha_Digitacion
+        o FECHA_PROGRAMACION (se registra en columnas_faltantes si no viene,
+        pero no bloquea la carga)."""
+        assert "FECHA_ATENCION" not in COLUMNAS_REQUERIDAS
+
     def test_columnas_extra_multiples_periodos(self):
         """Simula archivo real con columnas sobrantes de distintos periodos."""
         extras = ["IPS ASOCIADA", "COLUMNA_PERIODO_ABRIL", "DATO_EXTRA_2026"]

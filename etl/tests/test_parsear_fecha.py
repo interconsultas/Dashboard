@@ -3,7 +3,15 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from etl_autorizaciones import _parsear_fecha
+from etl_autorizaciones import _parsear_fecha, _parsear_columnas_fecha, COLS_FECHA
+
+
+def _contadores_vacios():
+    return {
+        "fechas_invalidas":          0,
+        "ejemplos_fechas_invalidas": [],
+        "columnas_faltantes":        [],
+    }
 
 
 class TestParsearFecha:
@@ -92,3 +100,68 @@ class TestParsearFecha:
         s = pd.Series(["206-11-03"])
         resultado = _parsear_fecha(s)
         assert pd.isna(resultado.iloc[0])
+
+
+class TestParsearColumnasFecha:
+    """Tests para etl_autorizaciones._parsear_columnas_fecha (wrapper por-DataFrame)."""
+
+    def _df_base(self, n=1):
+        data = {col: ["2026-03-15"] * n for col in COLS_FECHA}
+        data["Numero_Consec_Orden_Serie"] = [f"ORD-{i}" for i in range(n)]
+        return pd.DataFrame(data)
+
+    def test_columna_faltante_se_registra(self):
+        """Si el archivo no trae una columna de COLS_FECHA, debe quedar
+        registrada en contadores['columnas_faltantes'] en vez de perderse
+        en silencio."""
+        df = self._df_base()
+        df = df.drop(columns=["FECHA_ATENCION"])
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        assert "FECHA_ATENCION" in contadores["columnas_faltantes"]
+
+    def test_columna_presente_no_se_registra_como_faltante(self):
+        df = self._df_base()
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        assert contadores["columnas_faltantes"] == []
+
+    def test_valor_original_se_captura_en_ejemplo(self):
+        """Cuando un valor no puede parsearse, el ejemplo debe incluir el
+        valor original (no solo el consecutivo de orden)."""
+        df = self._df_base(n=1)
+        df.loc[0, "FECHA_ATENCION"] = "no-es-una-fecha"
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        ejemplos = [e for e in contadores["ejemplos_fechas_invalidas"] if e["columna"] == "FECHA_ATENCION"]
+        assert len(ejemplos) == 1
+        assert ejemplos[0]["valor_original"] == "no-es-una-fecha"
+
+    def test_ejemplos_no_comparten_tope_entre_columnas(self):
+        """5 fallos en FECHA_ATENCION y 5 en FECHA_PROGRAMACION deben dejar
+        5 ejemplos de cada una (10 en total), no compartir un tope global de 5."""
+        n = 5
+        df = self._df_base(n=n)
+        df["FECHA_ATENCION"] = ["no-es-fecha"] * n
+        df["FECHA_PROGRAMACION"] = ["tampoco-es-fecha"] * n
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        ejemplos_atencion = [e for e in contadores["ejemplos_fechas_invalidas"] if e["columna"] == "FECHA_ATENCION"]
+        ejemplos_programacion = [e for e in contadores["ejemplos_fechas_invalidas"] if e["columna"] == "FECHA_PROGRAMACION"]
+        assert len(ejemplos_atencion) == 5
+        assert len(ejemplos_programacion) == 5
+
+    def test_fechas_invalidas_solo_cuenta_valores_que_eran_no_nulos(self):
+        """Una celda ya vacía antes de parsear no debe sumar a fechas_invalidas."""
+        df = self._df_base(n=1)
+        df.loc[0, "FECHA_DIGITACION" if "FECHA_DIGITACION" in df.columns else "Fecha_Digitacion"] = None
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        assert contadores["fechas_invalidas"] == 0
+
+    def test_fecha_valida_no_genera_ejemplo(self):
+        df = self._df_base(n=1)
+        contadores = _contadores_vacios()
+        _parsear_columnas_fecha(df, contadores)
+        assert contadores["fechas_invalidas"] == 0
+        assert contadores["ejemplos_fechas_invalidas"] == []
