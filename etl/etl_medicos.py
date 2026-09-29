@@ -8,6 +8,7 @@ Uso:
     python etl_medicos.py --archivo "ruta/alternativa.xlsx"
 """
 import sys
+import json
 import argparse
 from pathlib import Path
 import pandas as pd
@@ -125,6 +126,10 @@ def cargar_medicos(archivo: Path) -> dict:
     print(f"  Errores          : {errores}")
     print("=" * 50)
     print("[OK] Carga de medicos completada")
+
+    # Linea final parseable por el caller (ej. el endpoint Node que ejecuta
+    # este script de forma sincrona y espera el resultado por stdout).
+    print(f"RESULT_JSON:{json.dumps(resultado)}")
 
     return resultado
 
