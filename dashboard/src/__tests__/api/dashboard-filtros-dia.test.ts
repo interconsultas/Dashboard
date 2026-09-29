@@ -110,6 +110,32 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
     expect(cacheKeyUsada).toContain(`"modo":"dia"`);
   });
 
+  it("sin rango angostado, bucketiza fechas fuera del mes calendario en 'Sin fecha' (dato real: periodo no siempre coincide con el mes de fecha_emision)", async () => {
+    mockQueryConSerieDiaria();
+
+    await POST(req({ modo: "dia", desde: 202603, hasta: 202603 }));
+
+    const diaCalls = mockQuery.mock.calls.filter(([sql]) => (sql as string).includes("date_trunc('day'"));
+    expect(diaCalls).toHaveLength(1);
+    const [sql, params] = diaCalls[0];
+    expect(sql).toMatch(/CASE/);
+    expect(sql).toMatch(/THEN NULL/);
+    expect(params).toEqual(expect.arrayContaining(["2026-03-01", "2026-03-31"]));
+  });
+
+  it("con rango angostado, NO agrega el CASE de bucketing (addRangoFechaDiaria ya excluye lo de fuera por WHERE)", async () => {
+    mockQueryConSerieDiaria();
+
+    await POST(req({
+      modo: "dia", desde: 202603, hasta: 202603,
+      dia_desde: "2026-03-03", dia_hasta: "2026-03-15",
+    }));
+
+    const diaCalls = mockQuery.mock.calls.filter(([sql]) => (sql as string).includes("date_trunc('day'"));
+    expect(diaCalls).toHaveLength(1);
+    expect(diaCalls[0][0]).not.toMatch(/CASE/);
+  });
+
   describe("extensión: rango de días dentro del mes", () => {
     it("en modo día (sin angostar), kpis/opciones/top/serie también golpean autorizaciones, no la vista", async () => {
       mockQueryConSerieDiaria();
