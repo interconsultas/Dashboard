@@ -29,6 +29,19 @@ export interface FiltrosBody {
   view?: string;
   /** "dia" solo tiene efecto en la vista default con desde===hasta; ver route.ts */
   modo?: "mes" | "dia";
+  /** Rango de días dentro del mes seleccionado (ISO "YYYY-MM-DD"), solo con modo:"dia". */
+  dia_desde?: string;
+  dia_hasta?: string;
+}
+
+/** Primer y último día del mes YYYYMM, como fechas ISO "YYYY-MM-DD". */
+export function mesBounds(periodo: number): { desde: string; hasta: string } {
+  const anio = Math.floor(periodo / 100);
+  const mes = periodo % 100;
+  const desde = `${anio}-${String(mes).padStart(2, "0")}-01`;
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+  const hasta = `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+  return { desde, hasta };
 }
 
 export interface Parsed {
@@ -80,6 +93,12 @@ export function addNotIn(b: WB, col: string, vals: string[]) {
   const ph = vals.map((_, i) => `$${b.params.length + 1 + i}`);
   b.clauses.push(`${col} NOT IN (${ph.join(",")})`);
   b.params.push(...vals);
+}
+
+/** Rango de días dentro del mes (issue #4, extensión: angostar el modo día). */
+export function addRangoFechaDiaria(b: WB, desde: string, hasta: string, alias = "r") {
+  b.clauses.push(`${alias}.${COLUMNA_FECHA_DIARIA} BETWEEN $${b.params.length + 1} AND $${b.params.length + 2}`);
+  b.params.push(desde, hasta);
 }
 
 export function addRegional(b: WB, clause: string, params: (string | null)[]) {

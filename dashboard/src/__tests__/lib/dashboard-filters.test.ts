@@ -5,6 +5,8 @@ import {
   addIn,
   addNotIn,
   addEstado,
+  addRangoFechaDiaria,
+  mesBounds,
   toW,
   parseBody,
   shiftPeriodo,
@@ -309,6 +311,50 @@ describe("dashboard-filters", () => {
       const sql = toW(b);
       expect(sql).toContain("desc_regional_afiliado");
       expect(b.params).toContain("CALDAS");
+    });
+  });
+
+  describe("addRangoFechaDiaria", () => {
+    it("agrega BETWEEN sobre la columna configurada usando alias por defecto 'r'", () => {
+      const b = wb();
+      addRangoFechaDiaria(b, "2026-09-03", "2026-09-15");
+      expect(b.clauses).toContain(`r.${COLUMNA_FECHA_DIARIA} BETWEEN $1 AND $2`);
+      expect(b.params).toEqual(["2026-09-03", "2026-09-15"]);
+    });
+
+    it("indexa correctamente después de params existentes", () => {
+      const b = wb();
+      b.params.push("prev");
+      addRangoFechaDiaria(b, "2026-09-03", "2026-09-15");
+      expect(b.clauses).toContain(`r.${COLUMNA_FECHA_DIARIA} BETWEEN $2 AND $3`);
+    });
+
+    it("usa alias personalizado", () => {
+      const b = wb();
+      addRangoFechaDiaria(b, "2026-09-03", "2026-09-15", "a");
+      expect(b.clauses).toContain(`a.${COLUMNA_FECHA_DIARIA} BETWEEN $1 AND $2`);
+    });
+  });
+
+  describe("mesBounds", () => {
+    it("calcula primer y último día de un mes de 30 días", () => {
+      expect(mesBounds(202609)).toEqual({ desde: "2026-09-01", hasta: "2026-09-30" });
+    });
+
+    it("calcula primer y último día de un mes de 31 días", () => {
+      expect(mesBounds(202603)).toEqual({ desde: "2026-03-01", hasta: "2026-03-31" });
+    });
+
+    it("calcula febrero de año bisiesto", () => {
+      expect(mesBounds(202802)).toEqual({ desde: "2028-02-01", hasta: "2028-02-29" });
+    });
+
+    it("calcula febrero de año no bisiesto", () => {
+      expect(mesBounds(202602)).toEqual({ desde: "2026-02-01", hasta: "2026-02-28" });
+    });
+
+    it("calcula diciembre (borde de año)", () => {
+      expect(mesBounds(202612)).toEqual({ desde: "2026-12-01", hasta: "2026-12-31" });
     });
   });
 });
