@@ -3,6 +3,7 @@ import { spawnEtl } from "@/lib/etl-spawn";
 jest.mock("child_process", () => ({
   spawn: jest.fn().mockReturnValue({
     unref: jest.fn(),
+    on: jest.fn(),
   }),
 }));
 
@@ -13,8 +14,13 @@ jest.mock("fs", () => ({
   mkdirSync: jest.fn(),
 }));
 
+jest.mock("@/lib/cache", () => ({
+  clearCache: jest.fn(),
+}));
+
 import { spawn } from "child_process";
 import { openSync, closeSync } from "fs";
+import { clearCache } from "@/lib/cache";
 
 describe("spawnEtl", () => {
   beforeEach(() => {
@@ -60,5 +66,28 @@ describe("spawnEtl", () => {
     spawnEtl(["--preview"], "abcd1234-0000-0000-0000-000000000000");
     const [, , opts] = (spawn as jest.Mock).mock.calls[0];
     expect(opts.detached).toBe(true);
+  });
+
+  it("invalida el cache cuando el proceso termina con exito (exit code 0)", () => {
+    spawnEtl(["--confirm", "abc"], "aabbccdd-1122-3344-5566-778899001122");
+    const procMock = (spawn as jest.Mock).mock.results[0].value;
+    const onExit = (procMock.on as jest.Mock).mock.calls.find(
+      ([evt]: [string]) => evt === "exit"
+    )?.[1];
+    expect(onExit).toBeDefined();
+
+    onExit(0);
+    expect(clearCache).toHaveBeenCalledTimes(1);
+  });
+
+  it("no invalida el cache si el proceso termina con error (exit code distinto de 0)", () => {
+    spawnEtl(["--delete", "abc"], "aabbccdd-1122-3344-5566-778899001133");
+    const procMock = (spawn as jest.Mock).mock.results[0].value;
+    const onExit = (procMock.on as jest.Mock).mock.calls.find(
+      ([evt]: [string]) => evt === "exit"
+    )?.[1];
+
+    onExit(1);
+    expect(clearCache).not.toHaveBeenCalled();
   });
 });

@@ -1,52 +1,37 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
 jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
-jest.mock("@/lib/cache", () => ({ clearCache: jest.fn() }));
 
 import { GET } from "@/app/api/carga/historial/route";
 import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/middleware-roles";
-import { clearCache } from "@/lib/cache";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
-const mockClearCache = clearCache as jest.MockedFunction<typeof clearCache>;
 
-describe("GET /api/carga/historial - invalidación de caché", () => {
+describe("GET /api/carga/historial", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("rechaza si requireAuth devuelve error", async () => {
+    const errorResponse = { status: 403 } as never;
+    mockRequireAuth.mockResolvedValue({ error: errorResponse, user: null });
+
+    const res = await GET();
+
+    expect(res).toBe(errorResponse);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it("devuelve las filas del historial excluyendo canceladas", async () => {
     mockRequireAuth.mockResolvedValue({ error: null, user: null });
-  });
+    mockQuery.mockResolvedValue([{ job_id: "job-1", estado: "exitoso" } as never]);
 
-  it("invalida el caché al ver por primera vez una carga en estado exitoso", async () => {
-    mockQuery.mockResolvedValue([{ job_id: "job-exitoso-1", estado: "exitoso" } as never]);
+    const res = await GET();
+    const body = await res.json();
 
-    await GET();
-
-    expect(mockClearCache).toHaveBeenCalledTimes(1);
-  });
-
-  it("invalida el caché al ver por primera vez una carga eliminada", async () => {
-    mockQuery.mockResolvedValue([{ job_id: "job-eliminado-1", estado: "eliminado" } as never]);
-
-    await GET();
-
-    expect(mockClearCache).toHaveBeenCalledTimes(1);
-  });
-
-  it("no vuelve a invalidar el caché para un job ya notificado", async () => {
-    mockQuery.mockResolvedValue([{ job_id: "job-dedup-1", estado: "exitoso" } as never]);
-
-    await GET();
-    await GET();
-
-    expect(mockClearCache).toHaveBeenCalledTimes(1);
-  });
-
-  it("no invalida el caché para estados no terminales", async () => {
-    mockQuery.mockResolvedValue([{ job_id: "job-procesando-1", estado: "procesando" } as never]);
-
-    await GET();
-
-    expect(mockClearCache).not.toHaveBeenCalled();
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    expect(mockQuery.mock.calls[0][0]).toContain("estado NOT IN ('cancelado')");
+    expect(body).toEqual([{ job_id: "job-1", estado: "exitoso" }]);
   });
 });
