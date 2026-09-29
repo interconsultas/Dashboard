@@ -126,6 +126,27 @@ class TestParsearColumnasFecha:
         _parsear_columnas_fecha(df, contadores)
         assert contadores["columnas_faltantes"] == []
 
+    def test_columna_con_otro_casing_se_reconoce_y_no_se_marca_faltante(self):
+        """Bug real: un archivo con la columna 'FECHA_DIGITACION' (todo
+        mayúsculas) en vez de 'Fecha_Digitacion' (el nombre canónico en
+        COLS_FECHA) debe reconocerse y parsearse igual, no perderse."""
+        df = self._df_base()
+        df = df.rename(columns={"Fecha_Digitacion": "FECHA_DIGITACION"})
+        contadores = _contadores_vacios()
+        df = _parsear_columnas_fecha(df, contadores)
+        assert "Fecha_Digitacion" not in contadores["columnas_faltantes"]
+        assert "FECHA_DIGITACION" not in contadores["columnas_faltantes"]
+        assert "Fecha_Digitacion" in df.columns
+        assert pd.notna(df["Fecha_Digitacion"].iloc[0])
+
+    def test_columna_con_espacios_extra_se_reconoce(self):
+        df = self._df_base()
+        df = df.rename(columns={"Fecha_Digitacion": " Fecha_Digitacion "})
+        contadores = _contadores_vacios()
+        df = _parsear_columnas_fecha(df, contadores)
+        assert "Fecha_Digitacion" not in contadores["columnas_faltantes"]
+        assert "Fecha_Digitacion" in df.columns
+
     def test_valor_original_se_captura_en_ejemplo(self):
         """Cuando un valor no puede parsearse, el ejemplo debe incluir el
         valor original (no solo el consecutivo de orden)."""

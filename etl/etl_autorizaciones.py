@@ -346,11 +346,21 @@ def _parsear_columnas_fecha(df: pd.DataFrame, contadores: dict) -> pd.DataFrame:
         valor original que falló (antes solo se guardaba el consecutivo
         de orden, imposible de diagnosticar sin volver al Excel).
     """
+    # Mapa normalizado (sin espacios extra, en mayúsculas) -> nombre real
+    # de la columna en el archivo. Permite reconocer columnas cuyo casing
+    # no coincide exacto con el nombre canónico de COLS_FECHA (ej. el
+    # archivo trae "FECHA_DIGITACION" en vez de "Fecha_Digitacion").
+    columnas_normalizadas = {c.strip().upper(): c for c in df.columns}
+
     for col in COLS_FECHA:
         if col not in df.columns:
-            contadores["columnas_faltantes"].append(col)
-            df[col] = None
-            continue
+            nombre_real = columnas_normalizadas.get(col.strip().upper())
+            if nombre_real is not None:
+                df = df.rename(columns={nombre_real: col})
+            else:
+                contadores["columnas_faltantes"].append(col)
+                df[col] = None
+                continue
 
         original = df[col].copy()
         nulos_antes_mask = original.isna()
