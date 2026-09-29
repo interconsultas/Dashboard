@@ -1042,23 +1042,32 @@ def modo_eliminar(job_id: str) -> dict:
         print(f"[ERROR] job_id no encontrado: {job_id}")
         cur.close(); conn.close(); sys.exit(1)
 
-    nombre_archivo, periodo, estado = row
+    nombre_archivo, _periodo_detectado, estado = row
 
     if estado not in ESTADOS_ELIMINABLES:
         print(f"[ERROR] El job {job_id} esta en estado '{estado}', no se puede eliminar.")
         cur.close(); conn.close(); sys.exit(1)
 
-    if periodo is None:
-        print(f"[ERROR] El job {job_id} no tiene periodo_detectado, no se puede eliminar de forma segura.")
-        cur.close(); conn.close(); sys.exit(1)
-
-    print(f"[INFO] Eliminando datos de job {job_id} | archivo={nombre_archivo} | periodo={periodo}")
-
+    # No confiar en log_cargas.periodo_detectado (columna INT, un solo valor):
+    # un archivo que abarca mas de un periodo (ej. semanal que cruza fin de
+    # mes) solo guarda ahi el primero, dejando el resto huerfano si se borra
+    # por ese valor. Se identifican los periodos reales directo en
+    # autorizaciones para ese archivo_fuente.
     cur.execute(
-        "DELETE FROM autorizaciones WHERE periodo = %s AND archivo_fuente = %s",
-        (periodo, nombre_archivo),
+        "SELECT DISTINCT periodo FROM autorizaciones WHERE archivo_fuente = %s ORDER BY periodo",
+        (nombre_archivo,),
     )
-    filas_eliminadas = cur.rowcount
+    periodos_reales = [r[0] for r in cur.fetchall()]
+
+    print(f"[INFO] Eliminando datos de job {job_id} | archivo={nombre_archivo} | periodos={periodos_reales}")
+
+    filas_eliminadas = 0
+    for p in periodos_reales:
+        cur.execute(
+            "DELETE FROM autorizaciones WHERE periodo = %s AND archivo_fuente = %s",
+            (p, nombre_archivo),
+        )
+        filas_eliminadas += cur.rowcount
     conn.commit()
     print(f"[INFO] Filas eliminadas de autorizaciones: {filas_eliminadas:,}")
 
@@ -1077,7 +1086,7 @@ def modo_eliminar(job_id: str) -> dict:
         "job_id": job_id,
         "estado": "eliminado",
         "filas_eliminadas": filas_eliminadas,
-        "periodo": periodo,
+        "periodos": periodos_reales,
         "tiempo_segundos": t_total,
     }
     print(f"[OK] Job {job_id} eliminado ({filas_eliminadas:,} filas)")
