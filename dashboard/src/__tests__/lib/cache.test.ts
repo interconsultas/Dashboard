@@ -1,4 +1,4 @@
-import { getCached, setCache, cacheKey } from "@/lib/cache";
+import { getCached, setCache, cacheKey, clearCache } from "@/lib/cache";
 
 describe("cache", () => {
   beforeEach(() => {
@@ -59,6 +59,23 @@ describe("cache", () => {
       expect(getCached("test-string")).toBe("hola");
       expect(getCached("test-number")).toBe(99);
       expect(getCached("test-null-val")).toBeNull();
+    });
+  });
+
+  describe("clearCache", () => {
+    it("vacía todas las entradas guardadas", () => {
+      setCache("clear-a", 1);
+      setCache("clear-b", 2);
+
+      clearCache();
+
+      expect(getCached("clear-a")).toBeNull();
+      expect(getCached("clear-b")).toBeNull();
+    });
+
+    it("no lanza error si el store ya está vacío", () => {
+      clearCache();
+      expect(() => clearCache()).not.toThrow();
     });
   });
 
