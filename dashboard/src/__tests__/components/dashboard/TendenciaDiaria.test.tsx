@@ -71,4 +71,32 @@ describe("TendenciaDiaria", () => {
     // 5 + 3 + 2 = 10
     expect(screen.getByText(/Total del mes: 10/)).toBeInTheDocument();
   });
+
+  it("muestra el badge de variación cuando hay al menos 2 días con datos", () => {
+    render(
+      <TendenciaDiaria
+        serieDiaria={[
+          { dia: "2026-03-01", total: 5, valor_total: 500 },
+          { dia: "2026-03-02", total: 10, valor_total: 1000 },
+        ]}
+      />
+    );
+    expect(screen.getByText(/variación/)).toBeInTheDocument();
+  });
+
+  it("no muestra el badge de variación con un solo día de datos", () => {
+    render(
+      <TendenciaDiaria
+        serieDiaria={[{ dia: "2026-03-01", total: 5, valor_total: 500 }]}
+      />
+    );
+    expect(screen.queryByText(/variación/)).not.toBeInTheDocument();
+  });
+
+  it("no muestra el badge de variación cuando todos los datos están en el bucket 'Sin fecha'", () => {
+    render(
+      <TendenciaDiaria serieDiaria={[{ dia: null, total: 5, valor_total: 500 }]} />
+    );
+    expect(screen.queryByText(/variación/)).not.toBeInTheDocument();
+  });
 });
