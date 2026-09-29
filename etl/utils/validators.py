@@ -31,6 +31,7 @@ COLUMNAS_REQUERIDAS = [
     "Orden_Agrup_Prest_Desc",
     "PERIODO",
     "Fecha_Emision",
+    "FECHA_ATENCION",
     "Codigo_Diagnostico_EPS_Op",
     "Diagnostico_EPS_Desc",
     "CODIGO_SUCURSAL_EMITE",
