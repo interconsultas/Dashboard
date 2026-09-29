@@ -3,10 +3,13 @@
 /**
  * Columna que impulsa el filtro por día del dashboard general (issue #4).
  * Único punto de cambio: si el negocio pide usar otra fecha, se cambia acá
- * y en el índice `etl/sql/009_idx_fecha_atencion.sql` — no es configurable
+ * y en el índice `etl/sql/009_idx_fecha_emision.sql` — no es configurable
  * desde la UI ni la base de datos.
+ *
+ * fecha_atencion se descartó: ni el archivo EPS ni el AJUSTADOS la traen
+ * de forma confiable (confirmado en los archivos fuente reales).
  */
-export const COLUMNA_FECHA_DIARIA = "fecha_atencion";
+export const COLUMNA_FECHA_DIARIA = "fecha_emision";
 
 /* ── Types ───────────────────────────────────── */
 

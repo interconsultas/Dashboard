@@ -23,7 +23,7 @@ interface TopItem {
 }
 
 interface SerieDiariaPoint {
-  /** null representa el bucket "Sin fecha" (fecha_atencion IS NULL) */
+  /** null representa el bucket "Sin fecha" (COLUMNA_FECHA_DIARIA IS NULL) */
   dia: string | null;
   total: number;
   valor_total: number;

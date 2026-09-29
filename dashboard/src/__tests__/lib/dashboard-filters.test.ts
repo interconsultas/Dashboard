@@ -267,7 +267,7 @@ describe("dashboard-filters", () => {
 
   describe("COLUMNA_FECHA_DIARIA", () => {
     it("es un único punto de configuración para la columna del filtro diario", () => {
-      expect(COLUMNA_FECHA_DIARIA).toBe("fecha_atencion");
+      expect(COLUMNA_FECHA_DIARIA).toBe("fecha_emision");
     });
   });
 
