@@ -1,12 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { LogCarga } from "@/types/carga";
 import { BadgeEstado } from "@/components/ui/Badge";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Props {
   cargas: LogCarga[];
   onVerInforme: (jobId: string) => void;
+  onEliminado: () => void;
 }
+
+const ESTADOS_ELIMINABLES = new Set(["exitoso", "exitoso_con_advertencias"]);
 
 function fmtPeriodo(p: number | null): string {
   if (!p) return "—";
@@ -24,7 +29,30 @@ function fmtFecha(iso: string): string {
   });
 }
 
-export function ListaArchivos({ cargas, onVerInforme }: Props) {
+export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
+  const [jobAEliminar, setJobAEliminar] = useState<LogCarga | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
+
+  async function confirmarEliminar() {
+    if (!jobAEliminar) return;
+    setEliminando(true);
+    setErrorEliminar(null);
+    try {
+      const res = await fetch(`/api/carga/${jobAEliminar.job_id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "No se pudo eliminar la carga");
+      }
+      setJobAEliminar(null);
+      onEliminado();
+    } catch (e) {
+      setErrorEliminar(e instanceof Error ? e.message : "Error al eliminar");
+    } finally {
+      setEliminando(false);
+    }
+  }
+
   if (cargas.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 text-sm bg-white rounded-xl border border-gray-200">
@@ -76,19 +104,50 @@ export function ListaArchivos({ cargas, onVerInforme }: Props) {
                 <td className="px-4 py-3 text-gray-400 text-xs">
                   {c.cargado_por ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                   <button
                     onClick={() => onVerInforme(c.job_id)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
                   >
                     Ver informe
                   </button>
+                  {ESTADOS_ELIMINABLES.has(c.estado) && (
+                    <button
+                      onClick={() => {
+                        setErrorEliminar(null);
+                        setJobAEliminar(c);
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap text-red-700 bg-red-50 hover:bg-red-600 hover:text-white transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+
+      <ConfirmModal
+        open={jobAEliminar !== null}
+        title="Eliminar carga"
+        message={
+          <>
+            Esta acción eliminará todas las filas cargadas de{" "}
+            <strong>{jobAEliminar?.nombre_archivo}</strong>
+            {" "}({fmtPeriodo(jobAEliminar?.periodo_detectado ?? null)}) y no se puede deshacer.
+            {errorEliminar && <p className="mt-2 text-red-600">{errorEliminar}</p>}
+          </>
+        }
+        confirmLabel="Eliminar"
+        variant="destructive"
+        loading={eliminando}
+        onConfirm={confirmarEliminar}
+        onCancel={() => {
+          if (!eliminando) setJobAEliminar(null);
+        }}
+      />
     </div>
   );
 }

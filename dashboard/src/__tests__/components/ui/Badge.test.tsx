@@ -18,6 +18,8 @@ describe("BadgeEstado", () => {
     cancelado: "Cancelado",
     error_fatal: "Error",
     ya_procesado: "Duplicado",
+    eliminando: "Eliminando...",
+    eliminado: "Eliminado",
   };
 
   it.each(Object.entries(ESTADOS_LABEL))(

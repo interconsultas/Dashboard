@@ -61,6 +61,7 @@ export default function CargaPage() {
         <ListaArchivos
           cargas={historial ?? []}
           onVerInforme={(jobId) => setActiveJobId(jobId)}
+          onEliminado={() => mutate()}
         />
       </div>
     </div>
