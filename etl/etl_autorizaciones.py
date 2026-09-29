@@ -871,7 +871,7 @@ def modo_preview(
             FROM log_cargas
             WHERE hash_archivo = %s
               AND job_id != %s
-              AND estado NOT IN ('cancelado', 'error_fatal', 'procesando')
+              AND estado NOT IN ('cancelado', 'error_fatal', 'procesando', 'eliminado')
             LIMIT 1
         """, (h_archivo, job_id))
         existente = cur.fetchone()
@@ -975,6 +975,113 @@ def modo_preview(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Vistas materializadas
+# ─────────────────────────────────────────────────────────────────────────────
+
+VISTAS_MATERIALIZADAS = [
+    "vm_filtros_dashboard",
+    "vm_dash_laboratorios",
+    "vm_dash_rx",
+    "vm_dash_ecografias",
+    "vm_dash_remisiones_cap",
+    "vm_dash_medicamentos",
+    "vm_dash_remisiones_ext",
+    "vm_dash_proc_dx",
+]
+
+
+def refrescar_vistas_materializadas(conn) -> None:
+    """Refresca las 8 vistas materializadas del dashboard, una por una.
+
+    Si una vista falla (ej. no existe todavía), se hace rollback de esa
+    transacción puntual y se sigue con las demás — no debe abortar toda
+    la carga/eliminación por un problema en una sola vista.
+    """
+    print("[INFO] Refrescando vistas materializadas...")
+    cur = conn.cursor()
+    for vista in VISTAS_MATERIALIZADAS:
+        try:
+            cur.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {vista}")
+            conn.commit()
+            print(f"[OK]   {vista}")
+        except Exception as e:
+            conn.rollback()
+            print(f"[WARN] No se pudo refrescar {vista}: {e}")
+    cur.close()
+    print("[INFO] Vistas materializadas actualizadas")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODO --delete
+# ─────────────────────────────────────────────────────────────────────────────
+
+ESTADOS_ELIMINABLES = ("exitoso", "exitoso_con_advertencias", "eliminando")
+
+
+def modo_eliminar(job_id: str) -> dict:
+    """Elimina los datos de una carga ya confirmada, por archivo_fuente + periodo.
+
+    No se usa job_id para el DELETE sobre `autorizaciones` porque esa tabla
+    no tiene esa columna — se identifica la carga por (periodo, archivo_fuente),
+    igual que quedó acordado con el cliente (riesgo de nombre_archivo sin
+    UNIQUE, aceptado).
+    """
+    t0   = time.time()
+    conn = get_db_conn()
+    cur  = conn.cursor()
+
+    cur.execute(
+        "SELECT nombre_archivo, periodo_detectado, estado FROM log_cargas WHERE job_id = %s",
+        (job_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        print(f"[ERROR] job_id no encontrado: {job_id}")
+        cur.close(); conn.close(); sys.exit(1)
+
+    nombre_archivo, periodo, estado = row
+
+    if estado not in ESTADOS_ELIMINABLES:
+        print(f"[ERROR] El job {job_id} esta en estado '{estado}', no se puede eliminar.")
+        cur.close(); conn.close(); sys.exit(1)
+
+    if periodo is None:
+        print(f"[ERROR] El job {job_id} no tiene periodo_detectado, no se puede eliminar de forma segura.")
+        cur.close(); conn.close(); sys.exit(1)
+
+    print(f"[INFO] Eliminando datos de job {job_id} | archivo={nombre_archivo} | periodo={periodo}")
+
+    cur.execute(
+        "DELETE FROM autorizaciones WHERE periodo = %s AND archivo_fuente = %s",
+        (periodo, nombre_archivo),
+    )
+    filas_eliminadas = cur.rowcount
+    conn.commit()
+    print(f"[INFO] Filas eliminadas de autorizaciones: {filas_eliminadas:,}")
+
+    refrescar_vistas_materializadas(conn)
+
+    t_total = time.time() - t0
+    cur.execute(
+        "UPDATE log_cargas SET estado = 'eliminado', tiempo_segundos = tiempo_segundos + %s WHERE job_id = %s",
+        (round(t_total, 1), job_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    resultado = {
+        "job_id": job_id,
+        "estado": "eliminado",
+        "filas_eliminadas": filas_eliminadas,
+        "periodo": periodo,
+        "tiempo_segundos": t_total,
+    }
+    print(f"[OK] Job {job_id} eliminado ({filas_eliminadas:,} filas)")
+    return resultado
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MODO --confirm
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1064,27 +1171,7 @@ def modo_confirm(job_id: str) -> dict:
     cur.execute("DELETE FROM staging_autorizaciones WHERE job_id = %s", (job_id,))
     conn.commit()
 
-    # Refrescar vistas materializadas para que el dashboard refleje los datos nuevos
-    print("[INFO] Refrescando vistas materializadas...")
-    vistas = [
-        "vm_filtros_dashboard",
-        "vm_dash_laboratorios",
-        "vm_dash_rx",
-        "vm_dash_ecografias",
-        "vm_dash_remisiones_cap",
-        "vm_dash_medicamentos",
-        "vm_dash_remisiones_ext",
-        "vm_dash_proc_dx",
-    ]
-    for vista in vistas:
-        try:
-            cur.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {vista}")
-            conn.commit()
-            print(f"[OK]   {vista}")
-        except Exception as e:
-            conn.rollback()
-            print(f"[WARN] No se pudo refrescar {vista}: {e}")
-    print("[INFO] Vistas materializadas actualizadas")
+    refrescar_vistas_materializadas(conn)
 
     t_total = time.time() - t0
 
@@ -1147,6 +1234,8 @@ def main():
                        help="Confirmar carga con job_id dado")
     grupo.add_argument("--directo",  action="store_true",
                        help="Preview + confirm en un solo paso")
+    grupo.add_argument("--delete",   metavar="JOB_ID",
+                       help="Eliminar datos de una carga ya confirmada (por job_id)")
 
     parser.add_argument("--archivo",  type=str, default=None)
     parser.add_argument("--periodo",  type=int, default=None)
@@ -1182,6 +1271,9 @@ def main():
         modo_directo(
             Path(args.archivo), args.periodo, args.force, args.usuario
         )
+
+    elif args.delete:
+        modo_eliminar(args.delete)
 
 
 if __name__ == "__main__":
