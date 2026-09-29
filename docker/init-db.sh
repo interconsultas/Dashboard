@@ -30,7 +30,8 @@ for f in /sql/001_create_tables.sql \
          /sql/004_seed_usuarios.sql \
          /sql/005_estado_medico_null_to_externo.sql \
          /sql/006_create_subviews.sql \
-         /sql/008_delete_carga.sql; do
+         /sql/008_delete_carga.sql \
+         /sql/009_idx_fecha_atencion.sql; do
     echo "  -> $(basename "$f")"
     psql -v ON_ERROR_STOP=1 --username "$DB_USER" --dbname "$DB_NAME" -f "$f"
 done

@@ -4,9 +4,10 @@ import { requireAuth, regionalClause } from "@/lib/middleware-roles";
 import { getCached, setCache } from "@/lib/cache";
 import {
   type FiltrosBody, type Parsed, type Dimension, type WB,
-  wb, toW, buildAll, buildExcept, parseBody, shiftPeriodo,
+  wb, toW, buildAll, buildExcept, buildDia, parseBody, shiftPeriodo,
+  COLUMNA_FECHA_DIARIA,
 } from "@/lib/dashboard-filters";
-import { resolveView } from "@/lib/view-registry";
+import { resolveView, DEFAULT_VIEW } from "@/lib/view-registry";
 
 /* ── Types ───────────────────────────────────── */
 
@@ -19,6 +20,13 @@ interface TopItem {
   nombre: string;
   total: number;
   porcentaje: number;
+}
+
+interface SerieDiariaPoint {
+  /** null representa el bucket "Sin fecha" (fecha_atencion IS NULL) */
+  dia: string | null;
+  total: number;
+  valor_total: number;
 }
 
 interface FiltrosResponse {
@@ -46,6 +54,8 @@ interface FiltrosResponse {
   top_profesionales: TopItem[];
   top_prestaciones: TopItem[];
   top_diagnosticos: TopItem[];
+  /** Solo presente cuando el modo "día" aplica (ver isModoDia). */
+  serie_diaria?: SerieDiariaPoint[];
 }
 
 /* ── Constants ──────────────────────────────── */
@@ -81,6 +91,9 @@ export async function POST(req: NextRequest) {
       defaultsApplied = { desde, hasta, estado: ["ACTIVO", "INACTIVO"], touched: ["estado"] };
     }
   }
+
+  // ── Modo día (issue #4): solo en la vista default y con un único mes seleccionado ──
+  const isModoDia = body.modo === "dia" && view === DEFAULT_VIEW && p.desde != null && p.desde === p.hasta;
 
   // ── Cache (usa body con defaults ya aplicados) ──
   const sortedBody = { ...body, ...(defaultsApplied ? { desde: p.desde, hasta: p.hasta, estado: p.estado } : {}) } as Record<string, unknown>;
@@ -162,6 +175,23 @@ export async function POST(req: NextRequest) {
   const topPrestQ = topQ("descripcion_prestacion");
   const topDiagQ = topQ("diagnostico_desc");
 
+  // ── Serie diaria (solo modo día): golpea autorizaciones directamente, no la vista ──
+  let serieDiariaQ: Promise<{ dia: string | null; total: string; valor_total: string }[]> = Promise.resolve([]);
+  if (isModoDia) {
+    const bDia = wb();
+    buildDia(bDia, p, reg, p.desde as number);
+    serieDiariaQ = query<{ dia: string | null; total: string; valor_total: string }>(
+      `SELECT date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date AS dia,
+              COUNT(*)::bigint AS total,
+              COALESCE(SUM(valor_autorizado_prestacion), 0) AS valor_total
+       FROM autorizaciones r
+       ${toW(bDia)}
+       GROUP BY dia
+       ORDER BY dia NULLS LAST`,
+      bDia.params
+    );
+  }
+
   let serieAnteriorQ: Promise<{ periodo: number; total: string }[]> = Promise.resolve([]);
   if (p.desde && p.hasta) {
     const pPrev: Parsed = { ...p, desde: shiftPeriodo(p.desde, 12), hasta: shiftPeriodo(p.hasta, 12) };
@@ -173,10 +203,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR;
+  let periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR, serieDiariaR;
   try {
-    [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR] = await Promise.all([
-      periodosQ, estadosQ, profQ, progQ, tcQ, oaQ, asQ, diagQ, prestQ, kpisQ, serieActualQ, serieAnteriorQ, topProfQ, topPrestQ, topDiagQ,
+    [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR, serieDiariaR] = await Promise.all([
+      periodosQ, estadosQ, profQ, progQ, tcQ, oaQ, asQ, diagQ, prestQ, kpisQ, serieActualQ, serieAnteriorQ, topProfQ, topPrestQ, topDiagQ, serieDiariaQ,
     ]);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -233,6 +263,15 @@ export async function POST(req: NextRequest) {
         top_diagnosticos: toTop(topDiagR),
       };
     })(),
+    ...(isModoDia
+      ? {
+          serie_diaria: serieDiariaR.map((r) => ({
+            dia: r.dia,
+            total: Number(r.total),
+            valor_total: Number(r.valor_total),
+          })),
+        }
+      : {}),
   };
 
   setCache(cacheStr, result);

@@ -1,3 +1,13 @@
+/* ── Constantes de dominio ───────────────────── */
+
+/**
+ * Columna que impulsa el filtro por día del dashboard general (issue #4).
+ * Único punto de cambio: si el negocio pide usar otra fecha, se cambia acá
+ * y en el índice `etl/sql/009_idx_fecha_atencion.sql` — no es configurable
+ * desde la UI ni la base de datos.
+ */
+export const COLUMNA_FECHA_DIARIA = "fecha_atencion";
+
 /* ── Types ───────────────────────────────────── */
 
 export interface FiltrosBody {
@@ -14,6 +24,8 @@ export interface FiltrosBody {
   exclude_orden_agrup?: string[];
   apply_defaults?: boolean;
   view?: string;
+  /** "dia" solo tiene efecto en la vista default con desde===hasta; ver route.ts */
+  modo?: "mes" | "dia";
 }
 
 export interface Parsed {
@@ -41,6 +53,11 @@ export function wb(): WB { return { clauses: ["1=1"], params: [] }; }
 export function addPeriodo(b: WB, desde: number | null, hasta: number | null) {
   if (desde) { b.clauses.push(`periodo >= $${b.params.length + 1}`); b.params.push(desde); }
   if (hasta) { b.clauses.push(`periodo <= $${b.params.length + 1}`); b.params.push(hasta); }
+}
+
+export function addPeriodoExacto(b: WB, periodo: number) {
+  b.clauses.push(`periodo = $${b.params.length + 1}`);
+  b.params.push(periodo);
 }
 
 export function addEstado(b: WB, vals: string[], alias = "r") {
@@ -90,6 +107,16 @@ export function applyDimension(b: WB, dim: Dimension, vals: string[], alias = "r
 
 export function buildAll(b: WB, p: Parsed, reg: { clause: string; params: (string | null)[] }, alias = "r") {
   addPeriodo(b, p.desde, p.hasta);
+  addRegional(b, reg.clause, reg.params);
+  for (const dim of Object.keys(DIM_COL) as Dimension[]) {
+    if (p[dim].length > 0) applyDimension(b, dim, p[dim], alias);
+  }
+  if (p.exclude_orden_agrup.length > 0) addNotIn(b, `${alias}.orden_agrup_prest_desc`, p.exclude_orden_agrup);
+}
+
+/** Igual que buildAll pero con periodo exacto (modo "día", ver issue #4). */
+export function buildDia(b: WB, p: Parsed, reg: { clause: string; params: (string | null)[] }, periodo: number, alias = "r") {
+  addPeriodoExacto(b, periodo);
   addRegional(b, reg.clause, reg.params);
   for (const dim of Object.keys(DIM_COL) as Dimension[]) {
     if (p[dim].length > 0) applyDimension(b, dim, p[dim], alias);

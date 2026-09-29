@@ -35,7 +35,7 @@ const REGISTRY: Record<string, Partial<FiltrosBody>> = {
   },
 };
 
-const DEFAULT_VIEW = "vm_filtros_dashboard";
+export const DEFAULT_VIEW = "vm_filtros_dashboard";
 
 export function isAllowedView(name: string): boolean {
   return name in REGISTRY;

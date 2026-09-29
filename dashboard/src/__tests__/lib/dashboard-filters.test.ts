@@ -1,6 +1,7 @@
 import {
   wb,
   addPeriodo,
+  addPeriodoExacto,
   addIn,
   addNotIn,
   addEstado,
@@ -9,6 +10,8 @@ import {
   shiftPeriodo,
   buildAll,
   buildExcept,
+  buildDia,
+  COLUMNA_FECHA_DIARIA,
   type WB,
   type Parsed,
 } from "@/lib/dashboard-filters";
@@ -243,6 +246,69 @@ describe("dashboard-filters", () => {
       buildExcept(b, p, { clause: "", params: [] }, "periodo");
       const sql = toW(b);
       expect(sql).not.toContain("periodo");
+    });
+  });
+
+  describe("addPeriodoExacto", () => {
+    it("agrega cláusula de igualdad de periodo", () => {
+      const b = wb();
+      addPeriodoExacto(b, 202603);
+      expect(b.clauses).toContain("periodo = $1");
+      expect(b.params).toEqual([202603]);
+    });
+
+    it("indexa correctamente después de params existentes", () => {
+      const b = wb();
+      b.params.push("prev");
+      addPeriodoExacto(b, 202603);
+      expect(b.clauses).toContain("periodo = $2");
+    });
+  });
+
+  describe("COLUMNA_FECHA_DIARIA", () => {
+    it("es un único punto de configuración para la columna del filtro diario", () => {
+      expect(COLUMNA_FECHA_DIARIA).toBe("fecha_atencion");
+    });
+  });
+
+  describe("buildDia", () => {
+    it("usa igualdad exacta de periodo en vez de rango, y aplica el resto de filtros", () => {
+      const b = wb();
+      const p: Parsed = {
+        desde: 202603,
+        hasta: 202603,
+        estado: ["ACTIVO"],
+        profesional: [],
+        programa: ["MEDICINA GENERAL"],
+        tipo_convenio: [],
+        orden_agrup: [],
+        agrup_salud: [],
+        diagnostico: [],
+        prestacion: [],
+        exclude_orden_agrup: ["EXCLUIDO"],
+      };
+      buildDia(b, p, { clause: "", params: [] }, 202603);
+      const sql = toW(b);
+      expect(sql).toContain("periodo = ");
+      expect(sql).not.toContain("periodo >=");
+      expect(sql).not.toContain("periodo <=");
+      expect(sql).toContain("estado_medico IN");
+      expect(sql).toContain("programa_especialidad IN");
+      expect(sql).toContain("NOT IN");
+    });
+
+    it("aplica el filtro regional cuando corresponde", () => {
+      const b = wb();
+      const p: Parsed = {
+        desde: 202603, hasta: 202603,
+        estado: [], profesional: [], programa: [], tipo_convenio: [],
+        orden_agrup: [], agrup_salud: [], diagnostico: [], prestacion: [],
+        exclude_orden_agrup: [],
+      };
+      buildDia(b, p, { clause: "AND r.desc_regional_afiliado = $1", params: ["CALDAS"] }, 202603);
+      const sql = toW(b);
+      expect(sql).toContain("desc_regional_afiliado");
+      expect(b.params).toContain("CALDAS");
     });
   });
 });
