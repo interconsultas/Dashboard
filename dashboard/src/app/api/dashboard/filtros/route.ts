@@ -5,7 +5,7 @@ import { getCached, setCache } from "@/lib/cache";
 import {
   type FiltrosBody, type Parsed, type Dimension, type WB,
   wb, toW, buildAll, buildExcept, buildDia, parseBody, shiftPeriodo,
-  COLUMNA_FECHA_DIARIA,
+  COLUMNA_FECHA_DIARIA, addRangoFechaDiaria, mesBounds,
 } from "@/lib/dashboard-filters";
 import { resolveView, DEFAULT_VIEW } from "@/lib/view-registry";
 
@@ -95,6 +95,26 @@ export async function POST(req: NextRequest) {
   // ── Modo día (issue #4): solo en la vista default y con un único mes seleccionado ──
   const isModoDia = body.modo === "dia" && view === DEFAULT_VIEW && p.desde != null && p.desde === p.hasta;
 
+  // ── Rango de días dentro del mes (extensión issue #4): solo si angosta el mes completo ──
+  let diaRango: { desde: string; hasta: string } | null = null;
+  if (isModoDia) {
+    const { desde: mesDesde, hasta: mesHasta } = mesBounds(p.desde as number);
+    const bodyDesde = typeof body.dia_desde === "string" ? body.dia_desde : null;
+    const bodyHasta = typeof body.dia_hasta === "string" ? body.dia_hasta : null;
+    const esRangoValido =
+      bodyDesde != null && bodyHasta != null &&
+      bodyDesde >= mesDesde && bodyHasta <= mesHasta && bodyDesde <= bodyHasta;
+    const esMesCompleto = bodyDesde === mesDesde && bodyHasta === mesHasta;
+    if (esRangoValido && !esMesCompleto) {
+      diaRango = { desde: bodyDesde as string, hasta: bodyHasta as string };
+    }
+  }
+
+  // ── Fuente de datos: en modo día se lee autorizaciones directamente (no la vista pre-agregada) ──
+  const fromSource = isModoDia ? "autorizaciones" : view;
+  const totalAutExpr = isModoDia ? "COUNT(*)" : "SUM(total_autorizaciones)";
+  const valorTotalExpr = isModoDia ? "SUM(valor_autorizado_prestacion)" : "SUM(valor_total)";
+
   // ── Cache (usa body con defaults ya aplicados) ──
   const sortedBody = { ...body, ...(defaultsApplied ? { desde: p.desde, hasta: p.hasta, estado: p.estado } : {}) } as Record<string, unknown>;
   delete sortedBody.apply_defaults;
@@ -118,8 +138,9 @@ export async function POST(req: NextRequest) {
   // ── Opciones cascada: cada dimensión excluye su propio filtro ──
   function optQ(dim: Dimension, col: string) {
     const b = wb(); buildExcept(b, p, reg, dim);
+    if (diaRango) addRangoFechaDiaria(b, diaRango.desde, diaRango.hasta);
     return query<{ v: string | null }>(
-      `SELECT DISTINCT ${col} AS v FROM ${view} r ${toW(b)} ORDER BY v NULLS LAST`, b.params
+      `SELECT DISTINCT ${col} AS v FROM ${fromSource} r ${toW(b)} ORDER BY v NULLS LAST`, b.params
     );
   }
 
@@ -134,6 +155,7 @@ export async function POST(req: NextRequest) {
 
   // ── KPIs: todos los filtros ──
   const bKpi = wb(); buildAll(bKpi, p, reg);
+  if (diaRango) addRangoFechaDiaria(bKpi, diaRango.desde, diaRango.hasta);
   const kpisQ = query<{
     total_autorizaciones: string;
     valor_total: string;
@@ -142,19 +164,20 @@ export async function POST(req: NextRequest) {
     total_periodos: string;
     total_profesionales: string;
   }>(
-    `SELECT COALESCE(SUM(total_autorizaciones),0) AS total_autorizaciones,
-            COALESCE(SUM(valor_total),0) AS valor_total,
+    `SELECT COALESCE(${totalAutExpr},0) AS total_autorizaciones,
+            COALESCE(${valorTotalExpr},0) AS valor_total,
             MIN(periodo) AS periodo_min, MAX(periodo) AS periodo_max,
             COUNT(DISTINCT periodo) AS total_periodos,
             COUNT(DISTINCT nombre_medico) AS total_profesionales
-     FROM ${view} r ${toW(bKpi)}`, bKpi.params
+     FROM ${fromSource} r ${toW(bKpi)}`, bKpi.params
   );
 
   // ── Series mensuales: actual + anterior ──
   const bSerie = wb(); buildAll(bSerie, p, reg);
+  if (diaRango) addRangoFechaDiaria(bSerie, diaRango.desde, diaRango.hasta);
   const serieActualQ = query<{ periodo: number; total: string }>(
-    `SELECT periodo, SUM(total_autorizaciones) AS total
-     FROM ${view} r ${toW(bSerie)} GROUP BY periodo ORDER BY periodo`,
+    `SELECT periodo, ${totalAutExpr} AS total
+     FROM ${fromSource} r ${toW(bSerie)} GROUP BY periodo ORDER BY periodo`,
     bSerie.params
   );
 
@@ -162,9 +185,10 @@ export async function POST(req: NextRequest) {
   function topQ(col: string) {
     const b = wb(); buildAll(b, p, reg);
     b.clauses.push(`${col} IS NOT NULL`);
+    if (diaRango) addRangoFechaDiaria(b, diaRango.desde, diaRango.hasta);
     return query<{ nombre: string; total: string }>(
-      `SELECT ${col} AS nombre, SUM(total_autorizaciones)::bigint AS total
-       FROM ${view} r ${toW(b)}
+      `SELECT ${col} AS nombre, ${totalAutExpr}::bigint AS total
+       FROM ${fromSource} r ${toW(b)}
        GROUP BY ${col}
        ORDER BY total DESC
        LIMIT 10`,
@@ -180,6 +204,7 @@ export async function POST(req: NextRequest) {
   if (isModoDia) {
     const bDia = wb();
     buildDia(bDia, p, reg, p.desde as number);
+    if (diaRango) addRangoFechaDiaria(bDia, diaRango.desde, diaRango.hasta);
     serieDiariaQ = query<{ dia: string | null; total: string; valor_total: string }>(
       `SELECT date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date AS dia,
               COUNT(*)::bigint AS total,

@@ -109,4 +109,107 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
     const cacheKeyUsada = getCached.mock.calls[0][0] as string;
     expect(cacheKeyUsada).toContain(`"modo":"dia"`);
   });
+
+  describe("extensión: rango de días dentro del mes", () => {
+    it("en modo día (sin angostar), kpis/opciones/top/serie también golpean autorizaciones, no la vista", async () => {
+      mockQueryConSerieDiaria();
+
+      await POST(req({ modo: "dia", desde: 202603, hasta: 202603 }));
+
+      const todasLasQueries = mockQuery.mock.calls.map(([sql]) => sql as string);
+
+      // periodos (lista de meses seleccionables) y la serie del año anterior (comparación
+      // a otro periodo, no afectada por el rango de días de HOY) siguen viniendo de la vista.
+      const dePeriodos = todasLasQueries.filter((sql) => sql.includes("SELECT DISTINCT periodo"));
+      expect(dePeriodos.some((sql) => sql.includes("vm_filtros_dashboard"))).toBe(true);
+
+      // kpis, opciones cascada, serie actual, top-N y serie diaria van contra autorizaciones
+      const kpisSql = todasLasQueries.find((sql) => sql.includes("total_profesionales"));
+      const serieActualSql = todasLasQueries.find(
+        (sql) => sql.includes("GROUP BY periodo") && sql.includes("COUNT(*)")
+      );
+      const opcionSql = todasLasQueries.find((sql) => sql.includes("estado_medico AS v"));
+      const topSql = todasLasQueries.find((sql) => sql.includes("nombre_medico AS nombre"));
+
+      for (const sql of [kpisSql, serieActualSql, opcionSql, topSql]) {
+        expect(sql).toBeDefined();
+        expect(sql).toMatch(/FROM autorizaciones/);
+      }
+    });
+
+    it("con dia_desde/dia_hasta angostado, agrega BETWEEN a kpis, opciones, top y serie diaria", async () => {
+      mockQueryConSerieDiaria();
+
+      await POST(req({
+        modo: "dia", desde: 202603, hasta: 202603,
+        dia_desde: "2026-03-03", dia_hasta: "2026-03-15",
+      }));
+
+      const conBetween = mockQuery.mock.calls.filter(([sql]) =>
+        (sql as string).includes("fecha_emision BETWEEN")
+      );
+      // kpis + 8 opciones (estado, prof, programa, tc, oa, as, diag, prest) + serieActual + 3 top + serieDiaria = 14
+      expect(conBetween.length).toBeGreaterThanOrEqual(10);
+
+      for (const [, params] of conBetween) {
+        expect(params).toEqual(expect.arrayContaining(["2026-03-03", "2026-03-15"]));
+      }
+    });
+
+    it("dia_desde/dia_hasta fuera del mes seleccionado se ignoran (usa el mes completo)", async () => {
+      mockQueryConSerieDiaria();
+
+      await POST(req({
+        modo: "dia", desde: 202603, hasta: 202603,
+        dia_desde: "2026-02-20", dia_hasta: "2026-03-15",
+      }));
+
+      const conBetween = mockQuery.mock.calls.filter(([sql]) =>
+        (sql as string).includes("fecha_emision BETWEEN")
+      );
+      expect(conBetween).toHaveLength(0);
+    });
+
+    it("dia_hasta anterior a dia_desde se ignora (usa el mes completo)", async () => {
+      mockQueryConSerieDiaria();
+
+      await POST(req({
+        modo: "dia", desde: 202603, hasta: 202603,
+        dia_desde: "2026-03-15", dia_hasta: "2026-03-03",
+      }));
+
+      const conBetween = mockQuery.mock.calls.filter(([sql]) =>
+        (sql as string).includes("fecha_emision BETWEEN")
+      );
+      expect(conBetween).toHaveLength(0);
+    });
+
+    it("dia_desde/dia_hasta que cubren el mes completo se tratan igual que 'sin angostar' (sin BETWEEN)", async () => {
+      mockQueryConSerieDiaria();
+
+      await POST(req({
+        modo: "dia", desde: 202603, hasta: 202603,
+        dia_desde: "2026-03-01", dia_hasta: "2026-03-31",
+      }));
+
+      const conBetween = mockQuery.mock.calls.filter(([sql]) =>
+        (sql as string).includes("fecha_emision BETWEEN")
+      );
+      expect(conBetween).toHaveLength(0);
+    });
+
+    it("incluye dia_desde/dia_hasta en la clave de caché", async () => {
+      mockQueryConSerieDiaria();
+      const { getCached } = jest.requireMock("@/lib/cache") as { getCached: jest.Mock };
+
+      await POST(req({
+        modo: "dia", desde: 202603, hasta: 202603,
+        dia_desde: "2026-03-03", dia_hasta: "2026-03-15",
+      }));
+
+      const cacheKeyUsada = getCached.mock.calls[0][0] as string;
+      expect(cacheKeyUsada).toContain("2026-03-03");
+      expect(cacheKeyUsada).toContain("2026-03-15");
+    });
+  });
 });
