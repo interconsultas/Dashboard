@@ -4,7 +4,22 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import TendenciaDiaria from "@/components/dashboard/TendenciaDiaria";
+import TendenciaDiaria, { diaLabel } from "@/components/dashboard/TendenciaDiaria";
+
+describe("diaLabel", () => {
+  it("extrae el numero de dia de un string YYYY-MM-DD", () => {
+    expect(diaLabel("2026-09-05")).toBe("5");
+    expect(diaLabel("2026-09-15")).toBe("15");
+  });
+
+  it("no rompe si pg devuelve la fecha como Date serializado (YYYY-MM-DDTHH:mm:ss.sssZ)", () => {
+    // Regresion: node-postgres puede parsear `date` como Date de JS, que
+    // JSON.stringify serializa con hora/timezone. Sin el slice defensivo,
+    // esto rompia el eje X del grafico mostrando "NaN".
+    expect(diaLabel("2026-09-05T00:00:00.000Z")).toBe("5");
+    expect(diaLabel("2026-09-15T00:00:00.000Z")).toBe("15");
+  });
+});
 
 describe("TendenciaDiaria", () => {
   it("muestra skeleton cuando loading=true", () => {

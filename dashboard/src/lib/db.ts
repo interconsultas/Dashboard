@@ -1,4 +1,11 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
+// node-postgres parsea columnas `date` como objetos Date de JS por defecto.
+// Al serializar con JSON.stringify (NextResponse.json) terminan como
+// "YYYY-MM-DDTHH:mm:ss.sssZ", rompiendo cualquier parseo que espere
+// "YYYY-MM-DD" (ver TendenciaDiaria.diaLabel). Se devuelven como string tal
+// cual las manda Postgres.
+types.setTypeParser(1082 /* date */, (val: string) => val);
 
 declare global {
   // eslint-disable-next-line no-var

@@ -31,8 +31,11 @@ interface ChartPoint {
   total: number;
 }
 
-function diaLabel(dia: string): string {
-  const partes = dia.split("-");
+export function diaLabel(dia: string): string {
+  // Toma solo "YYYY-MM-DD" por si el valor viene con hora/timezone
+  // (ej. "2026-09-01T00:00:00.000Z", que puede colarse si algún día
+  // pg vuelve a parsear `date` como Date de JS en vez de string).
+  const partes = dia.slice(0, 10).split("-");
   return String(Number(partes[2]));
 }
 
