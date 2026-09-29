@@ -65,16 +65,12 @@ class TestValidarColumnas:
         assert resultado["ok"] is False
         assert len(resultado["faltantes"]) == len(COLUMNAS_REQUERIDAS)
 
-    def test_fecha_atencion_es_columna_requerida(self):
-        """FECHA_ATENCION siempre viene en el archivo fuente; si falta, se debe
-        abortar la carga (no insertar filas con fecha_atencion=NULL en silencio)."""
-        assert "FECHA_ATENCION" in COLUMNAS_REQUERIDAS
-
-    def test_fecha_atencion_faltante_bloquea_carga(self):
-        columnas = [c for c in COLUMNAS_REQUERIDAS if c != "FECHA_ATENCION"]
-        resultado = validar_columnas(columnas)
-        assert resultado["ok"] is False
-        assert "FECHA_ATENCION" in resultado["faltantes"]
+    def test_fecha_atencion_no_es_columna_requerida(self):
+        """FECHA_ATENCION no llega de forma confiable ni siquiera en el archivo
+        AJUSTADOS; es una columna de fecha opcional, igual que Fecha_Digitacion
+        o FECHA_PROGRAMACION (se registra en columnas_faltantes si no viene,
+        pero no bloquea la carga)."""
+        assert "FECHA_ATENCION" not in COLUMNAS_REQUERIDAS
 
     def test_columnas_extra_multiples_periodos(self):
         """Simula archivo real con columnas sobrantes de distintos periodos."""
