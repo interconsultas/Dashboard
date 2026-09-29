@@ -204,9 +204,23 @@ export async function POST(req: NextRequest) {
   if (isModoDia) {
     const bDia = wb();
     buildDia(bDia, p, reg, p.desde as number);
-    if (diaRango) addRangoFechaDiaria(bDia, diaRango.desde, diaRango.hasta);
+    let diaExpr = `date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date`;
+    if (diaRango) {
+      addRangoFechaDiaria(bDia, diaRango.desde, diaRango.hasta);
+    } else {
+      // Mes completo: en datos reales el periodo de reporte no siempre coincide
+      // con el mes calendario de fecha_emision (confirmado: filas de periodo=202602
+      // con fecha_emision de dic/2025, ene/2026 y mar/2026). Sin esto, esas filas
+      // aparecían como dias sueltos mal etiquetados (diaLabel solo muestra el numero
+      // de dia, ignorando mes/anio) en vez de sumarse al bucket "Sin fecha" (NULL).
+      const { desde: mesDesde, hasta: mesHasta } = mesBounds(p.desde as number);
+      const idxDesde = bDia.params.length + 1;
+      const idxHasta = bDia.params.length + 2;
+      bDia.params.push(mesDesde, mesHasta);
+      diaExpr = `CASE WHEN ${COLUMNA_FECHA_DIARIA} IS NULL OR ${COLUMNA_FECHA_DIARIA} < $${idxDesde} OR ${COLUMNA_FECHA_DIARIA} > $${idxHasta} THEN NULL ELSE date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date END`;
+    }
     serieDiariaQ = query<{ dia: string | null; total: string; valor_total: string }>(
-      `SELECT date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date AS dia,
+      `SELECT ${diaExpr} AS dia,
               COUNT(*)::bigint AS total,
               COALESCE(SUM(valor_autorizado_prestacion), 0) AS valor_total
        FROM autorizaciones r
