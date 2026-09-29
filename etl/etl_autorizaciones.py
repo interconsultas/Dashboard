@@ -578,7 +578,10 @@ def cruzar_medicos(
     nombre_por_usuario = usuario_upper.map(usuario_nombre_map)
 
     # Fallback: si no se encuentra, usar PRESTADOR_REMITE
-    df["NOMBRE"] = nombre_por_usuario
+    # .astype("object") es necesario porque si el catalogo esta vacio (0 medicos)
+    # nombre_por_usuario queda 100% NaN -> pandas infiere dtype float64, y la
+    # asignacion de strings de mas abajo rompe con LossySetitemError (pandas >= 3.0).
+    df["NOMBRE"] = nombre_por_usuario.astype("object")
     sin_nombre = df["NOMBRE"].isna() & tiene_prestador
     df.loc[sin_nombre, "NOMBRE"] = df.loc[sin_nombre, "PRESTADOR_REMITE"]
 
