@@ -172,7 +172,7 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
       }));
 
       const conBetween = mockQuery.mock.calls.filter(([sql]) =>
-        (sql as string).includes("fecha_emision BETWEEN")
+        (sql as string).includes("fecha_digitacion BETWEEN")
       );
       // kpis + 8 opciones (estado, prof, programa, tc, oa, as, diag, prest) + serieActual + 3 top + serieDiaria = 14
       expect(conBetween.length).toBeGreaterThanOrEqual(10);
@@ -191,7 +191,7 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
       }));
 
       const conBetween = mockQuery.mock.calls.filter(([sql]) =>
-        (sql as string).includes("fecha_emision BETWEEN")
+        (sql as string).includes("fecha_digitacion BETWEEN")
       );
       expect(conBetween).toHaveLength(0);
     });
@@ -205,7 +205,7 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
       }));
 
       const conBetween = mockQuery.mock.calls.filter(([sql]) =>
-        (sql as string).includes("fecha_emision BETWEEN")
+        (sql as string).includes("fecha_digitacion BETWEEN")
       );
       expect(conBetween).toHaveLength(0);
     });
@@ -219,7 +219,7 @@ describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
       }));
 
       const conBetween = mockQuery.mock.calls.filter(([sql]) =>
-        (sql as string).includes("fecha_emision BETWEEN")
+        (sql as string).includes("fecha_digitacion BETWEEN")
       );
       expect(conBetween).toHaveLength(0);
     });

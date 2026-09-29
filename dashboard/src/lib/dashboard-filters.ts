@@ -3,13 +3,17 @@
 /**
  * Columna que impulsa el filtro por día del dashboard general (issue #4).
  * Único punto de cambio: si el negocio pide usar otra fecha, se cambia acá
- * y en el índice `etl/sql/009_idx_fecha_emision.sql` — no es configurable
+ * y en el índice `etl/sql/011_idx_fecha_digitacion.sql` — no es configurable
  * desde la UI ni la base de datos.
  *
  * fecha_atencion se descartó: ni el archivo EPS ni el AJUSTADOS la traen
  * de forma confiable (confirmado en los archivos fuente reales).
+ * fecha_emision se descartó a su vez: aunque está 100% poblada, puede venir
+ * de meses anteriores al período por atraso administrativo (PR #12).
+ * fecha_digitacion sí queda acotada al mes en curso (confirmado con datos
+ * reales tras el fix de reconocimiento de columnas del PR #13).
  */
-export const COLUMNA_FECHA_DIARIA = "fecha_emision";
+export const COLUMNA_FECHA_DIARIA = "fecha_digitacion";
 
 /* ── Types ───────────────────────────────────── */
 
