@@ -8,7 +8,9 @@ import CheckDropdown from "@/components/ui/CheckDropdown";
 import { estadoLabel } from "@/lib/estado";
 import { Spinner } from "@/components/ui/Spinner";
 import TendenciaMensual from "@/components/dashboard/TendenciaMensual";
+import TendenciaDiaria from "@/components/dashboard/TendenciaDiaria";
 import TopProfesionales from "@/components/dashboard/TopProfesionales";
+import ModoVistaSwitch, { type ModoVista } from "@/components/dashboard/ModoVistaSwitch";
 
 /* ── Helpers ─────────────────────────────────────── */
 
@@ -65,6 +67,7 @@ interface FiltrosData {
   };
   serie_actual: { periodo: number; total: number }[];
   serie_anterior: { periodo: number; total: number }[];
+  serie_diaria?: { dia: string | null; total: number; valor_total: number }[];
   top_profesionales: { nombre: string; total: number; porcentaje: number }[];
   top_prestaciones: { nombre: string; total: number; porcentaje: number }[];
   top_diagnosticos: { nombre: string; total: number; porcentaje: number }[];
@@ -121,7 +124,7 @@ function reducer(state: Filters, action: Action): Filters {
 
 /* ── Body builder ───────────────────────────────── */
 
-function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean): string {
+function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean, modo?: ModoVista): string {
   function valFor(field: CheckField): string[] {
     return f.touched.includes(field) ? f[field] : [];
   }
@@ -139,6 +142,8 @@ function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean): stri
   };
   if (viewName) base.view = viewName;
   if (applyDefaults) base.apply_defaults = true;
+  // El modo día solo tiene efecto en el dashboard general (sin viewName) — ver guardia server-side en la API.
+  if (!viewName && modo) base.modo = modo;
   return JSON.stringify(base);
 }
 
@@ -150,10 +155,11 @@ const selectCls = "w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm 
 
 export default function DashboardView({ title, subtitle, viewName }: DashboardViewProps) {
   const [f, dispatch] = useReducer(reducer, initial);
+  const [modoVista, setModoVista] = useState<ModoVista>("mes");
   const defaultsApplied = useRef(false);
   const { mutate: globalMutate } = useSWRConfig();
 
-  const body = useMemo(() => buildBody(f, viewName), [f, viewName]);
+  const body = useMemo(() => buildBody(f, viewName, false, modoVista), [f, viewName, modoVista]);
 
   const [committedBody, setCommittedBody] = useState(() => buildBody(initial, viewName, true));
 
@@ -250,7 +256,13 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
   /* ── Handlers ── */
 
   function setPeriodo(field: "desde" | "hasta", raw: string) {
-    dispatch({ type: "SET_PERIODO", field, value: raw ? Number(raw) : null });
+    const value = raw ? Number(raw) : null;
+    dispatch({ type: "SET_PERIODO", field, value });
+    // En modo día, desde y hasta viajan juntos: no tiene sentido un rango multi-mes.
+    if (modoVista === "dia" && value !== null) {
+      const other = field === "desde" ? "hasta" : "desde";
+      dispatch({ type: "SET_PERIODO", field: other, value });
+    }
   }
   function toggle(field: CheckField, value: string) {
     dispatch({ type: "TOGGLE", field, value });
@@ -261,6 +273,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
   function handleReset() {
     defaultsApplied.current = false;
     dispatch({ type: "RESET" });
+    setModoVista("mes");
     setCommittedBody(buildBody(initial, viewName, true));
   }
 
@@ -365,6 +378,14 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         {/* Header */}
         <div className="flex items-center gap-3">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Filtros</p>
+          {!viewName && (
+            <ModoVistaSwitch
+              modo={modoVista}
+              onChange={setModoVista}
+              disabled={f.desde === null || f.desde !== f.hasta}
+              disabledReason="Seleccioná el mismo mes en Desde y Hasta para ver el detalle por día"
+            />
+          )}
           {revalidating && <Spinner className="h-3.5 w-3.5 text-brand-navy/40" />}
           {activeCount > 0 && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy">
@@ -527,13 +548,20 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         ))}
       </div>
 
-      {/* Tendencia mensual */}
+      {/* Tendencia mensual / diaria */}
       <div className={`transition-opacity duration-300 ${revalidating ? "opacity-60" : ""}`}>
-        <TendenciaMensual
-          serieActual={data?.serie_actual ?? []}
-          serieAnterior={data?.serie_anterior ?? []}
-          loading={isLoading && !data}
-        />
+        {!viewName && modoVista === "dia" ? (
+          <TendenciaDiaria
+            serieDiaria={data?.serie_diaria ?? []}
+            loading={isLoading && !data}
+          />
+        ) : (
+          <TendenciaMensual
+            serieActual={data?.serie_actual ?? []}
+            serieAnterior={data?.serie_anterior ?? []}
+            loading={isLoading && !data}
+          />
+        )}
       </div>
 
       {/* Top 10 rankings */}
