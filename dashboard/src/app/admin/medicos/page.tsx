@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
+import { ImportarMedicosExcel } from "@/components/medicos/ImportarMedicosExcel";
 
 interface Medico {
   usuario_txt: string;
@@ -157,13 +158,16 @@ export default function MedicosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-navy">
-          Profesionales (Médicos)
-        </h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Catálogo de profesionales — {medicos?.length ?? 0} registros
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-navy">
+            Profesionales (Médicos)
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Catálogo de profesionales — {medicos?.length ?? 0} registros
+          </p>
+        </div>
+        <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
       </div>
 
       {/* Formulario */}
