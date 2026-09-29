@@ -26,6 +26,11 @@ export function setCache(key: string, data: unknown, ttlMs = DEFAULT_TTL_MS): vo
   store.set(key, { data, expires: Date.now() + ttlMs });
 }
 
+/** Vacía todo el caché en memoria. Usado al terminar una carga o eliminación. */
+export function clearCache(): void {
+  store.clear();
+}
+
 /** Genera una clave de caché a partir de un prefijo y los search params */
 export function cacheKey(prefix: string, params: URLSearchParams): string {
   const sorted = new URLSearchParams(Array.from(params.entries()).sort());

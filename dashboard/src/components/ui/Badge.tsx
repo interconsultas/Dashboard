@@ -13,6 +13,8 @@ const ESTADO_CONFIG: Record<
   cancelado:              { label: "Cancelado",        className: "bg-gray-100 text-gray-700" },
   error_fatal:            { label: "Error",            className: "bg-red-100 text-red-800" },
   ya_procesado:           { label: "Duplicado",        className: "bg-orange-100 text-orange-800" },
+  eliminando:             { label: "Eliminando...",    className: "bg-blue-100 text-blue-800" },
+  eliminado:              { label: "Eliminado",        className: "bg-gray-100 text-gray-700" },
 };
 
 export function BadgeEstado({ estado }: { estado: EstadoCarga }) {

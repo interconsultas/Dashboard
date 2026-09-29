@@ -3,12 +3,14 @@
 import { useReducer, useRef, useMemo, useCallback, useState, useEffect } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { postFetcher, FetchError } from "@/lib/fetcher";
-import { type FiltrosBody } from "@/lib/dashboard-filters";
+import { type FiltrosBody, mesBounds } from "@/lib/dashboard-filters";
 import CheckDropdown from "@/components/ui/CheckDropdown";
 import { estadoLabel } from "@/lib/estado";
 import { Spinner } from "@/components/ui/Spinner";
 import TendenciaMensual from "@/components/dashboard/TendenciaMensual";
+import TendenciaDiaria from "@/components/dashboard/TendenciaDiaria";
 import TopProfesionales from "@/components/dashboard/TopProfesionales";
+import ModoVistaSwitch, { type ModoVista } from "@/components/dashboard/ModoVistaSwitch";
 
 /* ── Helpers ─────────────────────────────────────── */
 
@@ -16,6 +18,19 @@ const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov"
 function periodoLabel(p: number | null) {
   if (!p) return "—";
   return `${MESES[(p % 100) - 1]} ${Math.floor(p / 100)}`;
+}
+
+/** Cantidad de días del mes YYYYMM (28-31). */
+function diasEnMes(periodo: number | null): number {
+  if (!periodo) return 31;
+  return Number(mesBounds(periodo).hasta.slice(-2));
+}
+
+/** Fecha ISO "YYYY-MM-DD" para un día dentro del mes YYYYMM. */
+function diaISO(periodo: number, dia: number): string {
+  const anio = Math.floor(periodo / 100);
+  const mes = String(periodo % 100).padStart(2, "0");
+  return `${anio}-${mes}-${String(dia).padStart(2, "0")}`;
 }
 
 /* ── Types ───────────────────────────────────────── */
@@ -34,10 +49,14 @@ interface Filters {
   diagnostico: string[];
   prestacion: string[];
   touched: string[];
+  /** Rango de días dentro del mes seleccionado, solo con modo "día" (issue #4). */
+  diaDesde: number | null;
+  diaHasta: number | null;
 }
 
 type Action =
   | { type: "SET_PERIODO"; field: "desde" | "hasta"; value: number | null }
+  | { type: "SET_DIA"; field: "diaDesde" | "diaHasta"; value: number | null }
   | { type: "TOGGLE"; field: CheckField; value: string }
   | { type: "SET_ALL"; field: CheckField; values: string[] }
   | { type: "DEFAULTS"; partial: Partial<Filters> }
@@ -65,6 +84,7 @@ interface FiltrosData {
   };
   serie_actual: { periodo: number; total: number }[];
   serie_anterior: { periodo: number; total: number }[];
+  serie_diaria?: { dia: string | null; total: number; valor_total: number }[];
   top_profesionales: { nombre: string; total: number; porcentaje: number }[];
   top_prestaciones: { nombre: string; total: number; porcentaje: number }[];
   top_diagnosticos: { nombre: string; total: number; porcentaje: number }[];
@@ -85,6 +105,7 @@ const initial: Filters = {
   tipo_convenio: [], orden_agrup: [], agrup_salud: [],
   diagnostico: [], prestacion: [],
   touched: [],
+  diaDesde: null, diaHasta: null,
 };
 
 function addTouched(touched: string[], field: string): string[] {
@@ -105,6 +126,14 @@ function reducer(state: Filters, action: Action): Filters {
         next.desde = null;
       return next;
     }
+    case "SET_DIA": {
+      const next = { ...state, [action.field]: action.value };
+      if (action.field === "diaDesde" && action.value && next.diaHasta && action.value > next.diaHasta)
+        next.diaHasta = action.value;
+      if (action.field === "diaHasta" && action.value && next.diaDesde && action.value < next.diaDesde)
+        next.diaDesde = action.value;
+      return next;
+    }
     case "TOGGLE": {
       const arr = state[action.field] as string[];
       const has = arr.includes(action.value);
@@ -121,7 +150,7 @@ function reducer(state: Filters, action: Action): Filters {
 
 /* ── Body builder ───────────────────────────────── */
 
-function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean): string {
+function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean, modo?: ModoVista): string {
   function valFor(field: CheckField): string[] {
     return f.touched.includes(field) ? f[field] : [];
   }
@@ -139,6 +168,13 @@ function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean): stri
   };
   if (viewName) base.view = viewName;
   if (applyDefaults) base.apply_defaults = true;
+  // El modo día solo tiene efecto en el dashboard general (sin viewName) — ver guardia server-side en la API.
+  if (!viewName && modo) base.modo = modo;
+  // Rango de días dentro del mes: solo con modo día, mes seleccionado y rango elegido.
+  if (!viewName && modo === "dia" && f.desde && f.diaDesde && f.diaHasta) {
+    base.dia_desde = diaISO(f.desde, f.diaDesde);
+    base.dia_hasta = diaISO(f.desde, f.diaHasta);
+  }
   return JSON.stringify(base);
 }
 
@@ -150,10 +186,11 @@ const selectCls = "w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm 
 
 export default function DashboardView({ title, subtitle, viewName }: DashboardViewProps) {
   const [f, dispatch] = useReducer(reducer, initial);
+  const [modoVista, setModoVista] = useState<ModoVista>("mes");
   const defaultsApplied = useRef(false);
   const { mutate: globalMutate } = useSWRConfig();
 
-  const body = useMemo(() => buildBody(f, viewName), [f, viewName]);
+  const body = useMemo(() => buildBody(f, viewName, false, modoVista), [f, viewName, modoVista]);
 
   const [committedBody, setCommittedBody] = useState(() => buildBody(initial, viewName, true));
 
@@ -250,7 +287,29 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
   /* ── Handlers ── */
 
   function setPeriodo(field: "desde" | "hasta", raw: string) {
-    dispatch({ type: "SET_PERIODO", field, value: raw ? Number(raw) : null });
+    const value = raw ? Number(raw) : null;
+    dispatch({ type: "SET_PERIODO", field, value });
+    // En modo día, desde y hasta viajan juntos: no tiene sentido un rango multi-mes.
+    if (modoVista === "dia" && value !== null) {
+      const other = field === "desde" ? "hasta" : "desde";
+      dispatch({ type: "SET_PERIODO", field: other, value });
+      // Cambiar de mes reinicia el rango de días al mes completo del mes nuevo.
+      dispatch({ type: "SET_DIA", field: "diaDesde", value: 1 });
+      dispatch({ type: "SET_DIA", field: "diaHasta", value: diasEnMes(value) });
+    }
+  }
+
+  function setDia(field: "diaDesde" | "diaHasta", raw: string) {
+    dispatch({ type: "SET_DIA", field, value: raw ? Number(raw) : null });
+  }
+
+  function handleModoChange(m: ModoVista) {
+    setModoVista(m);
+    // Al activar el modo día, arrancar mostrando el mes completo (sin angostar).
+    if (m === "dia" && f.desde) {
+      dispatch({ type: "SET_DIA", field: "diaDesde", value: 1 });
+      dispatch({ type: "SET_DIA", field: "diaHasta", value: diasEnMes(f.desde) });
+    }
   }
   function toggle(field: CheckField, value: string) {
     dispatch({ type: "TOGGLE", field, value });
@@ -261,6 +320,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
   function handleReset() {
     defaultsApplied.current = false;
     dispatch({ type: "RESET" });
+    setModoVista("mes");
     setCommittedBody(buildBody(initial, viewName, true));
   }
 
@@ -365,6 +425,14 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         {/* Header */}
         <div className="flex items-center gap-3">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Filtros</p>
+          {!viewName && (
+            <ModoVistaSwitch
+              modo={modoVista}
+              onChange={handleModoChange}
+              disabled={f.desde === null || f.desde !== f.hasta}
+              disabledReason="Seleccioná el mismo mes en Desde y Hasta para ver el detalle por día"
+            />
+          )}
           {revalidating && <Spinner className="h-3.5 w-3.5 text-brand-navy/40" />}
           {activeCount > 0 && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy">
@@ -409,6 +477,28 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
                 ))}
               </select>
             </div>
+
+            {/* Rango de días dentro del mes: solo en modo día con un mes seleccionado */}
+            {!viewName && modoVista === "dia" && f.desde !== null && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Desde (día)</label>
+                  <select className={selectCls} value={f.diaDesde ?? ""} onChange={(e) => setDia("diaDesde", e.target.value)}>
+                    {Array.from({ length: diasEnMes(f.desde) }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Hasta (día)</label>
+                  <select className={selectCls} value={f.diaHasta ?? ""} onChange={(e) => setDia("diaHasta", e.target.value)}>
+                    {Array.from({ length: diasEnMes(f.desde) }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {visibleNivel1.map(renderDropdown)}
           </div>
@@ -527,13 +617,20 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         ))}
       </div>
 
-      {/* Tendencia mensual */}
+      {/* Tendencia mensual / diaria */}
       <div className={`transition-opacity duration-300 ${revalidating ? "opacity-60" : ""}`}>
-        <TendenciaMensual
-          serieActual={data?.serie_actual ?? []}
-          serieAnterior={data?.serie_anterior ?? []}
-          loading={isLoading && !data}
-        />
+        {!viewName && modoVista === "dia" ? (
+          <TendenciaDiaria
+            serieDiaria={data?.serie_diaria ?? []}
+            loading={isLoading && !data}
+          />
+        ) : (
+          <TendenciaMensual
+            serieActual={data?.serie_actual ?? []}
+            serieAnterior={data?.serie_anterior ?? []}
+            loading={isLoading && !data}
+          />
+        )}
       </div>
 
       {/* Top 10 rankings */}

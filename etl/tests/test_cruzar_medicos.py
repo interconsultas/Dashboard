@@ -108,6 +108,25 @@ class TestCruzarMedicos:
         df_result, stats = cruzar_medicos(df, cat_nombre, cat_usuario)
         assert df_result["NOMBRE"].iloc[0] == "DR GARCIA MARTINEZ JUAN CARLOS"
 
+    def test_catalogo_completamente_vacio_no_rompe(self):
+        """
+        Con catálogo vacío (0 médicos, ej. BD recién creada), el mapeo de
+        USUARIO_TXT no produce ningún match: nombre_por_usuario queda como
+        una Series 100% NaN (dtype float64 en pandas). La asignación de
+        fallback a PRESTADOR_REMITE (strings) sobre esa columna no debe
+        romper con LossySetitemError/TypeError (pandas >= 3.0).
+        """
+        df = pd.DataFrame({
+            "PRESTADOR_REMITE": ["ONCOLOGOS DEL OCCIDENTE S.A.S", "DR ALGUIEN"],
+            "USUARIO_TXT": ["JGARCIA", "MLOPEZ"],
+            "NUMERO_REMITE": ["1234567", "7654321"],
+        })
+        df_result, stats = cruzar_medicos(df, {}, {})
+
+        assert df_result["NOMBRE"].iloc[0] == "ONCOLOGOS DEL OCCIDENTE S.A.S"
+        assert df_result["NOMBRE"].iloc[1] == "DR ALGUIEN"
+        assert df_result["ESTADO_MEDICO"].iloc[0] == "EXTERNO"
+
     def test_estado_externo_para_no_encontrados(self, catalogo_medicos):
         """Médicos no encontrados en catálogo reciben estado EXTERNO."""
         cat_nombre, cat_usuario = catalogo_medicos

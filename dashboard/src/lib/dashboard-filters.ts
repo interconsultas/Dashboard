@@ -1,3 +1,16 @@
+/* ── Constantes de dominio ───────────────────── */
+
+/**
+ * Columna que impulsa el filtro por día del dashboard general (issue #4).
+ * Único punto de cambio: si el negocio pide usar otra fecha, se cambia acá
+ * y en el índice `etl/sql/009_idx_fecha_emision.sql` — no es configurable
+ * desde la UI ni la base de datos.
+ *
+ * fecha_atencion se descartó: ni el archivo EPS ni el AJUSTADOS la traen
+ * de forma confiable (confirmado en los archivos fuente reales).
+ */
+export const COLUMNA_FECHA_DIARIA = "fecha_emision";
+
 /* ── Types ───────────────────────────────────── */
 
 export interface FiltrosBody {
@@ -14,6 +27,21 @@ export interface FiltrosBody {
   exclude_orden_agrup?: string[];
   apply_defaults?: boolean;
   view?: string;
+  /** "dia" solo tiene efecto en la vista default con desde===hasta; ver route.ts */
+  modo?: "mes" | "dia";
+  /** Rango de días dentro del mes seleccionado (ISO "YYYY-MM-DD"), solo con modo:"dia". */
+  dia_desde?: string;
+  dia_hasta?: string;
+}
+
+/** Primer y último día del mes YYYYMM, como fechas ISO "YYYY-MM-DD". */
+export function mesBounds(periodo: number): { desde: string; hasta: string } {
+  const anio = Math.floor(periodo / 100);
+  const mes = periodo % 100;
+  const desde = `${anio}-${String(mes).padStart(2, "0")}-01`;
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+  const hasta = `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+  return { desde, hasta };
 }
 
 export interface Parsed {
@@ -43,6 +71,11 @@ export function addPeriodo(b: WB, desde: number | null, hasta: number | null) {
   if (hasta) { b.clauses.push(`periodo <= $${b.params.length + 1}`); b.params.push(hasta); }
 }
 
+export function addPeriodoExacto(b: WB, periodo: number) {
+  b.clauses.push(`periodo = $${b.params.length + 1}`);
+  b.params.push(periodo);
+}
+
 export function addEstado(b: WB, vals: string[], alias = "r") {
   if (vals.length === 0) return;
   addIn(b, `${alias}.estado_medico`, vals);
@@ -60,6 +93,12 @@ export function addNotIn(b: WB, col: string, vals: string[]) {
   const ph = vals.map((_, i) => `$${b.params.length + 1 + i}`);
   b.clauses.push(`${col} NOT IN (${ph.join(",")})`);
   b.params.push(...vals);
+}
+
+/** Rango de días dentro del mes (issue #4, extensión: angostar el modo día). */
+export function addRangoFechaDiaria(b: WB, desde: string, hasta: string, alias = "r") {
+  b.clauses.push(`${alias}.${COLUMNA_FECHA_DIARIA} BETWEEN $${b.params.length + 1} AND $${b.params.length + 2}`);
+  b.params.push(desde, hasta);
 }
 
 export function addRegional(b: WB, clause: string, params: (string | null)[]) {
@@ -90,6 +129,16 @@ export function applyDimension(b: WB, dim: Dimension, vals: string[], alias = "r
 
 export function buildAll(b: WB, p: Parsed, reg: { clause: string; params: (string | null)[] }, alias = "r") {
   addPeriodo(b, p.desde, p.hasta);
+  addRegional(b, reg.clause, reg.params);
+  for (const dim of Object.keys(DIM_COL) as Dimension[]) {
+    if (p[dim].length > 0) applyDimension(b, dim, p[dim], alias);
+  }
+  if (p.exclude_orden_agrup.length > 0) addNotIn(b, `${alias}.orden_agrup_prest_desc`, p.exclude_orden_agrup);
+}
+
+/** Igual que buildAll pero con periodo exacto (modo "día", ver issue #4). */
+export function buildDia(b: WB, p: Parsed, reg: { clause: string; params: (string | null)[] }, periodo: number, alias = "r") {
+  addPeriodoExacto(b, periodo);
   addRegional(b, reg.clause, reg.params);
   for (const dim of Object.keys(DIM_COL) as Dimension[]) {
     if (p[dim].length > 0) applyDimension(b, dim, p[dim], alias);

@@ -7,7 +7,9 @@ export type EstadoCarga =
   | "exitoso_con_advertencias"
   | "cancelado"
   | "error_fatal"
-  | "ya_procesado";
+  | "ya_procesado"
+  | "eliminando"
+  | "eliminado";
 
 export interface LogCarga {
   id: number;

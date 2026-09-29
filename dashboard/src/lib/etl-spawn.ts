@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import { existsSync, openSync, closeSync, mkdirSync } from "fs";
 import path from "path";
+import { clearCache } from "@/lib/cache";
 
 /**
  * Lanza el ETL de Python como proceso desacoplado y redirige stdout+stderr
@@ -34,6 +35,15 @@ export function spawnEtl(args: string[], jobId: string): void {
     [scriptPath, ...args],
     { detached: true, stdio: ["ignore", fd, fd] }
   );
+
+  // Invalida el cache del dashboard al terminar, sin depender de que alguien
+  // este mirando el historial de cargas (esa via solo invalidaba si el
+  // usuario se quedaba en esa pantalla el tiempo suficiente para que el
+  // polling detectara la transicion a estado terminal).
+  proc.on("exit", (code) => {
+    if (code === 0) clearCache();
+  });
+
   proc.unref();
 
   // El hijo dupló el fd: el padre puede liberar su referencia.
