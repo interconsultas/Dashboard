@@ -14,6 +14,7 @@ function carga(overrides: Partial<LogCarga> = {}): LogCarga {
     nombre_archivo: "detallado_marzo.xlsx",
     hash_archivo: null,
     periodo_detectado: 202603,
+    periodos_detectados: null,
     filas_en_archivo: 100,
     filas_validas: 100,
     filas_insertadas: 100,
@@ -33,6 +34,30 @@ function carga(overrides: Partial<LogCarga> = {}): LogCarga {
     ...overrides,
   };
 }
+
+describe("ListaArchivos - periodo mostrado", () => {
+  it("muestra ambos meses cuando el archivo abarca mas de un periodo", () => {
+    render(
+      <ListaArchivos
+        cargas={[carga({ periodo_detectado: 202602, periodos_detectados: [202602, 202603] })]}
+        onVerInforme={jest.fn()}
+        onEliminado={jest.fn()}
+      />
+    );
+    expect(screen.getByText("Feb 2026 / Mar 2026")).toBeInTheDocument();
+  });
+
+  it("cae al periodo_detectado unico si periodos_detectados es null (filas viejas)", () => {
+    render(
+      <ListaArchivos
+        cargas={[carga({ periodo_detectado: 202603, periodos_detectados: null })]}
+        onVerInforme={jest.fn()}
+        onEliminado={jest.fn()}
+      />
+    );
+    expect(screen.getByText("Mar 2026")).toBeInTheDocument();
+  });
+});
 
 describe("ListaArchivos - botón Eliminar", () => {
   const originalFetch = global.fetch;

@@ -18,7 +18,7 @@ export async function GET(
 
   const row = await queryOne<LogCarga>(
     `SELECT id, job_id, nombre_archivo, hash_archivo,
-            periodo_detectado, filas_en_archivo, filas_validas,
+            periodo_detectado, periodos_detectados, filas_en_archivo, filas_validas,
             filas_insertadas, filas_duplicadas, filas_con_error,
             fechas_invalidas, valores_invalidos,
             medicos_no_encontrados, columnas_faltantes,

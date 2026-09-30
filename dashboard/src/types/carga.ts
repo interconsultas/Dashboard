@@ -17,6 +17,7 @@ export interface LogCarga {
   nombre_archivo: string;
   hash_archivo: string | null;
   periodo_detectado: number | null;
+  periodos_detectados: number[] | null;
   filas_en_archivo: number;
   filas_validas: number;
   filas_insertadas: number;

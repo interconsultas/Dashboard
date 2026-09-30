@@ -20,6 +20,7 @@ export async function GET(
     job_id: string;
     nombre_archivo: string;
     periodo_detectado: number | null;
+    periodos_detectados: number[] | null;
     filas_en_archivo: number;
     filas_insertadas: number;
     fechas_invalidas: number;
@@ -28,7 +29,7 @@ export async function GET(
     distribucion_estados: Record<string, number> | null;
     suma_valor_autorizado: number | null;
   }>(
-    `SELECT job_id, nombre_archivo, periodo_detectado,
+    `SELECT job_id, nombre_archivo, periodo_detectado, periodos_detectados,
             filas_en_archivo, filas_insertadas, fechas_invalidas, valores_invalidos,
             medicos_no_encontrados, distribucion_estados, suma_valor_autorizado
      FROM log_cargas WHERE job_id = $1`,
@@ -87,6 +88,7 @@ export async function GET(
     job_id: jobId,
     nombre_archivo: log.nombre_archivo,
     periodo_detectado: log.periodo_detectado,
+    periodos_detectados: log.periodos_detectados,
     total_filas: totalFilas,
     filas_validas: log.filas_insertadas,
     filas_con_error: Math.max(0, totalFilas - log.filas_insertadas),
