@@ -458,6 +458,7 @@ def leer_y_limpiar(
         "columnas_faltantes":           [],
         "valores_invalidos":            0,
         "periodo_detectado":            None,
+        "periodos_detectados":          [],
     }
 
     print(f"[INFO] Leyendo: {archivo.name}")
@@ -503,6 +504,7 @@ def leer_y_limpiar(
     periodos_unicos = df["PERIODO"].dropna().unique().tolist()
     periodo = periodos_unicos[0] if len(periodos_unicos) == 1 else periodos_unicos
     contadores["periodo_detectado"] = periodo
+    contadores["periodos_detectados"] = sorted(int(p) for p in periodos_unicos)
     if len(periodos_unicos) > 1:
         print(f"[INFO] Multiples periodos detectados: {sorted(periodos_unicos)}")
 
@@ -796,7 +798,7 @@ def registrar_log(conn, job_id: str, informe: dict, estado: str) -> None:
     cur.execute("""
         INSERT INTO log_cargas (
             job_id, nombre_archivo, hash_archivo,
-            periodo_detectado, filas_en_archivo,
+            periodo_detectado, periodos_detectados, filas_en_archivo,
             filas_insertadas, filas_duplicadas,
             filas_con_error, fechas_invalidas, valores_invalidos,
             medicos_no_encontrados, columnas_faltantes,
@@ -805,7 +807,7 @@ def registrar_log(conn, job_id: str, informe: dict, estado: str) -> None:
             cargado_por, tiempo_segundos
         ) VALUES (
             %s, %s, %s,
-            %s, %s,
+            %s, %s, %s,
             %s, %s,
             %s, %s, %s,
             %s::jsonb, %s::jsonb,
@@ -815,6 +817,7 @@ def registrar_log(conn, job_id: str, informe: dict, estado: str) -> None:
         )
         ON CONFLICT (job_id) DO UPDATE SET
             estado               = EXCLUDED.estado,
+            periodos_detectados  = EXCLUDED.periodos_detectados,
             filas_insertadas     = EXCLUDED.filas_insertadas,
             filas_duplicadas     = EXCLUDED.filas_duplicadas,
             filas_con_error      = EXCLUDED.filas_con_error,
@@ -829,6 +832,7 @@ def registrar_log(conn, job_id: str, informe: dict, estado: str) -> None:
         informe.get("nombre_archivo"),
         informe.get("hash_archivo"),
         informe.get("periodo_detectado"),
+        informe.get("periodos_detectados") or [],
         informe.get("filas_en_archivo", 0),
         informe.get("filas_insertadas", 0),
         informe.get("filas_duplicadas", 0),
@@ -934,6 +938,7 @@ def modo_preview(
         nombre_archivo=archivo.name,
         hash_archivo=h_archivo,
         periodo_detectado=periodo_log,
+        periodos_detectados=contadores["periodos_detectados"],
         filas_en_archivo=contadores["filas_en_archivo"],
         estado="previsualizando",
         tiempo_segundos=time.time() - t0,
@@ -966,6 +971,7 @@ def modo_preview(
         nombre_archivo=archivo.name,
         hash_archivo=h_archivo,
         periodo_detectado=periodo_log,
+        periodos_detectados=contadores["periodos_detectados"],
         filas_en_archivo=contadores["filas_en_archivo"],
         filas_insertadas=result_st["insertadas"],
         filas_con_error_bd=result_st["errores"],
@@ -1197,15 +1203,19 @@ def modo_confirm(job_id: str) -> dict:
 
     t_total = time.time() - t0
 
-    # Actualizar log
+    # Actualizar log — periodos_detectados sale de staging (todos los periodos
+    # que trae el archivo), no de cuantos terminaron realmente insertados: un
+    # periodo puede quedar en 0 filas nuevas por deduplicacion de hash y aun
+    # asi el archivo lo cubre.
     cur.execute("""
         UPDATE log_cargas SET
-            estado           = 'exitoso',
-            filas_insertadas = %s,
-            filas_duplicadas = %s,
-            tiempo_segundos  = tiempo_segundos + %s
+            estado              = 'exitoso',
+            filas_insertadas    = %s,
+            filas_duplicadas    = %s,
+            periodos_detectados = %s,
+            tiempo_segundos     = tiempo_segundos + %s
         WHERE job_id = %s
-    """, (filas_insertadas, max(filas_duplicadas, 0), round(t_total, 1), job_id))
+    """, (filas_insertadas, max(filas_duplicadas, 0), periodos_staging, round(t_total, 1), job_id))
     conn.commit()
     cur.close()
     conn.close()
@@ -1215,6 +1225,7 @@ def modo_confirm(job_id: str) -> dict:
         nombre_archivo=nombre_archivo,
         hash_archivo=h_archivo,
         periodo_detectado=periodo,
+        periodos_detectados=periodos_staging,
         filas_en_archivo=filas_en_archivo,
         filas_insertadas=filas_insertadas,
         filas_duplicadas=max(filas_duplicadas, 0),

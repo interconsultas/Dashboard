@@ -35,6 +35,7 @@ class TestConstruirInforme:
         assert informe["columnas_extra"] == []
         assert informe["error_fatal_mensaje"] is None
         assert informe["medicos_no_encontrados"] == {"total": 0, "cedulas": []}
+        assert informe["periodos_detectados"] == []
 
     def test_tiempo_redondeado(self):
         informe = construir_informe(
@@ -63,6 +64,17 @@ class TestConstruirInforme:
         assert informe["filas_en_archivo"] == 5000
         assert informe["filas_insertadas"] == 4900
         assert informe["cargado_por"] == "admin@test.com"
+
+    def test_periodos_detectados_lista_completa(self):
+        """Regresion: periodo_detectado solo guarda el primer periodo cuando
+        el archivo abarca varios. periodos_detectados guarda la lista completa."""
+        informe = construir_informe(
+            job_id="job-1",
+            nombre_archivo="multi.xlsx",
+            periodo_detectado=202602,
+            periodos_detectados=[202602, 202603],
+        )
+        assert informe["periodos_detectados"] == [202602, 202603]
 
 
 class TestInformeErrorFatal:

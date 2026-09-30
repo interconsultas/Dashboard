@@ -33,7 +33,8 @@ for f in /sql/001_create_tables.sql \
          /sql/008_delete_carga.sql \
          /sql/009_idx_fecha_emision.sql \
          /sql/010_idx_modo_dia.sql \
-         /sql/011_idx_fecha_digitacion.sql; do
+         /sql/011_idx_fecha_digitacion.sql \
+         /sql/012_periodos_detectados.sql; do
     echo "  -> $(basename "$f")"
     psql -v ON_ERROR_STOP=1 --username "$DB_USER" --dbname "$DB_NAME" -f "$f"
 done
