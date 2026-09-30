@@ -8,6 +8,16 @@ import {
   COLUMNA_FECHA_DIARIA, addRangoFechaDiaria, mesBounds,
 } from "@/lib/dashboard-filters";
 import { resolveView, DEFAULT_VIEW } from "@/lib/view-registry";
+import { runLimited } from "@/lib/concurrency";
+
+/**
+ * Máximo de queries corriendo en simultáneo contra Postgres por request.
+ * Producción corre en un droplet de 2 vCPUs — lanzar las ~15 queries de este
+ * endpoint todas juntas (Promise.all) satura la CPU y las hace superar el
+ * statement_timeout de la app (ver dashboard/src/lib/db.ts), devolviendo 503
+ * en cascada. Correrlas en tandas evita esa saturación.
+ */
+const MAX_QUERIES_CONCURRENTES = 4;
 
 /* ── Types ───────────────────────────────────── */
 
@@ -131,7 +141,7 @@ export async function POST(req: NextRequest) {
 
   // ── Periodos: sin filtro de periodo ──
   const bPer = wb(); buildExcept(bPer, p, reg, "periodo");
-  const periodosQ = query<{ periodo: number }>(
+  const periodosTask = () => query<{ periodo: number }>(
     `SELECT DISTINCT periodo FROM ${view} r ${toW(bPer)} ORDER BY periodo`, bPer.params
   );
 
@@ -139,24 +149,24 @@ export async function POST(req: NextRequest) {
   function optQ(dim: Dimension, col: string) {
     const b = wb(); buildExcept(b, p, reg, dim);
     if (diaRango) addRangoFechaDiaria(b, diaRango.desde, diaRango.hasta);
-    return query<{ v: string | null }>(
+    return () => query<{ v: string | null }>(
       `SELECT DISTINCT ${col} AS v FROM ${fromSource} r ${toW(b)} ORDER BY v NULLS LAST`, b.params
     );
   }
 
-  const estadosQ = optQ("estado", "estado_medico");
-  const profQ = optQ("profesional", "nombre_medico");
-  const progQ = optQ("programa", "programa_especialidad");
-  const tcQ = optQ("tipo_convenio", "tipo_convenio_desc");
-  const oaQ = optQ("orden_agrup", "orden_agrup_prest_desc");
-  const asQ = optQ("agrup_salud", "agrup_salud_prest_desc");
-  const diagQ = optQ("diagnostico", "diagnostico_desc");
-  const prestQ = optQ("prestacion", "descripcion_prestacion");
+  const estadosTask = optQ("estado", "estado_medico");
+  const profTask = optQ("profesional", "nombre_medico");
+  const progTask = optQ("programa", "programa_especialidad");
+  const tcTask = optQ("tipo_convenio", "tipo_convenio_desc");
+  const oaTask = optQ("orden_agrup", "orden_agrup_prest_desc");
+  const asTask = optQ("agrup_salud", "agrup_salud_prest_desc");
+  const diagTask = optQ("diagnostico", "diagnostico_desc");
+  const prestTask = optQ("prestacion", "descripcion_prestacion");
 
   // ── KPIs: todos los filtros ──
   const bKpi = wb(); buildAll(bKpi, p, reg);
   if (diaRango) addRangoFechaDiaria(bKpi, diaRango.desde, diaRango.hasta);
-  const kpisQ = query<{
+  const kpisTask = () => query<{
     total_autorizaciones: string;
     valor_total: string;
     periodo_min: number | null;
@@ -175,7 +185,7 @@ export async function POST(req: NextRequest) {
   // ── Series mensuales: actual + anterior ──
   const bSerie = wb(); buildAll(bSerie, p, reg);
   if (diaRango) addRangoFechaDiaria(bSerie, diaRango.desde, diaRango.hasta);
-  const serieActualQ = query<{ periodo: number; total: string }>(
+  const serieActualTask = () => query<{ periodo: number; total: string }>(
     `SELECT periodo, ${totalAutExpr} AS total
      FROM ${fromSource} r ${toW(bSerie)} GROUP BY periodo ORDER BY periodo`,
     bSerie.params
@@ -186,7 +196,7 @@ export async function POST(req: NextRequest) {
     const b = wb(); buildAll(b, p, reg);
     b.clauses.push(`${col} IS NOT NULL`);
     if (diaRango) addRangoFechaDiaria(b, diaRango.desde, diaRango.hasta);
-    return query<{ nombre: string; total: string }>(
+    return () => query<{ nombre: string; total: string }>(
       `SELECT ${col} AS nombre, ${totalAutExpr}::bigint AS total
        FROM ${fromSource} r ${toW(b)}
        GROUP BY ${col}
@@ -195,12 +205,13 @@ export async function POST(req: NextRequest) {
       b.params
     );
   }
-  const topProfQ = topQ("nombre_medico");
-  const topPrestQ = topQ("descripcion_prestacion");
-  const topDiagQ = topQ("diagnostico_desc");
+  const topProfTask = topQ("nombre_medico");
+  const topPrestTask = topQ("descripcion_prestacion");
+  const topDiagTask = topQ("diagnostico_desc");
 
   // ── Serie diaria (solo modo día): golpea autorizaciones directamente, no la vista ──
-  let serieDiariaQ: Promise<{ dia: string | null; total: string; valor_total: string }[]> = Promise.resolve([]);
+  let serieDiariaTask: () => Promise<{ dia: string | null; total: string; valor_total: string }[]> =
+    () => Promise.resolve([]);
   if (isModoDia) {
     const bDia = wb();
     buildDia(bDia, p, reg, p.desde as number);
@@ -219,7 +230,7 @@ export async function POST(req: NextRequest) {
       bDia.params.push(mesDesde, mesHasta);
       diaExpr = `CASE WHEN ${COLUMNA_FECHA_DIARIA} IS NULL OR ${COLUMNA_FECHA_DIARIA} < $${idxDesde} OR ${COLUMNA_FECHA_DIARIA} > $${idxHasta} THEN NULL ELSE date_trunc('day', ${COLUMNA_FECHA_DIARIA})::date END`;
     }
-    serieDiariaQ = query<{ dia: string | null; total: string; valor_total: string }>(
+    serieDiariaTask = () => query<{ dia: string | null; total: string; valor_total: string }>(
       `SELECT ${diaExpr} AS dia,
               COUNT(*)::bigint AS total,
               COALESCE(SUM(valor_autorizado_prestacion), 0) AS valor_total
@@ -231,22 +242,45 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let serieAnteriorQ: Promise<{ periodo: number; total: string }[]> = Promise.resolve([]);
+  let serieAnteriorTask: () => Promise<{ periodo: number; total: string }[]> = () => Promise.resolve([]);
   if (p.desde && p.hasta) {
     const pPrev: Parsed = { ...p, desde: shiftPeriodo(p.desde, 12), hasta: shiftPeriodo(p.hasta, 12) };
     const bPrev = wb(); buildAll(bPrev, pPrev, reg);
-    serieAnteriorQ = query<{ periodo: number; total: string }>(
+    serieAnteriorTask = () => query<{ periodo: number; total: string }>(
       `SELECT periodo, SUM(total_autorizaciones) AS total
        FROM ${view} r ${toW(bPrev)} GROUP BY periodo ORDER BY periodo`,
       bPrev.params
     );
   }
 
-  let periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR, serieDiariaR;
+  type PeriodoRow = { periodo: number };
+  type OpcionRow = { v: string | null };
+  type KpiRow = {
+    total_autorizaciones: string;
+    valor_total: string;
+    periodo_min: number | null;
+    periodo_max: number | null;
+    total_periodos: string;
+    total_profesionales: string;
+  };
+  type SerieRow = { periodo: number; total: string };
+  type TopRow = { nombre: string; total: string };
+  type SerieDiariaRow = { dia: string | null; total: string; valor_total: string };
+
+  let periodosR: PeriodoRow[], estadosR: OpcionRow[], profR: OpcionRow[], progR: OpcionRow[],
+    tcR: OpcionRow[], oaR: OpcionRow[], asR: OpcionRow[], diagR: OpcionRow[], prestR: OpcionRow[],
+    kpisR: KpiRow[], serieActualR: SerieRow[], serieAnteriorR: SerieRow[],
+    topProfR: TopRow[], topPrestR: TopRow[], topDiagR: TopRow[], serieDiariaR: SerieDiariaRow[];
   try {
-    [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR, serieDiariaR] = await Promise.all([
-      periodosQ, estadosQ, profQ, progQ, tcQ, oaQ, asQ, diagQ, prestQ, kpisQ, serieActualQ, serieAnteriorQ, topProfQ, topPrestQ, topDiagQ, serieDiariaQ,
-    ]);
+    const tasks = [
+      periodosTask, estadosTask, profTask, progTask, tcTask, oaTask, asTask, diagTask, prestTask,
+      kpisTask, serieActualTask, serieAnteriorTask, topProfTask, topPrestTask, topDiagTask, serieDiariaTask,
+    ];
+    [periodosR, estadosR, profR, progR, tcR, oaR, asR, diagR, prestR, kpisR, serieActualR, serieAnteriorR, topProfR, topPrestR, topDiagR, serieDiariaR] =
+      (await runLimited<unknown>(tasks, MAX_QUERIES_CONCURRENTES)) as unknown as [
+        PeriodoRow[], OpcionRow[], OpcionRow[], OpcionRow[], OpcionRow[], OpcionRow[], OpcionRow[],
+        OpcionRow[], OpcionRow[], KpiRow[], SerieRow[], SerieRow[], TopRow[], TopRow[], TopRow[], SerieDiariaRow[],
+      ];
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     const isRefresh = /timeout|lock|concurrent|materialized/i.test(msg);
