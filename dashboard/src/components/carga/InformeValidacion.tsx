@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { LogCarga } from "@/types/carga";
 import { BadgeEstado } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
+import { fmtPeriodos } from "@/lib/periodo";
 
 interface PreviewData {
   job_id: string;
   nombre_archivo: string;
   periodo_detectado: number | null;
+  periodos_detectados: number[] | null;
   total_filas: number;
   filas_validas: number;
   filas_con_error: number;
@@ -23,13 +25,6 @@ interface PreviewData {
 interface Props {
   jobId: string;
   onReset: () => void;
-}
-
-const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-
-function fmtPeriodo(p: number | null): string {
-  if (!p) return "—";
-  return `${MESES[(p % 100) - 1]} ${Math.floor(p / 100)}`;
 }
 
 function fmtNum(n: number | null | undefined): string {
@@ -185,7 +180,7 @@ export function InformeValidacion({ jobId, onReset }: Props) {
               <BadgeEstado estado={informe.estado} />
               {(preview?.periodo_detectado || informe.periodo_detectado) && (
                 <span className="text-sm text-gray-600">
-                  Período: <strong>{fmtPeriodo(preview?.periodo_detectado ?? informe.periodo_detectado)}</strong>
+                  Período: <strong>{fmtPeriodos(preview?.periodos_detectados ?? informe.periodos_detectados, preview?.periodo_detectado ?? informe.periodo_detectado)}</strong>
                 </span>
               )}
             </div>

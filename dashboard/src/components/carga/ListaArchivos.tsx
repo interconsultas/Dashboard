@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LogCarga } from "@/types/carga";
 import { BadgeEstado } from "@/components/ui/Badge";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { fmtPeriodos } from "@/lib/periodo";
 
 interface Props {
   cargas: LogCarga[];
@@ -12,14 +13,6 @@ interface Props {
 }
 
 const ESTADOS_ELIMINABLES = new Set(["exitoso", "exitoso_con_advertencias"]);
-
-function fmtPeriodo(p: number | null): string {
-  if (!p) return "—";
-  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const anio = Math.floor(p / 100);
-  const mes = (p % 100) - 1;
-  return `${meses[mes]} ${anio}`;
-}
 
 function fmtFecha(iso: string): string {
   const d = new Date(iso);
@@ -87,7 +80,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                  {fmtPeriodo(c.periodo_detectado)}
+                  {fmtPeriodos(c.periodos_detectados, c.periodo_detectado)}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-500 tabular-nums">
                   {filasArch > 0 ? filasArch.toLocaleString("es-CO") : "—"}
@@ -136,7 +129,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
           <>
             Esta acción eliminará todas las filas cargadas de{" "}
             <strong>{jobAEliminar?.nombre_archivo}</strong>
-            {" "}({fmtPeriodo(jobAEliminar?.periodo_detectado ?? null)}) y no se puede deshacer.
+            {" "}({fmtPeriodos(jobAEliminar?.periodos_detectados, jobAEliminar?.periodo_detectado ?? null)}) y no se puede deshacer.
             {errorEliminar && <p className="mt-2 text-red-600">{errorEliminar}</p>}
           </>
         }

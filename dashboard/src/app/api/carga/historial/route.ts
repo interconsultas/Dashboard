@@ -8,7 +8,7 @@ export async function GET() {
   if (error) return error;
 
   const rows = await query<LogCarga>(
-    `SELECT id, job_id, nombre_archivo, periodo_detectado,
+    `SELECT id, job_id, nombre_archivo, periodo_detectado, periodos_detectados,
             filas_en_archivo, filas_insertadas, filas_duplicadas,
             estado, cargado_por, tiempo_segundos, cargado_en
      FROM log_cargas
