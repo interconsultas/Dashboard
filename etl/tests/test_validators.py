@@ -50,6 +50,16 @@ class TestValidarColumnas:
         assert resultado["ok"] is True
         assert resultado["extra"] == []
 
+    def test_fecha_digitacion_no_es_extra(self):
+        """Regresion: FECHA_DIGITACION es una columna opcional conocida (se usa
+        para el filtro por dia del dashboard, ver COLS_FECHA), no debe
+        reportarse como 'columna extra que se ignorara' — sea cual sea el
+        casing con el que venga en el archivo real."""
+        for variante in ["Fecha_Digitacion", "FECHA_DIGITACION", "fecha_digitacion"]:
+            columnas = list(COLUMNAS_REQUERIDAS) + [variante]
+            resultado = validar_columnas(columnas)
+            assert variante not in resultado["extra"], f"{variante} no deberia ser extra"
+
     def test_comparacion_case_insensitive(self):
         columnas = [c.upper() for c in COLUMNAS_REQUERIDAS]
         resultado = validar_columnas(columnas)

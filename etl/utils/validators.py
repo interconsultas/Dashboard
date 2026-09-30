@@ -93,16 +93,22 @@ def validar_columnas(columnas_archivo: list) -> dict:
     """
     cols_upper = {c.strip().upper() for c in columnas_archivo}
     requeridas_upper = {c.upper() for c in COLUMNAS_REQUERIDAS}
+    eliminables_upper = {c.strip().upper() for c in COLUMNAS_ELIMINAR}
+    # Columnas opcionales conocidas: no son requeridas, pero el pipeline si
+    # las usa cuando estan presentes (ver COLS_FECHA en etl_autorizaciones.py).
+    # La comparacion es case-insensitive, igual que el resto de esta funcion —
+    # un archivo real trae "FECHA_DIGITACION" en mayusculas, no "Fecha_Digitacion".
+    opcionales_conocidas_upper = {
+        "VALOR_AUTORIZADO_PRESTACION", "VALOR_PROVISION",
+        "SEGUNDO_APELLIDO", "SEGUNDO_NOMBRE",
+        "FECHA_ATENCION_PRESTACION_IVR", "FECHA_DIGITACION",
+    }
 
     faltantes = [c for c in COLUMNAS_REQUERIDAS if c.upper() not in cols_upper]
     extra = [c for c in columnas_archivo
              if c.strip().upper() not in requeridas_upper
-             and c.strip() not in COLUMNAS_ELIMINAR
-             and c.strip() not in [
-                 "Valor_Autorizado_Prestacion", "Valor_Provision",
-                 "Segundo_Apellido", "Segundo_Nombre",
-                 "Fecha_Atencion_Prestacion_IVR",
-             ]]
+             and c.strip().upper() not in eliminables_upper
+             and c.strip().upper() not in opcionales_conocidas_upper]
 
     return {
         "ok": len(faltantes) == 0,
