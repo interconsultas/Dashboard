@@ -13,3 +13,5 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY vm_dash_remisiones_cap;
 REFRESH MATERIALIZED VIEW CONCURRENTLY vm_dash_medicamentos;
 REFRESH MATERIALIZED VIEW CONCURRENTLY vm_dash_remisiones_ext;
 REFRESH MATERIALIZED VIEW CONCURRENTLY vm_dash_proc_dx;
+-- Depende de las 7 subvistas vm_dash_*: debe refrescarse al final.
+REFRESH MATERIALIZED VIEW CONCURRENTLY vm_cumpl_ordenes;
