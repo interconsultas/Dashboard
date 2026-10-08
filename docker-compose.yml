@@ -37,6 +37,7 @@ services:
       AUTH_TRUST_HOST: "true"
       SEMAFORO_VERDE_MIN: ${SEMAFORO_VERDE_MIN:-80}
       SEMAFORO_AMARILLO_MIN: ${SEMAFORO_AMARILLO_MIN:-60}
+      CUMPLIMIENTO_ATRIBUCION: ${CUMPLIMIENTO_ATRIBUCION:-ordenador}
       # Variables para el ETL de Python
       DB_HOST: db
       DB_PORT: "5432"

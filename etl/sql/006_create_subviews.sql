@@ -15,12 +15,13 @@
 --     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
 --     diagnostico_desc, descripcion_prestacion,
 --     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+--     numero_remite,                   -- cédula del médico que ordena
 --     COUNT(*)                         AS total_autorizaciones,
 --     SUM(valor_autorizado_prestacion) AS valor_total,
 --     SUM(cantidad_autorizada)         AS total_cantidad
 -- FROM autorizaciones
 -- WHERE <condiciones del tipo>
--- GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
+-- GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13
 
 -- ─────────────────────────────────────────────
 -- Helper: macro de columnas para no repetir
@@ -37,6 +38,7 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
@@ -44,13 +46,13 @@ FROM autorizaciones
 WHERE tipo_convenio_desc = 'CAPITADO'
   AND orden_agrup_prest_desc IN ('LABORATORIO CLINICO', 'ACT Y PROCEDIMIENTOS OTROS POS')
   AND agrup_salud_prest_desc = 'PROCEDIMIENTOS DIAGNOSTICOS'
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_laboratorios_uq ON vm_dash_laboratorios (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_laboratorios_periodo ON vm_dash_laboratorios (periodo);
@@ -66,19 +68,20 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
 FROM autorizaciones
 WHERE orden_agrup_prest_desc = 'RADIOLOGIA'
   AND agrup_salud_prest_desc = 'PROCEDIMIENTOS DIAGNOSTICOS'
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_rx_uq ON vm_dash_rx (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_rx_periodo ON vm_dash_rx (periodo);
@@ -94,6 +97,7 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
@@ -101,13 +105,13 @@ FROM autorizaciones
 WHERE tipo_convenio_desc = 'CAPITADO'
   AND orden_agrup_prest_desc = 'ECOGRAFIA'
   AND agrup_salud_prest_desc = 'PROCEDIMIENTOS DIAGNOSTICOS'
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_ecografias_uq ON vm_dash_ecografias (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_ecografias_periodo ON vm_dash_ecografias (periodo);
@@ -123,6 +127,7 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
@@ -130,13 +135,13 @@ FROM autorizaciones
 WHERE tipo_convenio_desc = 'CAPITADO'
   AND orden_agrup_prest_desc IN ('CONSULTA ESP BASICAS', 'CONSULTA MEDICO GENERAL', 'CONSULTA OTRAS ESP.', 'PROMOCION Y PREVENCION', 'SALUD EN CASA')
   AND agrup_salud_prest_desc IN ('CONSULTAS MEDICAS', 'NIVEL BASICO Y ATENCION DOMICIALIARIA')
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_remisiones_cap_uq ON vm_dash_remisiones_cap (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_remisiones_cap_periodo ON vm_dash_remisiones_cap (periodo);
@@ -152,19 +157,20 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
 FROM autorizaciones
 WHERE orden_agrup_prest_desc <> 'PROGRAMAS ESPECIALES'
   AND agrup_salud_prest_desc IN ('MEDICAMENTOS NO PBS', 'MEDICAMENTOS PBS AMBULATORIOS')
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_medicamentos_uq ON vm_dash_medicamentos (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_medicamentos_periodo ON vm_dash_medicamentos (periodo);
@@ -180,19 +186,20 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
 FROM autorizaciones
 WHERE orden_agrup_prest_desc IN ('CONSULTA ESP BASICAS', 'CONSULTA MEDICA URGENTE', 'CONSULTA MEDICO GENERAL', 'CONSULTA OTRAS ESP.')
   AND agrup_salud_prest_desc IN ('CONSULTAS MEDICAS', 'NIVEL BASICO Y ATENCION DOMICIALIARIA')
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_remisiones_ext_uq ON vm_dash_remisiones_ext (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_remisiones_ext_periodo ON vm_dash_remisiones_ext (periodo);
@@ -208,19 +215,20 @@ SELECT
     tipo_convenio_desc, orden_agrup_prest_desc, agrup_salud_prest_desc,
     diagnostico_desc, descripcion_prestacion,
     estado_autorizacion_desc, desc_regional_afiliado, usuario_txt,
+    numero_remite,
     COUNT(*)                         AS total_autorizaciones,
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
 FROM autorizaciones
 WHERE tipo_convenio_desc IN ('ACTIVIDAD', 'VALOR AGREGADO', 'COMPRAS POR VOLUMEN')
   AND agrup_salud_prest_desc IN ('ENDOSCOPIAS DIAGNOST Y TERAPEUTICAS', 'NIVEL BASICO Y ATENCION DOMICILIARIA', 'PROCEDIMIENTOS DIAGNOSTICOS')
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12;
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_proc_dx_uq ON vm_dash_proc_dx (
     periodo, usuario_txt, tipo_convenio_desc, orden_agrup_prest_desc,
     agrup_salud_prest_desc, programa_especialidad, desc_regional_afiliado,
     estado_autorizacion_desc, estado_medico, nombre_medico,
-    diagnostico_desc, descripcion_prestacion
+    diagnostico_desc, descripcion_prestacion, numero_remite
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_dash_proc_dx_periodo ON vm_dash_proc_dx (periodo);

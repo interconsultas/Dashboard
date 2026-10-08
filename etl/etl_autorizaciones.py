@@ -1006,11 +1006,13 @@ VISTAS_MATERIALIZADAS = [
     "vm_dash_medicamentos",
     "vm_dash_remisiones_ext",
     "vm_dash_proc_dx",
+    # Depende de las 7 subvistas vm_dash_*: debe refrescarse al final
+    "vm_cumpl_ordenes",
 ]
 
 
 def refrescar_vistas_materializadas(conn) -> None:
-    """Refresca las 8 vistas materializadas del dashboard, una por una.
+    """Refresca las 9 vistas materializadas del dashboard, una por una.
 
     Si una vista falla (ej. no existe todavía), se hace rollback de esa
     transacción puntual y se sigue con las demás — no debe abortar toda

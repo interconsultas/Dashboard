@@ -11,7 +11,9 @@ El dashboard invoca al ETL vía `child_process.spawn()` en `dashboard/src/lib/et
 
 ## Base de datos
 
-PostgreSQL 16. Tabla principal `autorizaciones` particionada por `periodo` (YYYYMM). 8 vistas materializadas (`vm_*`) para analítica. Migraciones en `etl/sql/001-007`.
+PostgreSQL 16. Tabla principal `autorizaciones` particionada por `periodo` (YYYYMM). 9 vistas materializadas (`vm_*`) para analítica. Migraciones en `etl/sql/001-013`.
+
+`013_cumplimiento.sql` crea `vm_cumpl_ordenes` a partir de las 7 vistas `vm_dash_*`. Como `006_create_subviews.sql` las elimina con `CASCADE`, hay que volver a ejecutar `013` cada vez que se re-ejecute `006`.
 
 ## Roles de usuario
 
@@ -58,3 +60,4 @@ docker-compose --env-file .env.production up -d
 - `DATABASE_URL` — Conexión PostgreSQL para el dashboard
 - `PYTHON_PATH`, `ETL_SCRIPT_PATH`, `UPLOADS_DIR`, `ETL_LOGS_DIR` — Rutas para el spawn del ETL
 - `NEXTAUTH_SECRET` — Secreto JWT (mínimo 32 caracteres)
+- `CUMPLIMIENTO_ATRIBUCION` — A quién se atribuyen las órdenes en el módulo de cumplimiento: `ordenador` (por defecto, `numero_remite`) o `digitador` (`usuario_txt`)

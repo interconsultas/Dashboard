@@ -12,12 +12,14 @@ VISTAS_ESPERADAS = [
     "vm_dash_medicamentos",
     "vm_dash_remisiones_ext",
     "vm_dash_proc_dx",
+    # Depende de las 7 subvistas vm_dash_*: debe refrescarse al final
+    "vm_cumpl_ordenes",
 ]
 
 
 class TestRefrescarVistasMaterializadas:
 
-    def test_refresca_las_8_vistas_en_orden(self):
+    def test_refresca_las_9_vistas_en_orden(self):
         conn = MagicMock()
         cur = conn.cursor.return_value
 
@@ -38,7 +40,7 @@ class TestRefrescarVistasMaterializadas:
     def test_tolera_error_en_una_vista_y_sigue_con_las_demas(self):
         conn = MagicMock()
         cur = conn.cursor.return_value
-        cur.execute.side_effect = [None, Exception("vista no existe")] + [None] * 6
+        cur.execute.side_effect = [None, Exception("vista no existe")] + [None] * (len(VISTAS_ESPERADAS) - 2)
 
         # No debe propagar la excepción
         refrescar_vistas_materializadas(conn)

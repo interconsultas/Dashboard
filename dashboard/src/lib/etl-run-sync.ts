@@ -18,10 +18,29 @@ export interface EtlSyncResult {
 }
 
 export function runEtlMedicosSync(archivoPath: string): Promise<EtlSyncResult> {
-  const pythonPath = process.env.PYTHON_PATH ?? "python";
   const scriptPath =
     process.env.ETL_MEDICOS_SCRIPT_PATH ??
     path.join(process.cwd(), "..", "etl", "etl_medicos.py");
+
+  return runEtlSync(scriptPath, archivoPath);
+}
+
+/**
+ * Carga de citas atendidas (etl_citas.py). Sin ETL_CITAS_SCRIPT_PATH, el
+ * script se busca junto al de ETL_SCRIPT_PATH, que es la carpeta del ETL
+ * tanto en desarrollo como en la imagen Docker.
+ */
+export function runEtlCitasSync(archivoPath: string): Promise<EtlSyncResult> {
+  const etlDir = process.env.ETL_SCRIPT_PATH
+    ? path.dirname(process.env.ETL_SCRIPT_PATH)
+    : path.join(process.cwd(), "..", "etl");
+  const scriptPath = process.env.ETL_CITAS_SCRIPT_PATH ?? path.join(etlDir, "etl_citas.py");
+
+  return runEtlSync(scriptPath, archivoPath);
+}
+
+function runEtlSync(scriptPath: string, archivoPath: string): Promise<EtlSyncResult> {
+  const pythonPath = process.env.PYTHON_PATH ?? "python";
 
   return new Promise((resolve) => {
     let stdout = "";
