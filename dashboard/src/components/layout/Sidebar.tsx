@@ -47,6 +47,36 @@ function IconMedicos({ className }: { className?: string }) {
   );
 }
 
+function IconMetas({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7.5" />
+      <circle cx="10" cy="10" r="4" />
+      <circle cx="10" cy="10" r="0.8" />
+    </svg>
+  );
+}
+
+function IconCitas({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="14" height="13" rx="2" />
+      <path d="M3 8h14M7 2v4M13 2v4" />
+      <path d="M7.5 12.5l1.8 1.8 3.2-3.6" />
+    </svg>
+  );
+}
+
+function IconCumplimiento({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17h14" />
+      <path d="M5.5 17v-5M10 17V8M14.5 17v-7" />
+      <path d="M3 5h14" strokeDasharray="2 2.5" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -94,7 +124,9 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const isDashboard = pathname.startsWith("/dashboard");
+  // Cumplimiento vive bajo /dashboard pero es una entrada propia del menú
+  const isCumplimiento = pathname.startsWith("/dashboard/cumplimiento");
+  const isDashboard = pathname.startsWith("/dashboard") && !isCumplimiento;
   const [subOpen, setSubOpen] = useState(isDashboard);
 
   function handleNav() {
@@ -189,6 +221,20 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           </div>
         </div>
 
+        {/* Cumplimiento */}
+        <Link
+          href="/dashboard/cumplimiento"
+          onClick={handleNav}
+          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            isCumplimiento
+              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <IconCumplimiento className="w-[18px] h-[18px] flex-shrink-0" />
+          Cumplimiento
+        </Link>
+
         {/* Carga de archivos */}
         <Link
           href="/admin/carga"
@@ -203,20 +249,6 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           Carga de archivos
         </Link>
 
-        {/* Usuarios */}
-        <Link
-          href="/admin/usuarios"
-          onClick={handleNav}
-          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname.startsWith("/admin/usuarios")
-              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-              : "text-white/70 hover:bg-white/10 hover:text-white"
-          }`}
-        >
-          <IconUsers className="w-[18px] h-[18px] flex-shrink-0" />
-          Usuarios
-        </Link>
-
         {/* Profesionales */}
         <Link
           href="/admin/medicos"
@@ -229,6 +261,48 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         >
           <IconMedicos className="w-[18px] h-[18px] flex-shrink-0" />
           Profesionales
+        </Link>
+
+        {/* Metas */}
+        <Link
+          href="/admin/metas"
+          onClick={handleNav}
+          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            pathname.startsWith("/admin/metas")
+              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <IconMetas className="w-[18px] h-[18px] flex-shrink-0" />
+          Metas
+        </Link>
+
+        {/* Citas atendidas */}
+        <Link
+          href="/admin/citas-atendidas"
+          onClick={handleNav}
+          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            pathname.startsWith("/admin/citas-atendidas")
+              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <IconCitas className="w-[18px] h-[18px] flex-shrink-0" />
+          Citas atendidas
+        </Link>
+
+        {/* Usuarios */}
+        <Link
+          href="/admin/usuarios"
+          onClick={handleNav}
+          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            pathname.startsWith("/admin/usuarios")
+              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <IconUsers className="w-[18px] h-[18px] flex-shrink-0" />
+          Usuarios
         </Link>
       </nav>
 

@@ -74,7 +74,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
               <tr key={c.job_id}
                 className={`${idx % 2 === 0 ? "bg-white" : "bg-surface-alt"} hover:bg-brand-blue-soft-2 transition-colors`}
               >
-                <td className="px-4 py-3 max-w-[200px]">
+                <td className="px-4 py-3 max-w-[420px]">
                   <span className="block truncate font-medium text-gray-800 text-sm" title={c.nombre_archivo}>
                     {c.nombre_archivo}
                   </span>

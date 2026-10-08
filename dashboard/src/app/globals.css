@@ -109,6 +109,62 @@ body {
 .stagger-3 { animation-delay: 160ms; }
 .stagger-4 { animation-delay: 240ms; }
 
+/* ── Impresión / exportar a PDF ──
+   Hoja A4 horizontal: 297 mm − 2 × 12 mm ≈ 1031 px útiles
+   (ver ANCHO_IMPRESION_PX en src/hooks/useImpresion.ts). */
+@page {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  /* Tiles, badges y gráficas conservan sus colores de marca */
+  .cumplimiento-imprimible {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .recharts-tooltip-wrapper {
+    display: none !important;
+  }
+
+  /* Tablas compactas: el encabezado se repite en cada hoja y las filas no se parten */
+  .tabla-imprimible {
+    font-size: 9.5px;
+  }
+  .tabla-imprimible thead {
+    display: table-header-group;
+  }
+  .tabla-imprimible tr {
+    break-inside: avoid;
+  }
+  .tabla-imprimible th,
+  .tabla-imprimible td {
+    padding: 3px 4px;
+    letter-spacing: 0;
+  }
+  .tabla-imprimible th {
+    font-size: 8.5px;
+    white-space: normal;
+  }
+  .tabla-imprimible th *,
+  .tabla-imprimible td * {
+    font-size: inherit;
+    letter-spacing: inherit;
+  }
+  .tabla-imprimible td svg {
+    width: 8px;
+    height: 8px;
+  }
+  .tabla-imprimible .celda-vacia-impresion {
+    padding: 0;
+  }
+}
+
 /* ── Select nativo con flecha custom ── */
 select.appearance-none {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%239CA3AF'%3E%3Cpath d='M4.47 5.97a.75.75 0 011.06 0L8 8.44l2.47-2.47a.75.75 0 111.06 1.06l-3 3a.75.75 0 01-1.06 0l-3-3a.75.75 0 010-1.06z'/%3E%3C/svg%3E");

@@ -3,7 +3,8 @@ import { EventEmitter } from "events";
 jest.mock("child_process", () => ({ spawn: jest.fn() }));
 
 import { spawn } from "child_process";
-import { runEtlMedicosSync } from "@/lib/etl-run-sync";
+import path from "path";
+import { runEtlCitasSync, runEtlMedicosSync } from "@/lib/etl-run-sync";
 
 function mockProc() {
   const proc = new EventEmitter() as EventEmitter & {
@@ -93,5 +94,119 @@ describe("runEtlMedicosSync", () => {
     const [, args] = (spawn as jest.Mock).mock.calls[0];
     expect(args).toContain("--archivo");
     expect(args).toContain("/tmp/mi-archivo.xlsx");
+  });
+
+  it("usa ETL_MEDICOS_SCRIPT_PATH si está definida y, si no, ../etl/etl_medicos.py", async () => {
+    const original = process.env.ETL_MEDICOS_SCRIPT_PATH;
+    try {
+      delete process.env.ETL_MEDICOS_SCRIPT_PATH;
+      (spawn as jest.Mock).mockReturnValue(mockProc());
+      void runEtlMedicosSync("/tmp/a.xlsx");
+      expect((spawn as jest.Mock).mock.calls[0][1][0]).toBe(
+        path.join(process.cwd(), "..", "etl", "etl_medicos.py")
+      );
+
+      process.env.ETL_MEDICOS_SCRIPT_PATH = "/opt/etl/etl_medicos.py";
+      void runEtlMedicosSync("/tmp/a.xlsx");
+      expect((spawn as jest.Mock).mock.calls[1][1][0]).toBe("/opt/etl/etl_medicos.py");
+    } finally {
+      if (original === undefined) delete process.env.ETL_MEDICOS_SCRIPT_PATH;
+      else process.env.ETL_MEDICOS_SCRIPT_PATH = original;
+    }
+  });
+});
+
+describe("runEtlCitasSync", () => {
+  const VARIABLES = ["ETL_CITAS_SCRIPT_PATH", "ETL_SCRIPT_PATH", "PYTHON_PATH"] as const;
+  const originales: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    for (const v of VARIABLES) {
+      originales[v] = process.env[v];
+      delete process.env[v];
+    }
+  });
+
+  afterEach(() => {
+    for (const v of VARIABLES) {
+      if (originales[v] === undefined) delete process.env[v];
+      else process.env[v] = originales[v];
+    }
+  });
+
+  function scriptUsado(): string {
+    return (spawn as jest.Mock).mock.calls[0][1][0];
+  }
+
+  it("resuelve success:true con el resultado parseado cuando el proceso termina en 0", async () => {
+    const proc = mockProc();
+    (spawn as jest.Mock).mockReturnValue(proc);
+
+    const promise = runEtlCitasSync("/tmp/citas.xlsx");
+    proc.stdout.emit("data", Buffer.from("[INFO] Leyendo...\n"));
+    proc.stdout.emit(
+      "data",
+      Buffer.from('RESULT_JSON:{"registros":3,"periodos":[202601],"profesionales":2}\n')
+    );
+    proc.emit("close", 0);
+
+    expect(await promise).toEqual({
+      success: true,
+      resultado: { registros: 3, periodos: [202601], profesionales: 2 },
+    });
+  });
+
+  it("resuelve success:false con el mensaje de stderr cuando el proceso falla", async () => {
+    const proc = mockProc();
+    (spawn as jest.Mock).mockReturnValue(proc);
+
+    const promise = runEtlCitasSync("/tmp/citas.xlsx");
+    proc.stdout.emit("data", Buffer.from("[INFO] Leyendo...\n"));
+    proc.stderr.emit("data", Buffer.from("No se encontró la columna de cédula\n"));
+    proc.emit("close", 1);
+
+    expect(await promise).toEqual({
+      success: false,
+      error: "No se encontró la columna de cédula",
+    });
+  });
+
+  it("ejecuta el intérprete de PYTHON_PATH con --archivo y la ruta recibida", () => {
+    process.env.PYTHON_PATH = "python3";
+    (spawn as jest.Mock).mockReturnValue(mockProc());
+
+    void runEtlCitasSync("/tmp/citas.xlsx");
+
+    const [comando, args] = (spawn as jest.Mock).mock.calls[0];
+    expect(comando).toBe("python3");
+    expect(args.slice(1)).toEqual(["--archivo", "/tmp/citas.xlsx"]);
+  });
+
+  it("usa ETL_CITAS_SCRIPT_PATH si está definida", () => {
+    process.env.ETL_CITAS_SCRIPT_PATH = "/opt/etl/etl_citas.py";
+    process.env.ETL_SCRIPT_PATH = "/app/etl/etl_autorizaciones.py";
+    (spawn as jest.Mock).mockReturnValue(mockProc());
+
+    void runEtlCitasSync("/tmp/citas.xlsx");
+
+    expect(scriptUsado()).toBe("/opt/etl/etl_citas.py");
+  });
+
+  it("sin esa variable busca etl_citas.py junto al script de ETL_SCRIPT_PATH", () => {
+    process.env.ETL_SCRIPT_PATH = "/app/etl/etl_autorizaciones.py";
+    (spawn as jest.Mock).mockReturnValue(mockProc());
+
+    void runEtlCitasSync("/tmp/citas.xlsx");
+
+    expect(scriptUsado()).toBe(path.join("/app/etl", "etl_citas.py"));
+  });
+
+  it("sin ninguna de las dos usa ../etl/etl_citas.py respecto al directorio de trabajo", () => {
+    (spawn as jest.Mock).mockReturnValue(mockProc());
+
+    void runEtlCitasSync("/tmp/citas.xlsx");
+
+    expect(scriptUsado()).toBe(path.join(process.cwd(), "..", "etl", "etl_citas.py"));
   });
 });

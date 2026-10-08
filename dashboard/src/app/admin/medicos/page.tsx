@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { ImportarMedicosExcel } from "@/components/medicos/ImportarMedicosExcel";
+import { PROGRAMAS_META } from "@/lib/cumplimiento/categorias";
 
 interface Medico {
   usuario_txt: string;
@@ -12,6 +13,7 @@ interface Medico {
   estado: string | null;
   programa_especialidad: string | null;
   area: string | null;
+  programa_meta: string | null;
 }
 
 const ESTADOS = ["ACTIVO", "INACTIVO"];
@@ -45,6 +47,7 @@ const EMPTY = {
   estado: "ACTIVO",
   programa_especialidad: "",
   area: "",
+  programa_meta: "",
 };
 
 function BadgeEstado({ estado }: { estado: string | null }) {
@@ -67,6 +70,7 @@ export default function MedicosPage() {
   );
   const [form, setForm] = useState({ ...EMPTY });
   const [editKey, setEditKey] = useState<string | null>(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -101,6 +105,7 @@ export default function MedicosPage() {
         identificacion: Number(form.identificacion) || null,
         programa_especialidad: form.programa_especialidad || null,
         area: form.area || null,
+        programa_meta: form.programa_meta || null,
       };
       const res = await fetch(url, {
         method,
@@ -113,8 +118,7 @@ export default function MedicosPage() {
         return;
       }
       mutate("/api/admin/medicos");
-      setForm({ ...EMPTY });
-      setEditKey(null);
+      cerrarModal();
     } finally {
       setSaving(false);
     }
@@ -129,7 +133,23 @@ export default function MedicosPage() {
       estado: m.estado ?? "ACTIVO",
       programa_especialidad: m.programa_especialidad ?? "",
       area: m.area ?? "",
+      programa_meta: m.programa_meta ?? "",
     });
+    setError("");
+    setModalAbierto(true);
+  }
+
+  function abrirNuevo() {
+    setEditKey(null);
+    setForm({ ...EMPTY });
+    setError("");
+    setModalAbierto(true);
+  }
+
+  function cerrarModal() {
+    setModalAbierto(false);
+    setEditKey(null);
+    setForm({ ...EMPTY });
     setError("");
   }
 
@@ -167,17 +187,36 @@ export default function MedicosPage() {
             Catálogo de profesionales — {medicos?.length ?? 0} registros
           </p>
         </div>
-        <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
+        <div className="flex items-start gap-2">
+          <button
+            type="button"
+            onClick={abrirNuevo}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
+          >
+            Nuevo profesional
+          </button>
+          <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
+        </div>
       </div>
 
-      {/* Formulario */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">
+      {/* Formulario (crear y editar) */}
+      {modalAbierto && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-profesional"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && !saving) cerrarModal();
+        }}
+      >
+      <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <h3 id="titulo-modal-profesional" className="text-lg font-semibold text-gray-900 mb-4">
           {editKey ? "Editar profesional" : "Nuevo profesional"}
-        </p>
+        </h3>
         <form
           onSubmit={handleSubmit}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
           <div>
             <label className="block text-xs text-gray-500 mb-1">
@@ -187,6 +226,7 @@ export default function MedicosPage() {
               className={inputCls}
               value={form.usuario_txt}
               required
+              autoFocus={!editKey}
               disabled={!!editKey}
               onChange={(e) =>
                 setForm((p) => ({ ...p, usuario_txt: e.target.value.toUpperCase() }))
@@ -202,6 +242,7 @@ export default function MedicosPage() {
               type="number"
               value={form.identificacion}
               required
+              autoFocus={!!editKey}
               onChange={(e) =>
                 setForm((p) => ({ ...p, identificacion: e.target.value }))
               }
@@ -275,16 +316,43 @@ export default function MedicosPage() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">
+              Programa de metas
+            </label>
+            <select
+              className={inputCls}
+              value={form.programa_meta}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, programa_meta: e.target.value }))
+              }
+            >
+              <option value="">Sin asignar</option>
+              {PROGRAMAS_META.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {error && (
-            <div className="sm:col-span-2 lg:col-span-3">
+            <div className="sm:col-span-2">
               <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
               </p>
             </div>
           )}
 
-          <div className="flex items-end gap-2">
+          <div className="sm:col-span-2 mt-3 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={cerrarModal}
+              disabled={saving}
+              className="px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
             <button
               type="submit"
               disabled={saving}
@@ -296,22 +364,11 @@ export default function MedicosPage() {
                 ? "Actualizar"
                 : "Crear profesional"}
             </button>
-            {editKey && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditKey(null);
-                  setForm({ ...EMPTY });
-                  setError("");
-                }}
-                className="px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-500 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            )}
           </div>
         </form>
       </div>
+      </div>
+      )}
 
       {/* Buscador */}
       <div>
@@ -335,6 +392,7 @@ export default function MedicosPage() {
                 "Estado",
                 "Programa / Especialidad",
                 "Área",
+                "Programa de metas",
                 "",
               ].map((h) => (
                 <th
@@ -349,14 +407,14 @@ export default function MedicosPage() {
           <tbody className="bg-white divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
+                <td colSpan={8} className="text-center py-10 text-gray-400">
                   Cargando…
                 </td>
               </tr>
             )}
             {!isLoading && !filtrados?.length && (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
+                <td colSpan={8} className="text-center py-10 text-gray-400">
                   {busqueda
                     ? "Sin resultados para esa búsqueda"
                     : "No hay profesionales"}
@@ -387,6 +445,9 @@ export default function MedicosPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-xs">
                   {m.area ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-500 text-xs">
+                  {m.programa_meta ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-2">
