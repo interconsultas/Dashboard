@@ -1,6 +1,8 @@
 services:
   db:
+    command: ["postgres", "-c", "shared_buffers=768MB", "-c", "effective_cache_size=2GB", "-c", "work_mem=32MB", "-c", "maintenance_work_mem=256MB", "-c", "max_parallel_workers_per_gather=1"]
     image: postgres:16-alpine
+    shm_size: '1gb'
     restart: unless-stopped
     ports:
       - "127.0.0.1:5433:5432"
