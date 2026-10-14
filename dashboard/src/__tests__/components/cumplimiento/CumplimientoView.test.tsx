@@ -150,7 +150,7 @@ describe("CumplimientoView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Todos" }));
 
     expect(screen.getByLabelText("CPR")).toBeInTheDocument();
-    expect(screen.getByLabelText("Pediatría")).toBeInTheDocument();
+    expect(screen.getByLabelText("PEDIATRÍA")).toBeInTheDocument();
     expect(screen.queryByLabelText(/TOTAL/)).not.toBeInTheDocument();
   });
 
