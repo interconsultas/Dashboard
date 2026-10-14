@@ -175,6 +175,47 @@ export function parseBody(body: FiltrosBody): Parsed {
   };
 }
 
+/**
+ * Combina la selección del usuario con los filtros fijos de una subvista,
+ * igual que la pantalla (que consulta la vista y aplica encima los filtros
+ * del usuario): por cada dimensión que fija la vista, si el usuario envió
+ * valores se usa la intersección; si no, los valores de la vista.
+ * `vacio` = alguna intersección quedó vacía (la consulta no debe devolver filas).
+ * exclude_orden_agrup y los demás campos de la vista se imponen tal cual.
+ */
+export function mergeViewFilters(
+  body: FiltrosBody,
+  viewFilters: Partial<FiltrosBody>,
+): { filtros: FiltrosBody; vacio: boolean } {
+  const filtros: FiltrosBody = { ...body, ...viewFilters };
+  let vacio = false;
+  for (const dim of Object.keys(DIM_COL) as Dimension[]) {
+    const deVista = viewFilters[dim];
+    const delUsuario = body[dim];
+    if (!deVista || !delUsuario || delUsuario.length === 0) continue;
+    const permitidos = new Set(deVista);
+    const interseccion = delUsuario.filter((v) => permitidos.has(v));
+    if (interseccion.length === 0) vacio = true;
+    filtros[dim] = interseccion;
+  }
+  return { filtros, vacio };
+}
+
+/** WHERE de la exportación: filtros del usuario ∩ filtros fijos de la vista. */
+export function buildExport(
+  b: WB,
+  body: FiltrosBody,
+  viewFilters: Partial<FiltrosBody>,
+  reg: { clause: string; params: (string | null)[] },
+): Parsed {
+  const { filtros, vacio } = mergeViewFilters(body, viewFilters);
+  const p = parseBody(filtros);
+  buildAll(b, p, reg);
+  // Intersección vacía: sin filas (addIn omite listas vacías y devolvería todo)
+  if (vacio) b.clauses.push("FALSE");
+  return p;
+}
+
 export function shiftPeriodo(p: number, months: number): number {
   const y = Math.floor(p / 100);
   const m = (p % 100) - 1;

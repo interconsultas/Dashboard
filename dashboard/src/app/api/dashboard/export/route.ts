@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { requireAuth, regionalClause } from "@/lib/middleware-roles";
-import { type FiltrosBody, wb, toW, buildAll, parseBody } from "@/lib/dashboard-filters";
+import { type FiltrosBody, wb, toW, buildExport } from "@/lib/dashboard-filters";
 import { resolveView, getViewFilters } from "@/lib/view-registry";
 import { EXPORT_COLUMNS } from "@/lib/export-columns";
 
@@ -30,13 +30,11 @@ export async function POST(req: NextRequest) {
   const view = resolveView(body.view);
   const viewFilters = getViewFilters(view);
 
-  // Los filtros de la vista siempre tienen prioridad (son las condiciones fijas)
-  const merged: FiltrosBody = { ...body, ...viewFilters };
-  const p = parseBody(merged);
   const reg = regionalClause(user, 1, "r");
 
+  // Selección del usuario ∩ condiciones fijas de la vista (igual que la pantalla)
   const b = wb();
-  buildAll(b, p, reg);
+  const p = buildExport(b, body, viewFilters, reg);
 
   const selectCols = EXPORT_COLUMNS.map((c) => `${c.sql} AS ${c.alias}`).join(", ");
   const sql = `SELECT ${selectCols} FROM autorizaciones r ${toW(b)} ORDER BY periodo, nombre_medico LIMIT ${MAX_ROWS}`;
