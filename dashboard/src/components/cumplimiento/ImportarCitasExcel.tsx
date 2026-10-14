@@ -11,6 +11,8 @@ interface ResultadoImport {
   sin_catalogo: { documento: string; nombre: string | null }[];
   sin_programa: number;
   advertencias: string[];
+  /** Filas con nombre y valores pero sin cédula (columna ID): no se cargaron. */
+  sin_cedula?: { fila: number; nombre: string }[];
 }
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
 }
 
 const RUTA_PROFESIONALES = "/admin/medicos";
+/** El programa de metas se resuelve desde la especialidad del profesional. */
+const RUTA_MAPEO_PROGRAMAS = "/admin/metas/programas";
 const ERROR_GENERICO = "Error al importar el archivo";
 
 function plural(n: number, singular: string, pluralTxt: string) {
@@ -62,6 +66,7 @@ export function ImportarCitasExcel({ onImportado }: Props) {
   }
 
   const enlaceCls = "font-semibold underline";
+  const sinCedula = resultado?.sin_cedula ?? [];
 
   return (
     <div className="flex flex-col gap-2">
@@ -133,10 +138,28 @@ export function ImportarCitasExcel({ onImportado }: Props) {
                 "profesionales cargados no tienen programa"
               )}
               ; sin programa no hay meta con la cual medir el cumplimiento.{" "}
-              <Link href={RUTA_PROFESIONALES} className={enlaceCls}>
-                Asignar el programa en Profesionales
+              <Link href={RUTA_MAPEO_PROGRAMAS} className={enlaceCls}>
+                Asignar la meta por especialidad
               </Link>
             </p>
+          )}
+
+          {sinCedula.length > 0 && (
+            <div className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <p className="font-semibold">
+                {plural(
+                  sinCedula.length,
+                  "fila del archivo no tiene cédula (columna ID) y no se cargó",
+                  "filas del archivo no tienen cédula (columna ID) y no se cargaron"
+                )}
+              </p>
+              <p className="mt-1">Complete la cédula en el archivo y vuelva a importarlo.</p>
+              <ul className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
+                {sinCedula.map((f) => (
+                  <li key={f.fila}>{`Fila ${f.fila} — ${f.nombre}`}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {resultado.advertencias.length > 0 && (

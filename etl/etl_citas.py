@@ -5,8 +5,11 @@ tabla citas_atendidas. Es idempotente: se puede ejecutar múltiples veces sin
 duplicar datos, y nunca elimina periodos.
 
 Formato esperado: una hoja (por defecto 'Tabla_CitasConfirmadas') con una
-columna de cédula ('ID MD') y una columna por periodo ('202601', 'ene-26' o
-una fecha). Las demás columnas se ignoran.
+columna de cédula ('ID MD' o 'ID') y una columna por periodo ('202601', 'ene-26',
+una fecha o el nombre del mes, 'ENERO', con el año en una celda 'AÑO 2026'
+encima del encabezado, como en el informe mensual del cliente). Las demás
+columnas se ignoran. Las filas con nombre y valores pero sin cédula se omiten y
+se informan.
 
 Uso:
     python etl_citas.py --archivo "ruta/al/archivo.xlsx"
@@ -30,8 +33,8 @@ FILAS_ENCABEZADO = 10
 MAX_ADVERTENCIAS = 50
 
 # Encabezados normalizados (mayúsculas, sin tildes, espacios simples)
-ENCABEZADOS_ID = {"ID MD", "CEDULA", "DOCUMENTO", "IDENTIFICACION"}
-ENCABEZADOS_NOMBRE = {"PROFESIONAL", "NOMBRE", "MEDICO"}
+ENCABEZADOS_ID = {"ID MD", "ID", "CEDULA", "DOCUMENTO", "IDENTIFICACION"}
+ENCABEZADOS_NOMBRE = {"PROFESIONAL", "NOMBRE", "MEDICO", "NOMBRE DEL MEDICO"}
 
 MESES = {
     "ene": 1, "enero": 1,
@@ -49,24 +52,34 @@ MESES = {
 }
 RE_PERIODO_MES = re.compile(r"^([a-z]+)\.?[\s\-/_]*(\d{4}|\d{2})$")
 
+# Encabezados del informe mensual: el mes va sin año ('ENERO') y el año está en
+# una celda 'AÑO 2026' encima del encabezado (ya normalizada: 'ANO 2026').
+NOMBRES_MES = {
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+    "septiembre", "setiembre", "octubre", "noviembre", "diciembre",
+}
+RE_ANIO = re.compile(r"^ANO\s*:?\s*(\d{4})$")
+
 ANIO_MIN, ANIO_MAX = 2000, 2100
 CEDULA_MAX = 10 ** 15 - 1     # misma cota que la API del dashboard (15 dígitos)
 CITAS_MAX = 2147483647        # cantidad_citas es INT
 
+# El programa de metas se resuelve desde programa_especialidad (014_metas_v5.sql);
+# solo se usa para informar cuántos profesionales cargados no tienen meta.
 SQL_CATALOGO = """
-    SELECT identificacion, nombre, programa_meta
-    FROM medicos
-    WHERE identificacion = ANY(%s)
+    SELECT m.identificacion, m.nombre, map.programa
+    FROM medicos m
+    LEFT JOIN programa_meta_mapeo map
+           ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
+    WHERE m.identificacion = ANY(%s)
 """
 
-# El programa ya guardado para un periodo se conserva: solo se llena si es NULL
 SQL_UPSERT = """
-    INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico, programa)
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico)
+    VALUES (%s, %s, %s, %s)
     ON CONFLICT (documento, periodo) DO UPDATE SET
         cantidad_citas = EXCLUDED.cantidad_citas,
-        nombre_medico  = EXCLUDED.nombre_medico,
-        programa       = COALESCE(citas_atendidas.programa, EXCLUDED.programa)
+        nombre_medico  = EXCLUDED.nombre_medico
 """
 
 
@@ -91,6 +104,7 @@ class Lectura:
     registros: list[tuple[int, int, int]] = field(default_factory=list)  # (documento, periodo, citas)
     nombres: dict[int, str | None] = field(default_factory=dict)         # nombre según la hoja
     advertencias: list[str] = field(default_factory=list)
+    sin_cedula: list[dict] = field(default_factory=list)                 # {"fila", "nombre"} omitidas
 
 
 # ─────────────────────────────────────────────
@@ -175,9 +189,34 @@ def _celda(fila: tuple, indice: int | None):
     return fila[indice]
 
 
+def _anio_de_fila(titulos: list[str]) -> int | None:
+    """Año de una celda 'AÑO 2026' de la fila (encabezados ya normalizados)."""
+    for titulo in titulos:
+        m = RE_ANIO.match(titulo)
+        if m and ANIO_MIN <= int(m.group(1)) <= ANIO_MAX:
+            return int(m.group(1))
+    return None
+
+
+def _periodo_de_encabezado(valor, titulo: str, anio: int | None, ws) -> int | None:
+    """Periodo de un encabezado; el nombre del mes solo usa el año de 'AÑO <aaaa>'."""
+    periodo = parsear_periodo(valor)
+    mes = titulo.lower()
+    if periodo is not None or mes not in NOMBRES_MES:
+        return periodo
+    if anio is None:
+        raise ErrorArchivo(
+            f"La hoja '{ws.title}' tiene los meses por nombre ({titulo}, …) pero no se "
+            "encontró el año encima del encabezado. Agregue una celda como «AÑO 2026».",
+            tiene_cedula=True,
+        )
+    return _periodo_valido(anio, MESES[mes])
+
+
 def detectar_encabezado(ws) -> Encabezado:
     """Busca en las primeras filas la que tiene la columna de cédula y los periodos."""
     vio_cedula = False
+    anio: int | None = None   # de una fila 'AÑO 2026' encima del encabezado
 
     for n, fila in enumerate(
         ws.iter_rows(min_row=1, max_row=FILAS_ENCABEZADO, values_only=True), start=1
@@ -185,12 +224,15 @@ def detectar_encabezado(ws) -> Encabezado:
         titulos = [_normalizar(v) for v in fila]
         col_id = next((i for i, t in enumerate(titulos) if t in ENCABEZADOS_ID), None)
         if col_id is None:
+            anio = _anio_de_fila(titulos) or anio
             continue
         vio_cedula = True
 
         periodos: dict[int, int] = {}
         for i, valor in enumerate(fila):
-            periodo = parsear_periodo(valor) if i != col_id else None
+            if i == col_id:
+                continue
+            periodo = _periodo_de_encabezado(valor, titulos[i], anio, ws)
             if periodo is None:
                 continue
             if periodo in periodos.values():
@@ -201,6 +243,7 @@ def detectar_encabezado(ws) -> Encabezado:
                 )
             periodos[i] = periodo
         if not periodos:
+            anio = _anio_de_fila(titulos) or anio
             continue
 
         col_nombre = next((i for i, t in enumerate(titulos) if t in ENCABEZADOS_NOMBRE), None)
@@ -209,12 +252,13 @@ def detectar_encabezado(ws) -> Encabezado:
     if vio_cedula:
         raise ErrorArchivo(
             f"No se encontró ninguna columna de periodo en la hoja '{ws.title}'. "
-            "Los encabezados de los meses deben ser como 202601 o ene-26.",
+            "Los encabezados de los meses deben ser como 202601, ene-26 o ENERO "
+            "(con el año en una celda «AÑO 2026» encima).",
             tiene_cedula=True,
         )
     raise ErrorArchivo(
         f"No se encontró la columna de cédula en las primeras {FILAS_ENCABEZADO} filas de la "
-        f"hoja '{ws.title}'. El encabezado debe ser ID MD, CÉDULA, DOCUMENTO o IDENTIFICACIÓN."
+        f"hoja '{ws.title}'. El encabezado debe ser ID MD, ID, CÉDULA, DOCUMENTO o IDENTIFICACIÓN."
     )
 
 
@@ -239,13 +283,18 @@ def seleccionar_hoja(wb):
     if any(e.tiene_cedula for e in errores):
         raise ErrorArchivo(
             "Ninguna hoja del archivo tiene columnas de periodo junto a la columna de "
-            "identificación. Los encabezados de los meses deben ser como 202601 o ene-26.",
+            "identificación. Los encabezados de los meses deben ser como 202601, ene-26 "
+            "o ENERO (con el año en una celda «AÑO 2026» encima).",
             tiene_cedula=True,
         )
     raise ErrorArchivo(
         "Ninguna hoja del archivo tiene la columna de cédula. "
-        "El encabezado debe ser ID MD, CÉDULA, DOCUMENTO o IDENTIFICACIÓN."
+        "El encabezado debe ser ID MD, ID, CÉDULA, DOCUMENTO o IDENTIFICACIÓN."
     )
+
+
+def _vacia(valor) -> bool:
+    return valor is None or (isinstance(valor, str) and valor.strip() == "")
 
 
 def leer_registros(ws, enc: Encabezado) -> Lectura:
@@ -256,8 +305,17 @@ def leer_registros(ws, enc: Encabezado) -> Lectura:
     for n, fila in enumerate(
         ws.iter_rows(min_row=enc.fila + 1, values_only=True), start=enc.fila + 1
     ):
-        documento = parsear_cedula(_celda(fila, enc.col_id))
+        cedula = _celda(fila, enc.col_id)
+        documento = parsear_cedula(cedula)
         if documento is None:
+            # Una fila con nombre y valores pero sin cédula no se puede cargar:
+            # se informa para que la corrijan. Las filas vacías o de notas se ignoran.
+            nombre = _celda(fila, enc.col_nombre)
+            if (
+                _vacia(cedula) and not _vacia(nombre)
+                and any(not _vacia(_celda(fila, col)) for col in enc.periodos)
+            ):
+                lectura.sin_cedula.append({"fila": n, "nombre": str(nombre).strip()})
             continue
 
         registros = []
@@ -334,8 +392,8 @@ def cargar_citas(archivo: Path) -> dict:
 
         cargados = [r for r in lectura.registros if r[0] in catalogo]
         for documento, periodo, cantidad in cargados:
-            nombre, programa = catalogo[documento]
-            cur.execute(SQL_UPSERT, (documento, periodo, cantidad, nombre, programa))
+            nombre, _programa = catalogo[documento]
+            cur.execute(SQL_UPSERT, (documento, periodo, cantidad, nombre))
 
         conn.commit()
         cur.close()
@@ -352,6 +410,8 @@ def cargar_citas(archivo: Path) -> dict:
     ]
     for medico in sin_catalogo:
         print(f"[WARN] Cédula {medico['documento']} no está en el catálogo: {medico['nombre']}")
+    for omitida in lectura.sin_cedula:
+        print(f"[WARN] Fila {omitida['fila']} sin cédula, no se cargó: {omitida['nombre']}")
     for advertencia in lectura.advertencias:
         print(f"[WARN] {advertencia}")
 
@@ -362,6 +422,7 @@ def cargar_citas(archivo: Path) -> dict:
         "sin_catalogo": sin_catalogo,
         "sin_programa": sum(1 for d in importados if catalogo[d][1] is None),
         "advertencias": limitar_advertencias(lectura.advertencias),
+        "sin_cedula": lectura.sin_cedula,
     }
 
     print()
@@ -371,6 +432,7 @@ def cargar_citas(archivo: Path) -> dict:
     print(f"  Profesionales      : {resultado['profesionales']}")
     print(f"  Sin catálogo       : {len(sin_catalogo)}")
     print(f"  Sin programa       : {resultado['sin_programa']}")
+    print(f"  Filas sin cédula   : {len(lectura.sin_cedula)}")
     print(f"  Advertencias       : {len(lectura.advertencias)}")
     print("=" * 50)
     print("[OK] Carga de citas atendidas completada")

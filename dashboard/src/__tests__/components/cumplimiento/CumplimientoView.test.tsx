@@ -2,17 +2,22 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { act, render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 const mockUseSWR = jest.fn();
 jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => mockUseSWR(...args) }));
 
+// @react-pdf/renderer solo corre en el navegador: aquí se verifica qué se le pide al generador
+const mockDescargar = jest.fn();
+jest.mock("@/components/cumplimiento/pdf/descargarInforme", () => ({
+  descargarInforme: (...args: unknown[]) => mockDescargar(...args),
+}));
+
 import CumplimientoView from "@/components/cumplimiento/CumplimientoView";
 import { construirCumplimiento } from "@/lib/cumplimiento/calcular";
 import type { RespuestaCumplimiento } from "@/lib/cumplimiento/tipos";
 import { FetchError } from "@/lib/fetcher";
-import { ANCHO_IMPRESION_PX, ESPERA_LAYOUT_MS } from "@/hooks/useImpresion";
 
 const DATOS: RespuestaCumplimiento = {
   atribucion: "ordenador",
@@ -138,69 +143,50 @@ describe("CumplimientoView", () => {
     expect(screen.getByRole("button", { name: /^Profesional:/ })).toHaveTextContent("Todos los profesionales");
   });
 
-  it("no ofrece la exportación a PDF mientras esté deshabilitada", () => {
+  it("el filtro de programas muestra las etiquetas del Excel y no ofrece el total", () => {
     swr({ data: DATOS });
     render(<CumplimientoView />);
 
-    expect(screen.queryByRole("button", { name: /Exportar PDF/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Todos" }));
+
+    expect(screen.getByLabelText("CPR")).toBeInTheDocument();
+    expect(screen.getByLabelText("Pediatría")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/TOTAL/)).not.toBeInTheDocument();
   });
 
   describe("exportar a PDF", () => {
-    const botonExportar = () => screen.getByRole("button", { name: /Exportar PDF|Preparando/ });
+    const botonExportar = () => screen.getByRole("button", { name: /Exportar PDF|Generando PDF/ });
+    const SIN_CITAS = { ...DATOS, periodos_disponibles: [], periodo_desde: null, periodo_hasta: null, periodos: [], ...construirCumplimiento({ entradas: [], metas: [] }) };
 
     beforeEach(() => {
-      jest.useFakeTimers();
-      window.print = jest.fn();
+      mockDescargar.mockReset();
+      mockDescargar.mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    /** Dos cuadros de animación más la espera del layout. */
-    function esperarLayout() {
-      act(() => {
-        jest.advanceTimersToNextFrame();
-      });
-      act(() => {
-        jest.advanceTimersToNextFrame();
-      });
-      act(() => {
-        jest.advanceTimersByTime(ESPERA_LAYOUT_MS);
-      });
-    }
-
-    it("el botón está deshabilitado mientras carga por primera vez", () => {
+    it("no se ofrece mientras carga, si la consulta falla sin datos o si no hay citas cargadas", () => {
       swr({ isLoading: true });
-      render(<CumplimientoView exportarPdf />);
+      const { rerender } = render(<CumplimientoView />);
+      expect(screen.queryByRole("button", { name: /Exportar PDF/ })).not.toBeInTheDocument();
 
-      expect(botonExportar()).toBeDisabled();
-    });
-
-    it("el botón está deshabilitado cuando la consulta falla sin datos previos", () => {
       swr({ error: new FetchError("Sin permisos suficientes", 403, null) });
-      render(<CumplimientoView exportarPdf />);
+      rerender(<CumplimientoView />);
+      expect(screen.queryByRole("button", { name: /Exportar PDF/ })).not.toBeInTheDocument();
 
-      expect(botonExportar()).toBeDisabled();
-    });
-
-    it("el botón está deshabilitado cuando no hay citas cargadas", () => {
-      swr({ data: { ...DATOS, periodos_disponibles: [], periodo_desde: null, periodo_hasta: null, periodos: [], ...construirCumplimiento({ entradas: [], metas: [] }) } });
-      render(<CumplimientoView exportarPdf />);
-
-      expect(botonExportar()).toBeDisabled();
+      swr({ data: SIN_CITAS });
+      rerender(<CumplimientoView />);
+      expect(screen.queryByRole("button", { name: /Exportar PDF/ })).not.toBeInTheDocument();
     });
 
     it("el botón está deshabilitado mientras se actualizan los datos", () => {
       swr({ data: DATOS, isValidating: true });
-      render(<CumplimientoView exportarPdf />);
+      render(<CumplimientoView />);
 
       expect(botonExportar()).toBeDisabled();
     });
 
     it("con datos en pantalla el botón está habilitado en la vista general y en la de un profesional", () => {
       swr({ data: DATOS });
-      render(<CumplimientoView exportarPdf />);
+      render(<CumplimientoView />);
 
       expect(botonExportar()).toBeEnabled();
 
@@ -208,74 +194,70 @@ describe("CumplimientoView", () => {
       expect(botonExportar()).toBeEnabled();
     });
 
-    it("al exportar fija el ancho de impresión, abre el diálogo y luego restaura el layout", () => {
+    it("genera el informe de la vista general con los datos en pantalla", async () => {
       swr({ data: DATOS });
-      render(<CumplimientoView exportarPdf />);
-      const region = screen.getByTestId("cumplimiento-imprimible");
-      expect(region).not.toHaveClass("cumplimiento-imprimiendo");
-      expect(region.style.width).toBe("");
+      render(<CumplimientoView />);
 
       fireEvent.click(botonExportar());
 
-      expect(region).toHaveClass("cumplimiento-imprimiendo");
-      expect(region.style.width).toBe(`${ANCHO_IMPRESION_PX}px`);
-      expect(botonExportar()).toBeDisabled();
-      expect(window.print).not.toHaveBeenCalled();
-
-      esperarLayout();
-      expect(window.print).toHaveBeenCalledTimes(1);
-
-      act(() => {
-        window.dispatchEvent(new Event("afterprint"));
+      await waitFor(() => expect(mockDescargar).toHaveBeenCalledTimes(1));
+      expect(mockDescargar).toHaveBeenCalledWith({
+        datos: DATOS,
+        programas: null,
+        documento: null,
+        generado: expect.any(Date),
       });
-      expect(region).not.toHaveClass("cumplimiento-imprimiendo");
-      expect(region.style.width).toBe("");
-      expect(botonExportar()).toBeEnabled();
     });
 
-    it("el encabezado de impresión indica el rango, la atribución y la fecha de generación", () => {
-      jest.setSystemTime(new Date(2026, 9, 8, 10, 0));
+    it("genera el informe del profesional seleccionado con el filtro de programas aplicado", async () => {
       swr({ data: DATOS });
-      render(<CumplimientoView exportarPdf />);
-
-      const encabezado = screen.getByTestId("encabezado-impresion");
-      expect(encabezado).toHaveTextContent("Periodo: Dic 2025 – Feb 2026");
-      expect(encabezado).toHaveTextContent("Órdenes atribuidas al médico ordenador");
-      expect(encabezado).toHaveTextContent("Generado el 8 de octubre de 2026");
-      expect(encabezado).not.toHaveTextContent("Programa");
-      expect(encabezado).not.toHaveTextContent("Profesional");
-    });
-
-    it("el encabezado de impresión incluye el programa cuando hay un filtro aplicado", () => {
-      swr({ data: DATOS });
-      render(<CumplimientoView exportarPdf />);
+      render(<CumplimientoView />);
 
       fireEvent.click(screen.getByRole("button", { name: "Todos" }));
       fireEvent.click(screen.getByRole("button", { name: "Quitar todos" }));
       fireEvent.click(screen.getByLabelText("RCV"));
-      expect(screen.getByTestId("encabezado-impresion")).not.toHaveTextContent("Programa: RCV");
-
       fireEvent.click(screen.getByRole("button", { name: /Aplicar filtros/ }));
-
-      expect(screen.getByTestId("encabezado-impresion")).toHaveTextContent("Programa: RCV");
-    });
-
-    it("el encabezado de impresión identifica al profesional en la vista de detalle", () => {
-      swr({ data: DATOS });
-      render(<CumplimientoView exportarPdf />);
-
       fireEvent.click(screen.getByRole("button", { name: /Ver el detalle de PEREZ JUAN/ }));
 
-      expect(screen.getByTestId("encabezado-impresion")).toHaveTextContent(
-        "Profesional: PEREZ JUAN · Cédula 10234567 · Programa RCV"
-      );
+      fireEvent.click(botonExportar());
+
+      await waitFor(() => expect(mockDescargar).toHaveBeenCalledTimes(1));
+      expect(mockDescargar.mock.calls[0][0]).toMatchObject({ programas: ["RCV"], documento: "10234567" });
     });
 
-    it("sin datos no hay encabezado de impresión", () => {
-      swr({ isLoading: true });
-      render(<CumplimientoView exportarPdf />);
+    it("muestra el estado de carga mientras genera y no permite pedir otro", async () => {
+      let terminar: () => void = () => {};
+      mockDescargar.mockReturnValue(new Promise<void>((r) => (terminar = r)));
+      swr({ data: DATOS });
+      render(<CumplimientoView />);
 
-      expect(screen.queryByTestId("encabezado-impresion")).not.toBeInTheDocument();
+      fireEvent.click(botonExportar());
+
+      await waitFor(() => expect(botonExportar()).toHaveTextContent("Generando PDF..."));
+      expect(botonExportar()).toBeDisabled();
+
+      await act(async () => terminar());
+
+      expect(botonExportar()).toHaveTextContent("Exportar PDF");
+      expect(botonExportar()).toBeEnabled();
+      expect(mockDescargar).toHaveBeenCalledTimes(1);
+    });
+
+    it("informa el error si no se pudo generar el PDF y lo limpia al reintentar", async () => {
+      const consola = jest.spyOn(console, "error").mockImplementation(() => {});
+      mockDescargar.mockRejectedValueOnce(new Error("falló"));
+      swr({ data: DATOS });
+      render(<CumplimientoView />);
+
+      fireEvent.click(botonExportar());
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo generar el PDF. Intente de nuevo.");
+      expect(botonExportar()).toBeEnabled();
+
+      fireEvent.click(botonExportar());
+      await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+      expect(consola).toHaveBeenCalled();
+      consola.mockRestore();
     });
   });
 });

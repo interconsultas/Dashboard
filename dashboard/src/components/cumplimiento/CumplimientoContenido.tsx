@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CATEGORIAS } from "@/lib/cumplimiento/categorias";
+import { TEXTO_ATRIBUCION } from "@/lib/cumplimiento/informe";
 import type { RespuestaCumplimiento } from "@/lib/cumplimiento/tipos";
 import {
   contarSinPrograma,
@@ -21,19 +22,15 @@ interface Props {
 }
 
 const RUTA_CITAS = "/admin/citas-atendidas";
-const RUTA_PROFESIONALES = "/admin/medicos";
-
-export const TEXTO_ATRIBUCION: Record<RespuestaCumplimiento["atribucion"], string> = {
-  ordenador: "Órdenes atribuidas al médico ordenador",
-  digitador: "Órdenes atribuidas al usuario que digitó",
-};
+/** El programa de metas se resuelve desde la especialidad del profesional. */
+const RUTA_MAPEO_PROGRAMAS = "/admin/metas/programas";
 
 function BotonVolver({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="print:hidden flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
+      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -64,7 +61,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
     );
   }
 
-  const atribucion = <p className="print:hidden text-[11px] text-gray-500">{TEXTO_ATRIBUCION[datos.atribucion]}</p>;
+  const atribucion = <p className="text-[11px] text-gray-500">{TEXTO_ATRIBUCION[datos.atribucion]}</p>;
 
   // ── Tablero de un profesional ──
   if (documento !== null) {
@@ -88,10 +85,10 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
     const sinPrograma = contarSinPrograma(filas) > 0;
 
     return (
-      <div className="space-y-6 print:space-y-4">
+      <div className="space-y-6">
         <div
           data-testid="encabezado-profesional"
-          className="print:hidden bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 flex flex-wrap items-center justify-between gap-4"
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 flex flex-wrap items-center justify-between gap-4"
         >
           <div className="min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-brand-navy break-words">{profesional.nombre}</h2>
@@ -112,11 +109,11 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
         </div>
 
         {sinPrograma && (
-          <p role="note" className="print:break-inside-avoid rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          <p role="note" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
             Este profesional tiene citas atendidas en periodos sin programa asignado. Sin programa no hay
             meta y no se calcula el porcentaje de esos periodos.{" "}
-            <Link href={RUTA_PROFESIONALES} className="font-semibold underline">
-              Asignar el programa en Profesionales
+            <Link href={RUTA_MAPEO_PROGRAMAS} className="font-semibold underline">
+              Asignar la meta por especialidad
             </Link>
           </p>
         )}
@@ -128,12 +125,12 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
           subtitulo="Promedio de las categorías con meta en cada mes"
         />
 
-        <div className="space-y-3 print:break-inside-avoid">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Tendencia por indicador</p>
             <LeyendaTendencia />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 print:grid-cols-4 [.cumplimiento-imprimiendo_&]:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {CATEGORIAS.map((c) => (
               <TendenciaIndicador key={c.clave} etiqueta={c.etiqueta} serie={serieDeCategoria(serie, c.clave)} />
             ))}
@@ -151,15 +148,15 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
   const sinPrograma = contarSinPrograma(datos.filas);
 
   return (
-    <div className="space-y-6 print:space-y-4">
+    <div className="space-y-6">
       {sinPrograma > 0 && (
-        <p role="note" className="print:break-inside-avoid rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <p role="note" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           {sinPrograma === 1
             ? "1 profesional del listado tiene citas atendidas pero no tiene programa asignado."
             : `${sinPrograma} profesionales del listado tienen citas atendidas pero no tienen programa asignado.`}{" "}
           Sin programa no hay meta y no se calcula su porcentaje.{" "}
-          <Link href={RUTA_PROFESIONALES} className="font-semibold underline">
-            Asignar el programa en Profesionales
+          <Link href={RUTA_MAPEO_PROGRAMAS} className="font-semibold underline">
+            Asignar la meta por especialidad
           </Link>
         </p>
       )}

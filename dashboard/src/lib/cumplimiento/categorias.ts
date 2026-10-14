@@ -23,15 +23,51 @@ export const CATEGORIAS: readonly Categoria[] = [
   { clave: "remisiones_ext", etiqueta: "Remisiones red externa", escala: "x100" },
 ];
 
+/**
+ * Programas de metas que se pueden asignar a un profesional (por el mapeo de
+ * especialidades o por periodo en citas atendidas), en el orden de la hoja
+ * METAS del Excel del cliente.
+ */
 export const PROGRAMAS_META = [
   "PROGRAMADA",
   "NO PROGRAMADA",
   "RCV",
   "CyD-RIAS-PF-SALUD PÚBLICA",
   "CPR",
+  "DERMATOLOGÍA",
+  "MEDICINA INTERNA",
+  "GINECOLOGÍA Y OBSTETRICIA",
+  "PEDIATRÍA",
 ] as const;
 
 export type ProgramaMeta = (typeof PROGRAMAS_META)[number];
+
+/**
+ * Fila informativa del total de médicos generales integradores: se edita en
+ * Metas, pero no se asigna a profesionales ni entra en ningún cálculo.
+ */
+export const PROGRAMA_TOTAL_MGI = "TOTAL MGI";
+
+/** Filas de la matriz de metas, en el orden de la hoja METAS. */
+export const PROGRAMAS_EDITABLES: readonly string[] = [PROGRAMA_TOTAL_MGI, ...PROGRAMAS_META];
+
+const ETIQUETAS_PROGRAMA: Record<string, string> = {
+  [PROGRAMA_TOTAL_MGI]: "TOTAL MÉDICOS GENERALES INTEGRADORES",
+  PROGRAMADA: "PROGRAMADA",
+  "NO PROGRAMADA": "NO PROGRAMADA",
+  RCV: "RCV",
+  "CyD-RIAS-PF-SALUD PÚBLICA": "CyD-RIAS-PF-SALUD PÚBLICA",
+  CPR: "CPR",
+  "DERMATOLOGÍA": "Dermatología",
+  "MEDICINA INTERNA": "Medicina interna",
+  "GINECOLOGÍA Y OBSTETRICIA": "Ginecología y obstetricia",
+  "PEDIATRÍA": "Pediatría",
+};
+
+/** Etiqueta del Excel para un programa; la clave misma si no está en el catálogo. */
+export function etiquetaPrograma(clave: string): string {
+  return ETIQUETAS_PROGRAMA[clave] ?? clave;
+}
 
 export function esCategoria(valor: unknown): valor is string {
   return typeof valor === "string" && CATEGORIAS.some((c) => c.clave === valor);
@@ -39,6 +75,11 @@ export function esCategoria(valor: unknown): valor is string {
 
 export function esProgramaMeta(valor: unknown): valor is ProgramaMeta {
   return typeof valor === "string" && (PROGRAMAS_META as readonly string[]).includes(valor);
+}
+
+/** Programa que admite metas: los asignables más la fila TOTAL MGI. */
+export function esProgramaEditable(valor: unknown): valor is string {
+  return typeof valor === "string" && PROGRAMAS_EDITABLES.includes(valor);
 }
 
 export function escalaDe(clave: string): Escala | null {

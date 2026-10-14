@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import pool, { query } from "@/lib/db";
 import { requireAuth } from "@/lib/middleware-roles";
 import { clearCache } from "@/lib/cache";
-import { normalizarProgramaMeta } from "@/lib/cumplimiento/categorias";
 import { parsePeriodo } from "@/lib/cumplimiento/periodo";
 
 // cantidad_citas es INT
@@ -30,25 +29,28 @@ export async function GET(request: Request) {
 
   // Profesionales activos con sus citas del periodo, más las citas del periodo
   // cuyo profesional está inactivo o ya no figura en el catálogo.
+  // programa es el que resulta de la especialidad del profesional en
+  // programa_meta_mapeo (solo lectura en la grilla).
   const rows = await query<{
     documento: string;
     nombre: string | null;
     estado: string | null;
-    programa_meta: string | null;
-    cantidad_citas: number | null;
     programa: string | null;
+    cantidad_citas: number | null;
   }>(
-    `SELECT m.identificacion::text AS documento, m.nombre, m.estado, m.programa_meta,
-            c.cantidad_citas, c.programa
+    `SELECT m.identificacion::text AS documento, m.nombre, m.estado, map.programa AS programa,
+            c.cantidad_citas
      FROM medicos m
+     LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
      LEFT JOIN citas_atendidas c
             ON c.documento = m.identificacion AND c.periodo = $1
      WHERE m.estado = 'ACTIVO'
      UNION ALL
      SELECT c.documento::text AS documento, COALESCE(m.nombre, c.nombre_medico) AS nombre,
-            m.estado, m.programa_meta, c.cantidad_citas, c.programa
+            m.estado, map.programa AS programa, c.cantidad_citas
      FROM citas_atendidas c
      LEFT JOIN medicos m ON m.identificacion = c.documento
+     LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
      WHERE c.periodo = $1
        AND (m.identificacion IS NULL OR m.estado IS DISTINCT FROM 'ACTIVO')
      ORDER BY nombre`,
@@ -76,7 +78,7 @@ export async function PUT(request: Request) {
   }
 
   // Se valida todo antes de escribir: si una fila es inválida no se guarda ninguna
-  const guardar: { documento: string; cantidad_citas: number; programa: string | null }[] = [];
+  const guardar: { documento: string; cantidad_citas: number }[] = [];
   const eliminar: string[] = [];
   const vistos = new Set<string>();
 
@@ -96,11 +98,8 @@ export async function PUT(request: Request) {
     }
     vistos.add(documento);
 
+    // El programa no se recibe: sale del mapeo por especialidad
     const { cantidad_citas } = fila;
-    const programa = normalizarProgramaMeta(fila.programa);
-    if (!programa.valido) {
-      return badRequest(`${ref}: programa no válido`);
-    }
     if (cantidad_citas === null) {
       eliminar.push(documento);
       continue;
@@ -108,7 +107,7 @@ export async function PUT(request: Request) {
     if (!Number.isInteger(cantidad_citas) || cantidad_citas < 0 || cantidad_citas > CITAS_MAX) {
       return badRequest(`${ref}: las citas deben ser un número entero mayor o igual que cero`);
     }
-    guardar.push({ documento, cantidad_citas, programa: programa.valor });
+    guardar.push({ documento, cantidad_citas });
   }
 
   // Toda cédula que se guarda debe existir en el catálogo; de ahí sale el nombre.
@@ -150,15 +149,14 @@ export async function PUT(request: Request) {
       const values: unknown[] = [];
       const tuplas = guardar.map((g) => {
         const base = values.length;
-        values.push(g.documento, periodo, g.cantidad_citas, g.programa, nombres.get(g.documento));
-        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+        values.push(g.documento, periodo, g.cantidad_citas, nombres.get(g.documento));
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
       });
       await client.query(
-        `INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, programa, nombre_medico)
+        `INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico)
          VALUES ${tuplas.join(", ")}
          ON CONFLICT (documento, periodo) DO UPDATE SET
            cantidad_citas = EXCLUDED.cantidad_citas,
-           programa = EXCLUDED.programa,
            nombre_medico = EXCLUDED.nombre_medico`,
         values
       );

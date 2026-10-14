@@ -13,6 +13,7 @@ const RESULTADO = {
   sin_catalogo: [],
   sin_programa: 0,
   advertencias: [],
+  sin_cedula: [],
 };
 
 const mockFetch = jest.fn();
@@ -91,6 +92,7 @@ describe("ImportarCitasExcel", () => {
     expect(screen.queryByText(/no están en el catálogo/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/sin programa/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/advertencia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/sin cédula/i)).not.toBeInTheDocument();
   });
 
   it("usa el singular cuando se carga un solo registro de un solo profesional", async () => {
@@ -127,7 +129,7 @@ describe("ImportarCitasExcel", () => {
     );
   });
 
-  it("avisa cuántos profesionales no tienen programa y enlaza a Profesionales", async () => {
+  it("avisa cuántos profesionales no tienen programa y enlaza al mapeo por especialidad", async () => {
     responder({ ...RESULTADO, sin_programa: 4 });
     renderImportar();
 
@@ -135,7 +137,10 @@ describe("ImportarCitasExcel", () => {
 
     const nota = (await screen.findByText(/4 profesionales cargados no tienen programa/i))
       .closest("p") as HTMLElement;
-    expect(within(nota).getByRole("link")).toHaveAttribute("href", "/admin/medicos");
+    expect(within(nota).getByRole("link", { name: "Asignar la meta por especialidad" })).toHaveAttribute(
+      "href",
+      "/admin/metas/programas"
+    );
   });
 
   it("muestra las advertencias del archivo", async () => {
@@ -149,6 +154,49 @@ describe("ImportarCitasExcel", () => {
 
     expect(await screen.findByText("1 advertencia")).toBeInTheDocument();
     expect(screen.getByText(/Fila 5 \(cédula 11\)/)).toBeInTheDocument();
+  });
+
+  it("lista las filas sin cédula que no se cargaron con número de fila y nombre", async () => {
+    responder({
+      ...RESULTADO,
+      sin_cedula: [
+        { fila: 50, nombre: "PEREZ JUAN" },
+        { fila: 92, nombre: "GOMEZ ANA" },
+      ],
+    });
+    renderImportar();
+
+    seleccionarArchivo();
+
+    const aviso = (await screen.findByText(/2 filas del archivo no tienen cédula/i))
+      .closest("div") as HTMLElement;
+    expect(aviso).toHaveTextContent(/columna ID/);
+    expect(aviso).toHaveTextContent(/no se cargaron/);
+    const items = within(aviso).getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent("Fila 50 — PEREZ JUAN");
+    expect(items[1]).toHaveTextContent("Fila 92 — GOMEZ ANA");
+  });
+
+  it("usa el singular cuando hay una sola fila sin cédula", async () => {
+    responder({ ...RESULTADO, sin_cedula: [{ fila: 7, nombre: "PEREZ JUAN" }] });
+    renderImportar();
+
+    seleccionarArchivo();
+
+    expect(
+      await screen.findByText(/1 fila del archivo no tiene cédula/i)
+    ).toBeInTheDocument();
+  });
+
+  it("tolera un resultado sin la lista de filas sin cédula", async () => {
+    const { sin_cedula: _omitido, ...anterior } = RESULTADO;
+    responder(anterior);
+    renderImportar();
+
+    seleccionarArchivo();
+
+    expect(await screen.findByRole("status")).toBeInTheDocument();
+    expect(screen.queryByText(/sin cédula|no tienen? cédula/i)).not.toBeInTheDocument();
   });
 
   it("muestra el mensaje del API si la importación falla y no notifica al contenedor", async () => {

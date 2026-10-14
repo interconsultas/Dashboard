@@ -44,6 +44,11 @@ export function fmtTasa(valor: number | null): string {
 
 /* ── Series para las gráficas ────────────────── */
 
+/** Techo del eje Y: siempre deja visible la línea del 100%. */
+export function techoEje(max: number): number {
+  return Math.max(120, Math.ceil(max / 20) * 20);
+}
+
 export interface ValorPeriodo {
   periodo: number;
   valor: number | null;

@@ -126,16 +126,42 @@ class TestVistaCumplimientoOrdenes:
     def test_indice_unico_para_refresh_concurrente(self):
         sql = _leer("013_cumplimiento.sql")
         columnas = _columnas_indice_unico(sql, "vm_cumpl_ordenes")
-        assert columnas == ["categoria", "periodo", "numero_remite", "usuario_txt"]
+        assert columnas == ["categoria", "periodo", "numero_remite", "usuario_txt", "nombre_medico"]
         assert re.search(
             r"idx_vm_cumpl_ordenes_uq ON vm_cumpl_ordenes \([^)]*\)\s*NULLS NOT DISTINCT",
             sql,
+        )
+
+    @pytest.mark.parametrize("categoria", sorted(CATEGORIAS))
+    def test_cada_rama_expone_y_agrupa_por_nombre_medico(self, categoria):
+        bloque = _bloque_vista(_leer("013_cumplimiento.sql"), "vm_cumpl_ordenes")
+        rama = next(r for r in bloque.split("UNION ALL") if f"'{categoria}'" in r)
+        select = rama.split("FROM")[0]
+        group_by = rama.split("GROUP BY")[1]
+        columnas_grupo = [c.strip() for c in group_by.split(",")]
+        assert re.search(r"\bnombre_medico\b", select)
+        assert columnas_grupo == ["periodo", "numero_remite", "usuario_txt", "nombre_medico"]
+
+    def test_indice_por_periodo_y_nombre_medico(self):
+        sql = _leer("013_cumplimiento.sql")
+        assert re.search(
+            r"CREATE INDEX \w+ ON vm_cumpl_ordenes \(periodo, nombre_medico\);", sql
         )
 
     def test_no_reutiliza_nombres_que_003_elimina(self):
         sql = _leer("013_cumplimiento.sql")
         assert "vm_cumplimiento_mensual" not in sql
         assert "vm_tasas_por_medico" not in sql
+
+    def test_no_vuelve_a_crear_medicos_programa_meta(self):
+        # 014_metas_v5.sql elimina la columna; re-ejecutar 013 no debe recrearla
+        sql = _leer("013_cumplimiento.sql")
+        assert "programa_meta" not in sql
+
+    def test_no_vuelve_a_crear_citas_atendidas_programa(self):
+        # 014_metas_v5.sql elimina el programa por periodo; re-ejecutar 013 no debe recrearlo
+        sql = _leer("013_cumplimiento.sql")
+        assert not re.search(r"ALTER TABLE citas_atendidas", sql)
 
     def test_es_sql_plano_sin_metacomandos_psql(self):
         sql = (SQL_DIR / "013_cumplimiento.sql").read_text(encoding="utf-8")
@@ -154,6 +180,13 @@ class TestVistaCumplimientoOrdenes:
 
 
 class TestOrdenDeMigraciones:
+
+    def test_init_db_ejecuta_014_despues_de_013(self):
+        script = (RAIZ / "docker" / "init-db.sh").read_text(encoding="utf-8")
+        assert "/sql/014_metas_v5.sql" in script
+        assert script.index("/sql/013_cumplimiento.sql") < script.index(
+            "/sql/014_metas_v5.sql"
+        )
 
     def test_init_db_ejecuta_013_despues_de_006(self):
         script = (RAIZ / "docker" / "init-db.sh").read_text(encoding="utf-8")

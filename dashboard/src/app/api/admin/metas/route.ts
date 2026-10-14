@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/middleware-roles";
 import { clearCache } from "@/lib/cache";
-import { esCategoria, esProgramaMeta, escalaDe } from "@/lib/cumplimiento/categorias";
+import { esCategoria, esProgramaEditable, escalaDe } from "@/lib/cumplimiento/categorias";
 import { parseAnio } from "@/lib/cumplimiento/periodo";
 
 // valor_meta es NUMERIC(12,6): admite hasta 6 dígitos enteros
@@ -70,7 +70,8 @@ export async function PUT(request: Request) {
       return badRequest(`Meta ${n}: formato no válido`);
     }
     const { programa, tipo_prestacion, valor_meta } = meta;
-    if (!esProgramaMeta(programa)) {
+    // Incluye TOTAL MGI: es editable aunque no se asigne a profesionales
+    if (!esProgramaEditable(programa)) {
       return badRequest(`Meta ${n}: programa no válido`);
     }
     if (!esCategoria(tipo_prestacion)) {

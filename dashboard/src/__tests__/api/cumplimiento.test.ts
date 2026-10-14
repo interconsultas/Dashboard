@@ -111,6 +111,7 @@ describe("POST /api/cumplimiento", () => {
       ["rango de 25 meses", { periodo_desde: 202401, periodo_hasta: 202601 }],
       ["programas que no es una lista", { ...RANGO, programas: "RCV" }],
       ["programa desconocido", { ...RANGO, programas: ["RCV", "OTRO"] }],
+      ["programa TOTAL MGI (no asignable)", { ...RANGO, programas: ["TOTAL MGI"] }],
       ["programa que no es texto", { ...RANGO, programas: [5] }],
       ["documento con letras", { ...RANGO, documento: "12a45" }],
       ["documento con inyección", { ...RANGO, documento: "1 OR 1=1" }],
@@ -147,19 +148,41 @@ describe("POST /api/cumplimiento", () => {
       expect(sql).toContain("LEFT JOIN medicos m ON m.identificacion = c.documento");
       expect(sql).toContain("FROM vm_cumpl_ordenes WHERE periodo BETWEEN $1 AND $2 GROUP BY 1, 2, 3");
       expect(sql).toContain("WHERE c.periodo BETWEEN $1 AND $2");
-      expect(sql).toContain("COALESCE(c.programa, m.programa_meta)");
+      expect(sql).toContain(
+        "LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))"
+      );
+      expect(sql).toContain("map.programa AS programa");
+      expect(sql).not.toContain("c.programa");
+      expect(sql).not.toContain("programa_meta,");
+      expect(sql).not.toContain("m.programa_meta");
       expect(sql).not.toContain("202601");
       expect(sql).not.toContain("202603");
       expect(params).toEqual([202601, 202603]);
     });
 
-    it("por defecto atribuye las órdenes al médico ordenador", async () => {
+    it("por defecto atribuye las órdenes al nombre del profesional", async () => {
+      const res = await POST(req(RANGO));
+
+      const { sql, params } = consultaFilas();
+      expect(sql).toContain("SELECT categoria, periodo, nombre_medico, SUM(ordenes) AS ordenes");
+      expect(sql).toContain(
+        "ON o.periodo = c.periodo AND UPPER(TRIM(o.nombre_medico)) = UPPER(TRIM(COALESCE(m.nombre, c.nombre_medico)))"
+      );
+      expect(sql).not.toContain("o.numero_remite");
+      expect(sql).not.toContain("o.usuario_txt");
+      expect(params).toEqual([202601, 202603]);
+      expect((await res.json()).atribucion).toBe("nombre");
+    });
+
+    it("con CUMPLIMIENTO_ATRIBUCION=ordenador atribuye las órdenes al médico ordenador", async () => {
+      process.env.CUMPLIMIENTO_ATRIBUCION = "ordenador";
       await POST(req(RANGO));
 
       const { sql } = consultaFilas();
       expect(sql).toContain("SELECT categoria, periodo, numero_remite, SUM(ordenes) AS ordenes");
       expect(sql).toContain("ON o.periodo = c.periodo AND o.numero_remite = c.documento");
       expect(sql).not.toContain("o.usuario_txt");
+      expect(sql).not.toContain("o.nombre_medico");
       expect((await (await POST(req(RANGO))).json()).atribucion).toBe("ordenador");
     });
 
@@ -172,6 +195,7 @@ describe("POST /api/cumplimiento", () => {
       expect(sql).toContain("SELECT categoria, periodo, usuario_txt, SUM(ordenes) AS ordenes");
       expect(sql).toContain("ON o.periodo = c.periodo AND o.usuario_txt = m.usuario_txt");
       expect(sql).not.toContain("numero_remite");
+      expect(sql).not.toContain("o.nombre_medico");
       expect(params).toEqual([202601, 202603]);
       expect((await res.json()).atribucion).toBe("digitador");
     });
@@ -185,11 +209,11 @@ describe("POST /api/cumplimiento", () => {
       expect(params).toEqual([202601, 202603, "10234567"]);
     });
 
-    it("filtra por programa sobre el programa resuelto, con un parámetro", async () => {
+    it("filtra por programa sobre el programa del mapeo, con un parámetro", async () => {
       await POST(req({ ...RANGO, programas: ["RCV", "CPR"] }));
 
       const { sql, params } = consultaFilas();
-      expect(sql).toContain("AND COALESCE(c.programa, m.programa_meta) = ANY($3)");
+      expect(sql).toContain("AND map.programa = ANY($3)");
       expect(sql).not.toContain("RCV");
       expect(params).toEqual([202601, 202603, ["CPR", "RCV"]]);
     });
@@ -331,7 +355,7 @@ describe("POST /api/cumplimiento", () => {
 
       expect(res.status).toBe(200);
       expect(body).toMatchObject({
-        atribucion: "ordenador",
+        atribucion: "nombre",
         periodos_disponibles: [],
         periodo_desde: null,
         periodo_hasta: null,
@@ -352,7 +376,7 @@ describe("POST /api/cumplimiento", () => {
       expect(mockSetCache).toHaveBeenCalledTimes(1);
       const [clave, datos, ttl] = mockSetCache.mock.calls[0];
       expect(clave).toContain("cumplimiento");
-      expect(datos).toMatchObject({ atribucion: "ordenador" });
+      expect(datos).toMatchObject({ atribucion: "nombre" });
       expect(ttl).toBe(60_000);
     });
 

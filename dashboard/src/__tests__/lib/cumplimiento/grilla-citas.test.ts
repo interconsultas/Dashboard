@@ -11,9 +11,8 @@ function fila(parcial: Partial<FilaCitasApi> & { documento: string }): FilaCitas
   return {
     nombre: `PROFESIONAL ${parcial.documento}`,
     estado: "ACTIVO",
-    programa_meta: null,
-    cantidad_citas: null,
     programa: null,
+    cantidad_citas: null,
     ...parcial,
   };
 }
@@ -39,8 +38,8 @@ describe("cumplimiento/grilla-citas", () => {
   });
 
   describe("construirFilas", () => {
-    it("sin registro guardado deja las citas vacías y propone el programa de metas", () => {
-      const [f] = construirFilas([fila({ documento: "1", programa_meta: "RCV" })], {});
+    it("sin registro guardado deja las citas vacías y muestra el programa de la especialidad", () => {
+      const [f] = construirFilas([fila({ documento: "1", programa: "RCV" })], {});
       expect(f).toMatchObject({
         documento: "1",
         citas: "",
@@ -51,39 +50,27 @@ describe("cumplimiento/grilla-citas", () => {
       });
     });
 
-    it("con registro guardado muestra las citas y el programa guardados", () => {
-      const [f] = construirFilas(
-        [fila({ documento: "1", programa_meta: "RCV", cantidad_citas: 80, programa: "CPR" })],
-        {}
-      );
-      expect(f).toMatchObject({ citas: "80", programa: "CPR", guardada: true, cambiada: false });
+    it("con registro guardado muestra las citas guardadas y el programa de la especialidad", () => {
+      const [f] = construirFilas([fila({ documento: "1", programa: "RCV", cantidad_citas: 80 })], {});
+      expect(f).toMatchObject({ citas: "80", programa: "RCV", guardada: true, cambiada: false });
     });
 
-    it("con registro guardado sin programa no propone el programa de metas", () => {
-      const [f] = construirFilas(
-        [fila({ documento: "1", programa_meta: "RCV", cantidad_citas: 80, programa: null })],
-        {}
-      );
+    it("sin programa en la especialidad deja el programa vacío", () => {
+      const [f] = construirFilas([fila({ documento: "1", cantidad_citas: 80 })], {});
       expect(f).toMatchObject({ citas: "80", programa: "", cambiada: false });
     });
 
-    it("aplica las ediciones sobre los valores iniciales y marca la fila como cambiada", () => {
-      const [f] = construirFilas([fila({ documento: "1", programa_meta: "RCV" })], {
+    it("aplica las ediciones de citas y marca la fila como cambiada", () => {
+      const [f] = construirFilas([fila({ documento: "1", programa: "RCV" })], {
         "1": { citas: "45" },
       });
       expect(f).toMatchObject({ citas: "45", programa: "RCV", cambiada: true });
     });
 
-    it("no marca como cambiada una edición que deja los valores guardados", () => {
-      const [f] = construirFilas(
-        [fila({ documento: "1", cantidad_citas: 80, programa: "CPR" })],
-        { "1": { citas: "80", programa: "CPR" } }
-      );
-      expect(f.cambiada).toBe(false);
-    });
-
-    it("no marca como cambiada una fila sin citas a la que solo se le cambió el programa", () => {
-      const [f] = construirFilas([fila({ documento: "1" })], { "1": { programa: "CPR" } });
+    it("no marca como cambiada una edición que deja las citas guardadas", () => {
+      const [f] = construirFilas([fila({ documento: "1", cantidad_citas: 80, programa: "CPR" })], {
+        "1": { citas: "80" },
+      });
       expect(f.cambiada).toBe(false);
     });
 
@@ -101,36 +88,33 @@ describe("cumplimiento/grilla-citas", () => {
   });
 
   describe("cambiosPendientes", () => {
-    it("incluye solo las filas cambiadas, con las citas como entero y el programa vacío como null", () => {
+    it("incluye solo las filas cambiadas, con las citas como entero y sin programa", () => {
       const filas = construirFilas(
         [
-          fila({ documento: "1", programa_meta: "RCV" }),
+          fila({ documento: "1", programa: "RCV" }),
           fila({ documento: "2" }),
           fila({ documento: "3", cantidad_citas: 10, programa: "CPR" }),
         ],
         { "1": { citas: "45" }, "2": { citas: "7" } }
       );
       expect(cambiosPendientes(filas)).toEqual([
-        { documento: "1", cantidad_citas: 45, programa: "RCV" },
-        { documento: "2", cantidad_citas: 7, programa: null },
+        { documento: "1", cantidad_citas: 45 },
+        { documento: "2", cantidad_citas: 7 },
       ]);
     });
 
     it("envía las citas borradas como null para eliminar el registro", () => {
-      const filas = construirFilas(
-        [fila({ documento: "3", cantidad_citas: 10, programa: "CPR" })],
-        { "3": { citas: "" } }
-      );
-      expect(cambiosPendientes(filas)).toEqual([
-        { documento: "3", cantidad_citas: null, programa: null },
-      ]);
+      const filas = construirFilas([fila({ documento: "3", cantidad_citas: 10, programa: "CPR" })], {
+        "3": { citas: "" },
+      });
+      expect(cambiosPendientes(filas)).toEqual([{ documento: "3", cantidad_citas: null }]);
     });
   });
 
   describe("filtrarFilas", () => {
     const filas = construirFilas(
       [
-        fila({ documento: "101", nombre: "ARIAS ANA", programa_meta: "RCV" }),
+        fila({ documento: "101", nombre: "ARIAS ANA", programa: "RCV" }),
         fila({ documento: "202", nombre: "BELTRAN LUIS" }),
         fila({ documento: "303", nombre: "CANO EVA", cantidad_citas: 5 }),
         fila({ documento: "404", nombre: "DIAZ RAUL" }),
@@ -162,7 +146,7 @@ describe("cumplimiento/grilla-citas", () => {
     it("cuenta el total, los que tienen citas y los que tienen citas sin programa", () => {
       const filas = construirFilas(
         [
-          fila({ documento: "1", programa_meta: "RCV" }),
+          fila({ documento: "1", programa: "RCV" }),
           fila({ documento: "2", cantidad_citas: 5, programa: "CPR" }),
           fila({ documento: "3", cantidad_citas: 0, programa: null }),
           fila({ documento: "4" }),

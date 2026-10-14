@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { ImportarMedicosExcel } from "@/components/medicos/ImportarMedicosExcel";
-import { PROGRAMAS_META } from "@/lib/cumplimiento/categorias";
 
 interface Medico {
   usuario_txt: string;
@@ -13,7 +12,6 @@ interface Medico {
   estado: string | null;
   programa_especialidad: string | null;
   area: string | null;
-  programa_meta: string | null;
 }
 
 const ESTADOS = ["ACTIVO", "INACTIVO"];
@@ -47,7 +45,6 @@ const EMPTY = {
   estado: "ACTIVO",
   programa_especialidad: "",
   area: "",
-  programa_meta: "",
 };
 
 function BadgeEstado({ estado }: { estado: string | null }) {
@@ -105,7 +102,6 @@ export default function MedicosPage() {
         identificacion: Number(form.identificacion) || null,
         programa_especialidad: form.programa_especialidad || null,
         area: form.area || null,
-        programa_meta: form.programa_meta || null,
       };
       const res = await fetch(url, {
         method,
@@ -133,7 +129,6 @@ export default function MedicosPage() {
       estado: m.estado ?? "ACTIVO",
       programa_especialidad: m.programa_especialidad ?? "",
       area: m.area ?? "",
-      programa_meta: m.programa_meta ?? "",
     });
     setError("");
     setModalAbierto(true);
@@ -316,26 +311,6 @@ export default function MedicosPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">
-              Programa de metas
-            </label>
-            <select
-              className={inputCls}
-              value={form.programa_meta}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, programa_meta: e.target.value }))
-              }
-            >
-              <option value="">Sin asignar</option>
-              {PROGRAMAS_META.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {error && (
             <div className="sm:col-span-2">
               <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -407,14 +382,14 @@ export default function MedicosPage() {
           <tbody className="bg-white divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={8} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className="text-center py-10 text-gray-400">
                   Cargando…
                 </td>
               </tr>
             )}
             {!isLoading && !filtrados?.length && (
               <tr>
-                <td colSpan={8} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className="text-center py-10 text-gray-400">
                   {busqueda
                     ? "Sin resultados para esa búsqueda"
                     : "No hay profesionales"}
@@ -445,9 +420,6 @@ export default function MedicosPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-xs">
                   {m.area ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
-                  {m.programa_meta ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-2">

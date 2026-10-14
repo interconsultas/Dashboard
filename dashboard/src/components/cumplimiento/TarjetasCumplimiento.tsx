@@ -23,8 +23,8 @@ export function TarjetasCumplimiento({ resumen, loading }: Props) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 print:flex-row print:break-inside-avoid">
-      <div className="lg:w-72 flex-shrink-0 grid print:w-72">
+    <div className="flex flex-col lg:flex-row gap-4">
+      <div className="lg:w-72 flex-shrink-0 grid">
         <TileCumplimiento
           testId="tile-global"
           etiqueta="Cumplimiento global"
@@ -33,7 +33,7 @@ export function TarjetasCumplimiento({ resumen, loading }: Props) {
           destacado
         />
       </div>
-      <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 print:grid-cols-4">
+      <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
         {CATEGORIAS.map((c) => (
           <TileCumplimiento
             key={c.clave}

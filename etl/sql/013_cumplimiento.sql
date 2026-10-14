@@ -2,7 +2,7 @@
 -- Dashboard de Autorizaciones — IPS Manizales
 -- 013_cumplimiento.sql
 -- Infraestructura del módulo de cumplimiento: órdenes por médico
--- y periodo en 7 categorías, programa de cada médico y metas 2026.
+-- y periodo en 7 categorías y metas 2026.
 -- Idempotente: se puede ejecutar varias veces sin efectos adversos.
 --
 -- IMPORTANTE: 006_create_subviews.sql elimina las subvistas
@@ -17,69 +17,69 @@
 -- Hereda los filtros de las 7 subvistas vm_dash_* (fuente única de
 -- verdad). La definición de cada categoría vive solo en 006: aquí no
 -- se deben repetir sus condiciones WHERE.
--- Se conservan numero_remite (médico que ordena) y usuario_txt
+-- Se conservan nombre_medico (nombre del profesional resuelto por el
+-- ETL: USUARIO_TXT contra el catálogo de médicos, o PRESTADOR_REMITE si
+-- no hay coincidencia), numero_remite (médico que ordena) y usuario_txt
 -- (usuario que digita) para poder cambiar el criterio de atribución
 -- sin reconstruir la vista.
 DROP MATERIALIZED VIEW IF EXISTS vm_cumpl_ordenes;
 CREATE MATERIALIZED VIEW vm_cumpl_ordenes AS
-SELECT 'medicamentos' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'medicamentos' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_medicamentos
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'laboratorios' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'laboratorios' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_laboratorios
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'proc_dx' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'proc_dx' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_proc_dx
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'rx' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'rx' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_rx
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'ecografias' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'ecografias' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_ecografias
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'remisiones_cap' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'remisiones_cap' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_remisiones_cap
-GROUP BY periodo, numero_remite, usuario_txt
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico
 UNION ALL
-SELECT 'remisiones_ext' AS categoria, periodo, numero_remite, usuario_txt,
+SELECT 'remisiones_ext' AS categoria, periodo, numero_remite, usuario_txt, nombre_medico,
        SUM(total_autorizaciones)::bigint AS ordenes,
        SUM(total_cantidad)               AS cantidad
 FROM vm_dash_remisiones_ext
-GROUP BY periodo, numero_remite, usuario_txt;
+GROUP BY periodo, numero_remite, usuario_txt, nombre_medico;
 
 -- Índice único requerido por REFRESH MATERIALIZED VIEW CONCURRENTLY
 CREATE UNIQUE INDEX idx_vm_cumpl_ordenes_uq ON vm_cumpl_ordenes (
-    categoria, periodo, numero_remite, usuario_txt
+    categoria, periodo, numero_remite, usuario_txt, nombre_medico
 ) NULLS NOT DISTINCT;
 
 CREATE INDEX idx_vm_cumpl_ordenes_periodo_remite ON vm_cumpl_ordenes (periodo, numero_remite);
 CREATE INDEX idx_vm_cumpl_ordenes_periodo_usuario ON vm_cumpl_ordenes (periodo, usuario_txt);
+CREATE INDEX idx_vm_cumpl_ordenes_periodo_nombre ON vm_cumpl_ordenes (periodo, nombre_medico);
 
 -- ─────────────────────────────────────────────
 -- PROGRAMA DE CADA MÉDICO
 -- ─────────────────────────────────────────────
--- Programa por defecto con el que se eligen las metas del médico
-ALTER TABLE medicos ADD COLUMN IF NOT EXISTS programa_meta VARCHAR(80);
-
--- Programa vigente para ese médico en ese periodo
-ALTER TABLE citas_atendidas ADD COLUMN IF NOT EXISTS programa VARCHAR(80);
+-- El programa de metas se resuelve solo desde medicos.programa_especialidad
+-- con la tabla programa_meta_mapeo (ver 014_metas_v5.sql).
 
 -- ─────────────────────────────────────────────
 -- SEED: metas 2026 por programa y categoría

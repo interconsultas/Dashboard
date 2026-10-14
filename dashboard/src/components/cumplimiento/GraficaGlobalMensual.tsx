@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useModoImpresion } from "@/hooks/useImpresion";
 import {
   ResponsiveContainer,
   BarChart,
@@ -13,7 +12,9 @@ import {
   ReferenceLine,
   LabelList,
 } from "recharts";
-import { puntosGrafica, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
+import { puntosGrafica, techoEje, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
+
+export { techoEje };
 
 // Misma paleta que TendenciaMensual
 const NAVY = "#1e3a5f";
@@ -29,11 +30,6 @@ interface Props {
   titulo?: string;
   subtitulo?: string;
   loading?: boolean;
-}
-
-/** Techo del eje Y: siempre deja visible la línea del 100%. */
-export function techoEje(max: number): number {
-  return Math.max(120, Math.ceil(max / 20) * 20);
 }
 
 /** Tabla equivalente a la gráfica, solo para lectores de pantalla. */
@@ -67,7 +63,6 @@ export function GraficaGlobalMensual({
   loading,
 }: Props) {
   const puntos = useMemo(() => puntosGrafica(serie), [serie]);
-  const imprimiendo = useModoImpresion();
 
   if (loading) {
     return (
@@ -80,7 +75,7 @@ export function GraficaGlobalMensual({
   const hayDatos = puntos.some((p) => p.pct !== null);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up print:shadow-none print:border-gray-300 print:p-4 print:break-inside-avoid">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{titulo}</p>
@@ -98,8 +93,7 @@ export function GraficaGlobalMensual({
         <p className="text-sm text-gray-500 text-center py-8">Sin datos para mostrar la gráfica</p>
       ) : (
         <>
-          {/* Al exportar a PDF la gráfica es más baja para compartir la primera hoja con los tiles */}
-          <div className="h-72 [.cumplimiento-imprimiendo_&]:h-60" aria-hidden="true">
+          <div className="h-72" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={puntos} margin={{ top: 20, right: 20, left: 0, bottom: 4 }}>
                 <CartesianGrid stroke="#f3f4f6" vertical={false} />
@@ -140,7 +134,6 @@ export function GraficaGlobalMensual({
                   fill={NAVY}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={24}
-                  isAnimationActive={!imprimiendo}
                   animationDuration={800}
                   animationEasing="ease-out"
                 >

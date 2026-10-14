@@ -112,6 +112,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Filas: citas del rango con sus órdenes por categoría ──
+    // Programa: solo el que resulta de la especialidad del profesional en
+    // programa_meta_mapeo (sin programa no hay meta).
     const columna = COLUMNA_ORDENES[atribucion];
     const params: unknown[] = [desde, hasta];
     const filtros: string[] = [];
@@ -121,7 +123,7 @@ export async function POST(req: NextRequest) {
     }
     if (programas.length > 0) {
       params.push(programas);
-      filtros.push(`AND COALESCE(c.programa, m.programa_meta) = ANY($${params.length})`);
+      filtros.push(`AND map.programa = ANY($${params.length})`);
     }
 
     const [filasR, metasR] = await Promise.all([
@@ -138,11 +140,12 @@ export async function POST(req: NextRequest) {
                 COALESCE(m.nombre, c.nombre_medico) AS nombre,
                 c.periodo,
                 c.cantidad_citas AS citas,
-                COALESCE(c.programa, m.programa_meta) AS programa,
+                map.programa AS programa,
                 o.categoria,
                 o.ordenes
          FROM citas_atendidas c
          LEFT JOIN medicos m ON m.identificacion = c.documento
+         LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
          LEFT JOIN (
            SELECT categoria, periodo, ${columna}, SUM(ordenes) AS ordenes
            FROM vm_cumpl_ordenes

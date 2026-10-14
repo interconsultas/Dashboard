@@ -13,40 +13,33 @@ interface Props {
 const thGrupo = "px-2 pb-1 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-500 border-l border-gray-100 whitespace-nowrap";
 const thDetalle = "px-2 pb-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap";
 const tdNumero = "py-2 px-2 text-right text-gray-700 tabular-nums whitespace-nowrap";
-/**
- * Primera celda de cada categoría: lleva el borde que separa los grupos. Al imprimir
- * queda vacía y sin ancho (ver globals.css), pero se conserva para no descuadrar el colSpan.
- */
-const CELDA_ORDENES = "celda-vacia-impresion border-l border-gray-100 print:border-gray-300";
+/** Primera celda de cada categoría: lleva el borde que separa los grupos. */
+const CELDA_ORDENES = "border-l border-gray-100";
 
 /** Historial mes a mes de un profesional: citas, programa, global y el detalle de cada categoría. */
 export function TablaHistorial({ filas }: Props) {
   const ordenadas = [...filas].sort((a, b) => a.periodo - b.periodo);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up print:shadow-none print:border-gray-300 print:p-4 print:space-y-2">
-      <div className="print:break-after-avoid">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+      <div>
         <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Historial mes a mes</p>
         <p className="text-xs text-gray-500 mt-0.5">
           Tasa: órdenes por cita en medicamentos y laboratorios; órdenes por cada 100 citas en las demás categorías.
-        </p>
-        {/* La tabla completa no cabe en una hoja horizontal: al imprimir se omite el conteo de órdenes */}
-        <p className="hidden print:block text-[10px] text-gray-500 mt-0.5">
-          En el PDF se omite la columna «Órdenes» de cada categoría para ajustar la tabla al ancho de la hoja.
         </p>
       </div>
 
       {ordenadas.length === 0 ? (
         <p className="text-sm text-gray-500 text-center py-8">Sin periodos para mostrar</p>
       ) : (
-        <div className="overflow-x-auto print:overflow-visible">
-          <table className="tabla-imprimible w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
               <tr>
                 <th
                   scope="col"
                   rowSpan={2}
-                  className="sticky left-0 print:static bg-white pb-2 pr-3 text-left align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  className="sticky left-0 bg-white pb-2 pr-3 text-left align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                 >
                   Periodo
                 </th>
@@ -69,7 +62,7 @@ export function TablaHistorial({ filas }: Props) {
                 {CATEGORIAS.map((c) => (
                   <Fragment key={c.clave}>
                     <th scope="col" className={`${thDetalle} ${CELDA_ORDENES}`}>
-                      <span className="print:hidden">Órdenes</span>
+                      Órdenes
                     </th>
                     <th scope="col" className={thDetalle}>Tasa</th>
                     <th scope="col" className={thDetalle}>Meta</th>
@@ -83,7 +76,7 @@ export function TablaHistorial({ filas }: Props) {
                 <tr key={f.periodo} className="border-b border-gray-50 last:border-0">
                   <th
                     scope="row"
-                    className="sticky left-0 print:static bg-white py-2 pr-3 text-left font-medium text-gray-700 whitespace-nowrap"
+                    className="sticky left-0 bg-white py-2 pr-3 text-left font-medium text-gray-700 whitespace-nowrap"
                   >
                     {fmtPeriodo(f.periodo)}
                   </th>
@@ -107,7 +100,7 @@ export function TablaHistorial({ filas }: Props) {
                     return (
                       <Fragment key={c.clave}>
                         <td className={`${tdNumero} ${CELDA_ORDENES}`}>
-                          <span className="print:hidden">{d.ordenes.toLocaleString("es-CO")}</span>
+                          {d.ordenes.toLocaleString("es-CO")}
                         </td>
                         <td className={tdNumero}>{fmtTasa(d.tasa)}</td>
                         <td className={`${tdNumero} text-gray-500`}>{fmtTasa(d.meta)}</td>

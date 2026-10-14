@@ -35,7 +35,8 @@ for f in /sql/001_create_tables.sql \
          /sql/010_idx_modo_dia.sql \
          /sql/011_idx_fecha_digitacion.sql \
          /sql/012_periodos_detectados.sql \
-         /sql/013_cumplimiento.sql; do
+         /sql/013_cumplimiento.sql \
+         /sql/014_metas_v5.sql; do
     echo "  -> $(basename "$f")"
     psql -v ON_ERROR_STOP=1 --username "$DB_USER" --dbname "$DB_NAME" -f "$f"
 done

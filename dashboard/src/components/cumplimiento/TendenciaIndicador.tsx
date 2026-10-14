@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useModoImpresion } from "@/hooks/useImpresion";
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,9 +11,9 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
-import { puntosGrafica, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
+import { puntosGrafica, techoEje, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
 import { PorcentajeMeta } from "./PorcentajeMeta";
-import { TablaEquivalente, techoEje } from "./GraficaGlobalMensual";
+import { TablaEquivalente } from "./GraficaGlobalMensual";
 
 const NAVY = "#1e3a5f";
 const GREEN = "#4EA234";
@@ -45,13 +44,12 @@ export function LeyendaTendencia() {
 /** Gráfica pequeña de un indicador: porcentaje real por mes frente a una línea fija en 100%. */
 export function TendenciaIndicador({ etiqueta, serie }: Props) {
   const puntos = useMemo(() => puntosGrafica(serie), [serie]);
-  const imprimiendo = useModoImpresion();
   const conDato = puntos.filter((p) => p.pct !== null);
   const ultimo = conDato[conDato.length - 1];
   const valorUltimo = ultimo ? serie.find((s) => s.periodo === ultimo.periodo)?.valor ?? null : null;
 
   return (
-    <div data-testid="tendencia-indicador" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2 print:shadow-none print:border-gray-300 print:break-inside-avoid">
+    <div data-testid="tendencia-indicador" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{etiqueta}</p>
         {ultimo && (
@@ -113,7 +111,6 @@ export function TendenciaIndicador({ etiqueta, serie }: Props) {
                   dot={{ r: 4, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
                   activeDot={{ r: 6, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
                   connectNulls={false}
-                  isAnimationActive={!imprimiendo}
                   animationDuration={800}
                   animationEasing="ease-out"
                 />

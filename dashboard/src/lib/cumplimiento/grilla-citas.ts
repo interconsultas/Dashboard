@@ -3,15 +3,14 @@ export interface FilaCitasApi {
   documento: string;
   nombre: string | null;
   estado: string | null;
-  programa_meta: string | null;
-  cantidad_citas: number | null;
+  /** Programa de metas que resulta de la especialidad del profesional. */
   programa: string | null;
+  cantidad_citas: number | null;
 }
 
 /** Valores editados de una fila que todavía no se han guardado. */
 export interface EdicionCitas {
   citas?: string;
-  programa?: string;
 }
 
 export type Ediciones = Record<string, EdicionCitas>;
@@ -21,10 +20,9 @@ export interface FilaGrilla {
   documento: string;
   nombre: string;
   estado: string | null;
-  programaMeta: string | null;
   /** Texto del campo de citas; vacío significa "sin registro en el periodo". */
   citas: string;
-  /** Programa seleccionado; vacío significa "sin asignar". */
+  /** Programa de la especialidad (solo lectura); vacío significa "sin programa". */
   programa: string;
   /** El periodo ya tiene un registro guardado para este profesional. */
   guardada: boolean;
@@ -36,7 +34,6 @@ export interface FilaGrilla {
 export interface CambioCitas {
   documento: string;
   cantidad_citas: number | null;
-  programa: string | null;
 }
 
 const MAX_CITAS = 2147483647;
@@ -53,24 +50,18 @@ export function parseCitas(texto: string): number | null {
 export function construirFilas(api: FilaCitasApi[], ediciones: Ediciones): FilaGrilla[] {
   return api.map((f) => {
     const guardada = f.cantidad_citas !== null;
-    // El programa de metas solo se propone cuando el periodo no tiene registro
-    const programaInicial = guardada ? f.programa ?? "" : f.programa_meta ?? "";
     const edicion = ediciones[f.documento];
     const citas = edicion?.citas ?? (guardada ? String(f.cantidad_citas) : "");
-    const programa = edicion?.programa ?? programaInicial;
 
     const cantidad = parseCitas(citas);
-    const cambiada =
-      cantidad !== f.cantidad_citas ||
-      (cantidad !== null && (programa || null) !== f.programa);
+    const cambiada = cantidad !== f.cantidad_citas;
 
     return {
       documento: f.documento,
       nombre: f.nombre ?? "—",
       estado: f.estado,
-      programaMeta: f.programa_meta,
       citas,
-      programa,
+      programa: f.programa ?? "",
       guardada,
       citasInvalida: Number.isNaN(cantidad),
       cambiada,
@@ -82,14 +73,7 @@ export function construirFilas(api: FilaCitasApi[], ediciones: Ediciones): FilaG
 export function cambiosPendientes(filas: FilaGrilla[]): CambioCitas[] {
   return filas
     .filter((f) => f.cambiada && !f.citasInvalida)
-    .map((f) => {
-      const cantidad_citas = parseCitas(f.citas);
-      return {
-        documento: f.documento,
-        cantidad_citas,
-        programa: cantidad_citas === null ? null : f.programa || null,
-      };
-    });
+    .map((f) => ({ documento: f.documento, cantidad_citas: parseCitas(f.citas) }));
 }
 
 export function filtrarFilas(
@@ -98,7 +82,7 @@ export function filtrarFilas(
 ): FilaGrilla[] {
   const q = busqueda.trim().toUpperCase();
   return filas.filter((f) => {
-    if (!mostrarTodos && !f.programaMeta && !f.guardada && f.citas === "") return false;
+    if (!mostrarTodos && !f.programa && !f.guardada && f.citas === "") return false;
     if (!q) return true;
     return f.nombre.toUpperCase().includes(q) || f.documento.includes(q);
   });

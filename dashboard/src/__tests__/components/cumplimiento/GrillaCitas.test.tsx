@@ -10,7 +10,6 @@ import type { FilaGrilla } from "@/lib/cumplimiento/grilla-citas";
 function fila(parcial: Partial<FilaGrilla> & { documento: string; nombre: string }): FilaGrilla {
   return {
     estado: "ACTIVO",
-    programaMeta: null,
     citas: "",
     programa: "",
     guardada: false,
