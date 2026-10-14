@@ -26,6 +26,7 @@ const RUTA_PROFESIONALES = "/admin/medicos";
 export const TEXTO_ATRIBUCION: Record<RespuestaCumplimiento["atribucion"], string> = {
   ordenador: "Órdenes atribuidas al médico ordenador",
   digitador: "Órdenes atribuidas al usuario que digitó",
+  nombre: "Órdenes atribuidas por nombre del profesional",
 };
 
 function BotonVolver({ onClick }: { onClick: () => void }) {

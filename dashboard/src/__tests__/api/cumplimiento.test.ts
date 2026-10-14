@@ -153,13 +153,29 @@ describe("POST /api/cumplimiento", () => {
       expect(params).toEqual([202601, 202603]);
     });
 
-    it("por defecto atribuye las órdenes al médico ordenador", async () => {
+    it("por defecto atribuye las órdenes al nombre del profesional", async () => {
+      const res = await POST(req(RANGO));
+
+      const { sql, params } = consultaFilas();
+      expect(sql).toContain("SELECT categoria, periodo, nombre_medico, SUM(ordenes) AS ordenes");
+      expect(sql).toContain(
+        "ON o.periodo = c.periodo AND UPPER(TRIM(o.nombre_medico)) = UPPER(TRIM(COALESCE(m.nombre, c.nombre_medico)))"
+      );
+      expect(sql).not.toContain("o.numero_remite");
+      expect(sql).not.toContain("o.usuario_txt");
+      expect(params).toEqual([202601, 202603]);
+      expect((await res.json()).atribucion).toBe("nombre");
+    });
+
+    it("con CUMPLIMIENTO_ATRIBUCION=ordenador atribuye las órdenes al médico ordenador", async () => {
+      process.env.CUMPLIMIENTO_ATRIBUCION = "ordenador";
       await POST(req(RANGO));
 
       const { sql } = consultaFilas();
       expect(sql).toContain("SELECT categoria, periodo, numero_remite, SUM(ordenes) AS ordenes");
       expect(sql).toContain("ON o.periodo = c.periodo AND o.numero_remite = c.documento");
       expect(sql).not.toContain("o.usuario_txt");
+      expect(sql).not.toContain("o.nombre_medico");
       expect((await (await POST(req(RANGO))).json()).atribucion).toBe("ordenador");
     });
 
@@ -172,6 +188,7 @@ describe("POST /api/cumplimiento", () => {
       expect(sql).toContain("SELECT categoria, periodo, usuario_txt, SUM(ordenes) AS ordenes");
       expect(sql).toContain("ON o.periodo = c.periodo AND o.usuario_txt = m.usuario_txt");
       expect(sql).not.toContain("numero_remite");
+      expect(sql).not.toContain("o.nombre_medico");
       expect(params).toEqual([202601, 202603]);
       expect((await res.json()).atribucion).toBe("digitador");
     });
@@ -331,7 +348,7 @@ describe("POST /api/cumplimiento", () => {
 
       expect(res.status).toBe(200);
       expect(body).toMatchObject({
-        atribucion: "ordenador",
+        atribucion: "nombre",
         periodos_disponibles: [],
         periodo_desde: null,
         periodo_hasta: null,
@@ -352,7 +369,7 @@ describe("POST /api/cumplimiento", () => {
       expect(mockSetCache).toHaveBeenCalledTimes(1);
       const [clave, datos, ttl] = mockSetCache.mock.calls[0];
       expect(clave).toContain("cumplimiento");
-      expect(datos).toMatchObject({ atribucion: "ordenador" });
+      expect(datos).toMatchObject({ atribucion: "nombre" });
       expect(ttl).toBe(60_000);
     });
 

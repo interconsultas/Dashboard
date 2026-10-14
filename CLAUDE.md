@@ -60,4 +60,4 @@ docker-compose --env-file .env.production up -d
 - `DATABASE_URL` — Conexión PostgreSQL para el dashboard
 - `PYTHON_PATH`, `ETL_SCRIPT_PATH`, `UPLOADS_DIR`, `ETL_LOGS_DIR` — Rutas para el spawn del ETL
 - `NEXTAUTH_SECRET` — Secreto JWT (mínimo 32 caracteres)
-- `CUMPLIMIENTO_ATRIBUCION` — A quién se atribuyen las órdenes en el módulo de cumplimiento: `ordenador` (por defecto, `numero_remite`) o `digitador` (`usuario_txt`)
+- `CUMPLIMIENTO_ATRIBUCION` — A quién se atribuyen las órdenes en el módulo de cumplimiento: `nombre` (por defecto, `nombre_medico`: USUARIO_TXT resuelto contra el catálogo de médicos, o PRESTADOR_REMITE si no hay coincidencia), `ordenador` (`numero_remite`) o `digitador` (`usuario_txt`)

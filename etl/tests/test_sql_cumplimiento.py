@@ -126,10 +126,26 @@ class TestVistaCumplimientoOrdenes:
     def test_indice_unico_para_refresh_concurrente(self):
         sql = _leer("013_cumplimiento.sql")
         columnas = _columnas_indice_unico(sql, "vm_cumpl_ordenes")
-        assert columnas == ["categoria", "periodo", "numero_remite", "usuario_txt"]
+        assert columnas == ["categoria", "periodo", "numero_remite", "usuario_txt", "nombre_medico"]
         assert re.search(
             r"idx_vm_cumpl_ordenes_uq ON vm_cumpl_ordenes \([^)]*\)\s*NULLS NOT DISTINCT",
             sql,
+        )
+
+    @pytest.mark.parametrize("categoria", sorted(CATEGORIAS))
+    def test_cada_rama_expone_y_agrupa_por_nombre_medico(self, categoria):
+        bloque = _bloque_vista(_leer("013_cumplimiento.sql"), "vm_cumpl_ordenes")
+        rama = next(r for r in bloque.split("UNION ALL") if f"'{categoria}'" in r)
+        select = rama.split("FROM")[0]
+        group_by = rama.split("GROUP BY")[1]
+        columnas_grupo = [c.strip() for c in group_by.split(",")]
+        assert re.search(r"\bnombre_medico\b", select)
+        assert columnas_grupo == ["periodo", "numero_remite", "usuario_txt", "nombre_medico"]
+
+    def test_indice_por_periodo_y_nombre_medico(self):
+        sql = _leer("013_cumplimiento.sql")
+        assert re.search(
+            r"CREATE INDEX \w+ ON vm_cumpl_ordenes \(periodo, nombre_medico\);", sql
         )
 
     def test_no_reutiliza_nombres_que_003_elimina(self):

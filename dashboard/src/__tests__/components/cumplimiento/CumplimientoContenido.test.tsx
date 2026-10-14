@@ -98,6 +98,18 @@ describe("CumplimientoContenido", () => {
       expect(screen.getByText("Órdenes atribuidas al usuario que digitó")).toBeInTheDocument();
     });
 
+    it("indica cómo se atribuyen las órdenes: nombre del profesional", () => {
+      render(
+        <CumplimientoContenido
+          datos={{ ...DATOS, atribucion: "nombre" }}
+          documento={null}
+          onSeleccionar={jest.fn()}
+        />
+      );
+
+      expect(screen.getByText("Órdenes atribuidas por nombre del profesional")).toBeInTheDocument();
+    });
+
     it("avisa cuando hay profesionales con citas y sin programa, con enlace a Citas atendidas", () => {
       const datos = respuesta([
         entrada(PEREZ, 202601, 100, "RCV", 300),
