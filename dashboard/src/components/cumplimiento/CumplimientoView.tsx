@@ -11,9 +11,7 @@ import CheckDropdown from "@/components/ui/CheckDropdown";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonChart, SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
-import { ANCHO_IMPRESION_PX, ContextoImpresion, useImpresion } from "@/hooks/useImpresion";
-import { CumplimientoContenido, TEXTO_ATRIBUCION } from "./CumplimientoContenido";
-import { EncabezadoImpresion } from "./EncabezadoImpresion";
+import { CumplimientoContenido } from "./CumplimientoContenido";
 import { SelectorProfesional } from "./SelectorProfesional";
 import { TarjetasCumplimiento } from "./TarjetasCumplimiento";
 
@@ -25,14 +23,11 @@ const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracki
 const TODOS_LOS_PROGRAMAS: string[] = [...PROGRAMAS_META];
 const OPCIONES_PROGRAMA = PROGRAMAS_META.map((p) => ({ value: p, label: etiquetaPrograma(p) }));
 
+const ERROR_PDF = "No se pudo generar el PDF. Intente de nuevo.";
+
 /* ── Component ──────────────────────────────────── */
 
-interface Props {
-  /** Exportación a PDF: deshabilitada por ahora, hasta rediseñar el documento. */
-  exportarPdf?: boolean;
-}
-
-export default function CumplimientoView({ exportarPdf = false }: Props = {}) {
+export default function CumplimientoView() {
   const [form, setForm] = useState<FiltrosCumplimiento>({
     desde: null,
     hasta: null,
@@ -43,6 +38,8 @@ export default function CumplimientoView({ exportarPdf = false }: Props = {}) {
   // El profesional se elige sobre los datos ya consultados: no dispara otra consulta
   const [documento, setDocumento] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
+  const [generandoPdf, setGenerandoPdf] = useState(false);
+  const [errorPdf, setErrorPdf] = useState<string | null>(null);
 
   const committedBody = useMemo(() => cuerpoConsulta(aplicado), [aplicado]);
 
@@ -113,57 +110,64 @@ export default function CumplimientoView({ exportarPdf = false }: Props = {}) {
 
   /* ── Exportar a PDF ── */
 
-  const { imprimiendo, imprimir } = useImpresion();
   const profesional =
     documento !== null ? data?.profesionales.find((p) => p.documento === documento) ?? null : null;
   const hayContenido = !!data && !sinCitas && (documento === null || profesional !== null);
 
+  async function exportarPdf() {
+    if (!data || generandoPdf) return;
+    setGenerandoPdf(true);
+    setErrorPdf(null);
+    try {
+      // Carga diferida: el generador de PDF solo se descarga y ejecuta en el navegador al pedirlo
+      const { descargarInforme } = await import("./pdf/descargarInforme");
+      await descargarInforme({ datos: data, programas: aplicado?.programas ?? null, documento, generado: new Date() });
+    } catch (err) {
+      console.error("Error al generar el PDF de cumplimiento", err);
+      setErrorPdf(ERROR_PDF);
+    } finally {
+      setGenerandoPdf(false);
+    }
+  }
+
   return (
-    <div
-      data-testid="cumplimiento-imprimible"
-      // Al exportar, la región toma el ancho de la hoja para que las gráficas se midan con él
-      className={`cumplimiento-imprimible space-y-6 print:space-y-4 ${imprimiendo ? "cumplimiento-imprimiendo" : ""}`}
-      style={imprimiendo ? { width: ANCHO_IMPRESION_PX } : undefined}
-    >
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Cumplimiento de metas</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Órdenes por cita atendida frente a la meta del programa de cada profesional
           </p>
-          {data && hayContenido && (
-            <EncabezadoImpresion
-              desde={data.periodo_desde}
-              hasta={data.periodo_hasta}
-              programas={aplicado?.programas ?? null}
-              profesional={profesional}
-              atribucion={TEXTO_ATRIBUCION[data.atribucion]}
-              generado={new Date()}
-            />
-          )}
         </div>
-        {exportarPdf && (
-        <button
-          type="button"
-          onClick={imprimir}
-          disabled={!hayContenido || isValidating || imprimiendo}
-          className="print:hidden flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {imprimiendo ? (
-            <Spinner className="h-4 w-4 text-white" />
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-          )}
-          {imprimiendo ? "Preparando..." : "Exportar PDF"}
-        </button>
+        {data && !sinCitas && (
+          <div className="flex flex-col items-end gap-1.5">
+            <button
+              type="button"
+              onClick={exportarPdf}
+              disabled={!hayContenido || isValidating || generandoPdf}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {generandoPdf ? (
+                <Spinner className="h-4 w-4 text-white" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8.414a1 1 0 00-.293-.707l-4.414-4.414A1 1 0 0014.586 3H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
+                </svg>
+              )}
+              {generandoPdf ? "Generando PDF..." : "Exportar PDF"}
+            </button>
+            {errorPdf && (
+              <p role="alert" className="text-xs font-medium text-red-600">
+                {errorPdf}
+              </p>
+            )}
+          </div>
         )}
       </div>
 
       {/* Filtros */}
       {data && !sinCitas && (
-        <div className="print:hidden bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 space-y-4 sticky top-4 z-10">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 space-y-4 sticky top-4 z-10">
           <div className="flex items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Filtros</p>
             {revalidating && <Spinner className="h-3.5 w-3.5 text-brand-navy/40" />}
@@ -253,7 +257,7 @@ export default function CumplimientoView({ exportarPdf = false }: Props = {}) {
 
       {/* Error con datos previos en pantalla */}
       {error && data && (
-        <div className={`print:hidden rounded-2xl border px-5 py-4 flex items-center gap-3 ${
+        <div className={`rounded-2xl border px-5 py-4 flex items-center gap-3 ${
           error instanceof FetchError && error.status === 503
             ? "border-amber-200 bg-amber-50"
             : "border-red-200 bg-red-50"
@@ -275,10 +279,8 @@ export default function CumplimientoView({ exportarPdf = false }: Props = {}) {
           <SkeletonTable rows={8} />
         </div>
       ) : (
-        <div className={`transition-opacity duration-300 print:opacity-100 ${revalidating ? "opacity-60" : ""}`}>
-          <ContextoImpresion.Provider value={imprimiendo}>
-            <CumplimientoContenido datos={data} documento={documento} onSeleccionar={setDocumento} />
-          </ContextoImpresion.Provider>
+        <div className={`transition-opacity duration-300 ${revalidating ? "opacity-60" : ""}`}>
+          <CumplimientoContenido datos={data} documento={documento} onSeleccionar={setDocumento} />
         </div>
       )}
     </div>

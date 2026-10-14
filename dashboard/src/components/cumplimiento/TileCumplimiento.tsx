@@ -35,10 +35,10 @@ export function TileCumplimiento({ etiqueta, valor, destacado = false, nota, tes
   return (
     <div
       data-testid={testId}
-      className={`rounded-2xl border shadow-sm animate-fade-slide-up print:shadow-none print:break-inside-avoid ${
+      className={`rounded-2xl border shadow-sm animate-fade-slide-up ${
         destacado
           ? "bg-brand-navy border-brand-navy text-white p-6 flex flex-col justify-center"
-          : "bg-white border-gray-100 p-4 print:border-gray-300"
+          : "bg-white border-gray-100 p-4"
       }`}
     >
       <p

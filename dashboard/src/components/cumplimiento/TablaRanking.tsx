@@ -29,7 +29,7 @@ const COLUMNAS: Columna[] = [
 function IconOrden({ activo, direccion }: { activo: boolean; direccion: Direccion }) {
   return (
     <svg
-      className={`w-3 h-3 flex-shrink-0 print:hidden ${activo ? "text-brand-navy" : "text-gray-300"}`}
+      className={`w-3 h-3 flex-shrink-0 ${activo ? "text-brand-navy" : "text-gray-300"}`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -66,11 +66,11 @@ export function TablaRanking({ profesionales, onSeleccionar }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up print:shadow-none print:border-gray-300 print:p-4 print:space-y-2">
-      <div className="print:break-after-avoid">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+      <div>
         <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Ranking de profesionales</p>
         <p className="text-xs text-gray-500 mt-0.5">
-          Promedio del rango seleccionado.<span className="print:hidden"> Seleccione una fila para ver el detalle del profesional.</span>
+          Promedio del rango seleccionado. Seleccione una fila para ver el detalle del profesional.
         </p>
       </div>
 
@@ -79,8 +79,8 @@ export function TablaRanking({ profesionales, onSeleccionar }: Props) {
           Sin profesionales para los filtros seleccionados
         </p>
       ) : (
-        <div className="overflow-x-auto print:overflow-visible">
-          <table className="tabla-imprimible w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 {COLUMNAS.map((col) => {

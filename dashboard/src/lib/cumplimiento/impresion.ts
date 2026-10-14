@@ -1,4 +1,4 @@
-/** Textos del encabezado que solo aparece al exportar el cumplimiento a PDF. */
+/** Textos del encabezado del informe de cumplimiento en PDF (ver `informe.ts`). */
 import { fmtPeriodo } from "@/lib/periodo";
 import { PROGRAMAS_META } from "./categorias";
 

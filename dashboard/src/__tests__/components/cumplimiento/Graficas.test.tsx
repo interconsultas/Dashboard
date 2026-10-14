@@ -4,7 +4,8 @@
 import React from "react";
 import { render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { GraficaGlobalMensual, techoEje } from "@/components/cumplimiento/GraficaGlobalMensual";
+import { GraficaGlobalMensual } from "@/components/cumplimiento/GraficaGlobalMensual";
+import { techoEje } from "@/lib/cumplimiento/presentacion";
 import { TendenciaIndicador } from "@/components/cumplimiento/TendenciaIndicador";
 
 // Las gráficas se prueban por los datos que reciben (tabla equivalente), no por el SVG de Recharts.
