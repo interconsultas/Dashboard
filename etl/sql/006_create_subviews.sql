@@ -135,6 +135,28 @@ FROM autorizaciones
 WHERE tipo_convenio_desc = 'CAPITADO'
   AND orden_agrup_prest_desc IN ('CONSULTA ESP BASICAS', 'CONSULTA MEDICO GENERAL', 'CONSULTA OTRAS ESP.', 'PROMOCION Y PREVENCION', 'SALUD EN CASA')
   AND agrup_salud_prest_desc IN ('CONSULTAS MEDICAS', 'NIVEL BASICO Y ATENCION DOMICIALIARIA')
+  -- Los dobles espacios ('CONTROL  EN ...') son intencionales: así vienen
+  -- en los datos de origen y la comparación es exacta.
+  AND descripcion_prestacion IN (
+      'CONTROL  EN PEDIATRIA',
+      'CONSULTA  EN PEDIATRIA',
+      'CONTROL PEDIATRA',
+      'CONSULTA PEDIATRA',
+      'CONTROL  EN MEDICINA INTERNA',
+      'CONSULTA  EN MEDICINA INTERNA',
+      'CONTROL MEDICINA INTERNA (NO VIGENTE, USAR CODIGO 890366)',
+      'CONTROL MEDICINA INTERNA',
+      'CONSULTA MEDICINA INTERNA',
+      'CONTROL GINECOLOGIA',
+      'CONSULTA GINECOLOGIA',
+      'CONTROL GINECOLOGO (A) (NO VIGENTE, USAR CODIGO 890350)',
+      'CONTROL GINECOLOGO (A)',
+      'CONSULTA GINECOLOGO',
+      'CONTROL  EN DERMATOLOGIA',
+      'CONSULTA  EN DERMATOLOGIA',
+      'CONTROL DERMATOLOGO (A)',
+      'CONSULTA DERMATOLOGIA'
+  )
 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
 CREATE UNIQUE INDEX idx_vm_dash_remisiones_cap_uq ON vm_dash_remisiones_cap (
@@ -191,7 +213,8 @@ SELECT
     SUM(valor_autorizado_prestacion) AS valor_total,
     SUM(cantidad_autorizada)         AS total_cantidad
 FROM autorizaciones
-WHERE orden_agrup_prest_desc IN ('CONSULTA ESP BASICAS', 'CONSULTA MEDICA URGENTE', 'CONSULTA MEDICO GENERAL', 'CONSULTA OTRAS ESP.')
+WHERE tipo_convenio_desc IN ('ACTIVIDAD')
+  AND orden_agrup_prest_desc IN ('CONSULTA ESP BASICAS', 'CONSULTA MEDICA URGENTE', 'CONSULTA MEDICO GENERAL', 'CONSULTA OTRAS ESP.')
   AND agrup_salud_prest_desc IN ('CONSULTAS MEDICAS', 'NIVEL BASICO Y ATENCION DOMICIALIARIA')
 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13;
 

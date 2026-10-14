@@ -63,5 +63,23 @@ describe("view-registry", () => {
       expect(filtros.tipo_convenio).toEqual(["CAPITADO"]);
       expect(filtros.orden_agrup).toEqual(["ECOGRAFIA"]);
     });
+
+    it("remisiones capitadas filtran por las 18 prestaciones exactas (con dobles espacios)", () => {
+      const filtros = getViewFilters("vm_dash_remisiones_cap");
+      expect(filtros.tipo_convenio).toEqual(["CAPITADO"]);
+      expect(filtros.prestacion).toHaveLength(18);
+      expect(filtros.prestacion).toContain("CONTROL  EN PEDIATRIA");
+      expect(filtros.prestacion).toContain("CONSULTA  EN DERMATOLOGIA");
+      expect(filtros.prestacion).toContain("CONTROL MEDICINA INTERNA (NO VIGENTE, USAR CODIGO 890366)");
+      expect(filtros.prestacion).toContain("CONTROL GINECOLOGO (A) (NO VIGENTE, USAR CODIGO 890350)");
+      expect(filtros.prestacion).not.toContain("CONTROL EN PEDIATRIA");
+      expect(filtros.prestacion?.filter((p) => p.includes("  EN "))).toHaveLength(6);
+    });
+
+    it("remisiones red externa filtran por convenio ACTIVIDAD", () => {
+      const filtros = getViewFilters("vm_dash_remisiones_ext");
+      expect(filtros.tipo_convenio).toEqual(["ACTIVIDAD"]);
+      expect(filtros.prestacion).toBeUndefined();
+    });
   });
 });
