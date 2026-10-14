@@ -41,6 +41,34 @@ def _filas_cliente():
     ]
 
 
+MESES_INFORME = [
+    "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+    "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE",
+]
+ENCABEZADO_INFORME = (
+    ["NOMBRE DEL MÉDICO", "ID", "CARGO"] + MESES_INFORME
+    + ["PROMEDIO ", "NÚMERO DE USUARIOS ASIGNADOS "]
+)
+
+
+def _fila_informe(nombre, cedula, cargo, valores):
+    """Fila del informe mensual: `valores` son los meses reportados desde enero."""
+    meses = list(valores) + [None] * (12 - len(valores))
+    return [nombre, cedula, cargo] + meses + [None, None]
+
+
+def _filas_informe(anio="AÑO 2026"):
+    """Informe mensual del cliente (datos ficticios): título, año, encabezado."""
+    return [
+        ["TOTAL CONSULTAS  CONFIRMADAS"],
+        [anio],
+        ENCABEZADO_INFORME,
+        _fila_informe("MEDICO UNO", 1001, "MEDICO GENERAL", [300, 0, 310]),
+        _fila_informe("MEDICO DOS", None, "MEDICO GENERAL", [200, 210, 220]),
+        _fila_informe("MEDICO TRES", 1003, "ESPECIALISTA", [50, 60]),
+    ]
+
+
 def _conn_mock(medicos):
     """`medicos`: filas (identificacion, nombre, programa) del catálogo, con el
     programa resuelto desde programa_especialidad por programa_meta_mapeo."""
@@ -87,7 +115,7 @@ class TestParsearPeriodo:
     @pytest.mark.parametrize("valor", [
         None, "", "PROMEDIO ", "NÚMERO DE USUARIOS ASIGNADOS ", "PROFESIONAL", "ID MD",
         202613, 202600, "202613", 20261, "2026", 1252, 302.83, True,
-        "xyz-26", "ene-226", "ene", "26-ene", 199912, 210101,
+        "xyz-26", "ene-226", "ene", "26-ene", 199912, 210101, "ENERO", "Diciembre",
     ])
     def test_retorna_none_si_no_es_un_periodo(self, valor):
         assert ec.parsear_periodo(valor) is None
@@ -187,6 +215,73 @@ class TestDetectarEncabezado:
     def test_falla_si_un_periodo_aparece_en_dos_columnas(self):
         with pytest.raises(ec.ErrorArchivo, match="202601"):
             ec.detectar_encabezado(_hoja([["ID MD", "202601", "ene-26"], [1, 5, 6]]))
+
+
+class TestEncabezadoInformeMensual:
+
+    def test_detecta_el_informe_con_meses_por_nombre_y_el_anio_de_la_fila_superior(self):
+        enc = ec.detectar_encabezado(_hoja(_filas_informe()))
+
+        assert enc.fila == 3
+        assert enc.col_id == 1
+        assert enc.col_nombre == 0
+        assert enc.periodos == {3 + i: 202601 + i for i in range(12)}
+
+    @pytest.mark.parametrize("titulo", ["ID", "id", " Id "])
+    def test_acepta_id_como_columna_de_cedula(self, titulo):
+        enc = ec.detectar_encabezado(_hoja([[titulo, "ene-26"], [123, 5]]))
+
+        assert enc.col_id == 0
+
+    @pytest.mark.parametrize("mes, esperado", [
+        ("ENERO", 202601), ("enero", 202601), (" Febrero ", 202602),
+        ("SEPTIEMBRE", 202609), ("Setiembre", 202609), ("DICIEMBRE ", 202612),
+    ])
+    def test_los_nombres_de_mes_no_distinguen_mayusculas_ni_espacios(self, mes, esperado):
+        enc = ec.detectar_encabezado(_hoja([["AÑO 2026"], ["ID", mes], [1, 5]]))
+
+        assert enc.periodos == {1: esperado}
+
+    @pytest.mark.parametrize("anio", ["AÑO 2026", "año 2026", "ANO 2026", " Año   2026 ", "AÑO: 2026"])
+    def test_el_anio_tolera_tildes_mayusculas_y_espacios(self, anio):
+        enc = ec.detectar_encabezado(_hoja([[None, anio], ["ID", "ENERO"], [1, 5]]))
+
+        assert enc.periodos == {1: 202601}
+
+    def test_ignora_cargo_promedio_y_usuarios_asignados(self):
+        enc = ec.detectar_encabezado(_hoja(_filas_informe()))
+
+        assert 2 not in enc.periodos
+        assert 15 not in enc.periodos
+        assert 16 not in enc.periodos
+
+    def test_falla_si_hay_meses_por_nombre_y_no_se_encuentra_el_anio(self):
+        filas = _filas_informe()
+        del filas[1]
+
+        with pytest.raises(ec.ErrorArchivo, match="AÑO"):
+            ec.detectar_encabezado(_hoja(filas))
+
+    def test_el_anio_debe_estar_encima_del_encabezado(self):
+        filas = _filas_informe()
+        anio = filas.pop(1)
+        filas.append(anio)
+
+        with pytest.raises(ec.ErrorArchivo, match="AÑO"):
+            ec.detectar_encabezado(_hoja(filas))
+
+    def test_los_formatos_con_anio_no_requieren_la_fila_de_anio(self):
+        enc = ec.detectar_encabezado(_hoja([["ID", "ene-26", 202602, datetime(2026, 3, 1)], [1, 1, 2, 3]]))
+
+        assert enc.periodos == {1: 202601, 2: 202602, 3: 202603}
+
+    def test_selecciona_la_unica_hoja_del_informe(self):
+        wb = _libro(_filas_informe(), titulo="MÉDICOS DE FAMILIA")
+
+        ws, enc = ec.seleccionar_hoja(wb)
+
+        assert ws.title == "MÉDICOS DE FAMILIA"
+        assert enc.fila == 3
 
 
 class TestSeleccionarHoja:
@@ -319,6 +414,48 @@ class TestLeerRegistros:
         assert lectura.nombres == {11: None}
 
 
+class TestLeerInformeMensual:
+
+    def _leer(self, filas):
+        ws = _hoja(filas)
+        return ec.leer_registros(ws, ec.detectar_encabezado(ws))
+
+    def test_carga_los_meses_reportados_y_omite_los_vacios(self):
+        lectura = self._leer(_filas_informe())
+
+        assert lectura.registros == [
+            (1001, 202601, 300), (1001, 202602, 0), (1001, 202603, 310),
+            (1003, 202601, 50), (1003, 202602, 60),
+        ]
+        assert lectura.nombres == {1001: "MEDICO UNO", 1003: "MEDICO TRES"}
+
+    def test_omite_y_reporta_las_filas_sin_cedula_con_numero_de_fila_y_nombre(self):
+        lectura = self._leer(_filas_informe())
+
+        assert lectura.sin_cedula == [{"fila": 5, "nombre": "MEDICO DOS"}]
+        assert lectura.advertencias == []
+
+    def test_no_reporta_filas_vacias_ni_notas_sin_valores(self):
+        lectura = self._leer([
+            ["AÑO 2026"],
+            ENCABEZADO_INFORME,
+            _fila_informe("MEDICO UNO", 1001, "MEDICO GENERAL", [1]),
+            [None] * 17,
+            _fila_informe("Nota: datos preliminares", None, None, []),
+        ])
+
+        assert lectura.sin_cedula == []
+
+    def test_reporta_la_fila_sin_cedula_aunque_la_celda_tenga_espacios(self):
+        lectura = self._leer([
+            ["AÑO 2026"],
+            ENCABEZADO_INFORME,
+            _fila_informe("  MEDICO DOS ", "  ", "MEDICO GENERAL", [7]),
+        ])
+
+        assert lectura.sin_cedula == [{"fila": 3, "nombre": "MEDICO DOS"}]
+
+
 class TestLimitarAdvertencias:
 
     def test_no_modifica_una_lista_corta(self):
@@ -365,6 +502,7 @@ class TestCargarCitas:
             "sin_catalogo": [],
             "sin_programa": 1,
             "advertencias": [],
+            "sin_cedula": [],
         }
 
     def test_consulta_el_catalogo_con_las_cedulas_como_parametro(self, tmp_path):
@@ -444,6 +582,20 @@ class TestCargarCitas:
         assert resultado["registros"] == 1
         assert len(resultado["advertencias"]) == 1
         assert "NA" in resultado["advertencias"][0]
+
+    def test_importa_el_informe_mensual_y_reporta_las_filas_sin_cedula(self, tmp_path):
+        medicos = [(1001, "UNO MEDICO", "RCV"), (1003, "TRES MEDICO", "RCV")]
+
+        resultado, conn, cur = self._cargar(tmp_path, filas=_filas_informe(), medicos=medicos)
+
+        assert [c.args[1][:3] for c in _inserts(cur)] == [
+            (1001, 202601, 300), (1001, 202602, 0), (1001, 202603, 310),
+            (1003, 202601, 50), (1003, 202602, 60),
+        ]
+        assert resultado["periodos"] == [202601, 202602, 202603]
+        assert resultado["profesionales"] == 2
+        assert resultado["sin_cedula"] == [{"fila": 5, "nombre": "MEDICO DOS"}]
+        assert conn.commit.call_count == 1
 
     def test_revierte_la_transaccion_si_una_sentencia_falla(self, tmp_path):
         ruta = _guardar(tmp_path, _libro(_filas_cliente()))
