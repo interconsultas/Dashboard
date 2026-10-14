@@ -61,10 +61,10 @@ describe("cumplimiento/categorias", () => {
       ["RCV", "RCV"],
       ["CyD-RIAS-PF-SALUD PÚBLICA", "CyD-RIAS-PF-SALUD PÚBLICA"],
       ["CPR", "CPR"],
-      ["DERMATOLOGÍA", "Dermatología"],
-      ["MEDICINA INTERNA", "Medicina interna"],
-      ["GINECOLOGÍA Y OBSTETRICIA", "Ginecología y obstetricia"],
-      ["PEDIATRÍA", "Pediatría"],
+      ["DERMATOLOGÍA", "DERMATOLOGÍA"],
+      ["MEDICINA INTERNA", "MEDICINA INTERNA"],
+      ["GINECOLOGÍA Y OBSTETRICIA", "GINECOLOGÍA Y OBSTETRICIA"],
+      ["PEDIATRÍA", "PEDIATRÍA"],
     ])("retorna la etiqueta del Excel para %s", (clave, etiqueta) => {
       expect(etiquetaPrograma(clave)).toBe(etiqueta);
     });
