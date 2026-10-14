@@ -24,12 +24,15 @@ EOSQL
 
 echo "=== Ejecutando migraciones SQL ==="
 
+# 015 va justo después de 006 (no al final): su DROP ... CASCADE elimina
+# vm_cumpl_ordenes, así que debe correr antes de 013, que la crea.
 for f in /sql/001_create_tables.sql \
          /sql/002_create_indexes.sql \
          /sql/003_create_views.sql \
          /sql/004_seed_usuarios.sql \
          /sql/005_estado_medico_null_to_externo.sql \
          /sql/006_create_subviews.sql \
+         /sql/015_filtros_remisiones.sql \
          /sql/008_delete_carga.sql \
          /sql/009_idx_fecha_emision.sql \
          /sql/010_idx_modo_dia.sql \
