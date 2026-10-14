@@ -53,20 +53,22 @@ ANIO_MIN, ANIO_MAX = 2000, 2100
 CEDULA_MAX = 10 ** 15 - 1     # misma cota que la API del dashboard (15 dígitos)
 CITAS_MAX = 2147483647        # cantidad_citas es INT
 
+# El programa de metas se resuelve desde programa_especialidad (014_metas_v5.sql);
+# solo se usa para informar cuántos profesionales cargados no tienen meta.
 SQL_CATALOGO = """
-    SELECT identificacion, nombre, programa_meta
-    FROM medicos
-    WHERE identificacion = ANY(%s)
+    SELECT m.identificacion, m.nombre, map.programa
+    FROM medicos m
+    LEFT JOIN programa_meta_mapeo map
+           ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
+    WHERE m.identificacion = ANY(%s)
 """
 
-# El programa ya guardado para un periodo se conserva: solo se llena si es NULL
 SQL_UPSERT = """
-    INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico, programa)
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico)
+    VALUES (%s, %s, %s, %s)
     ON CONFLICT (documento, periodo) DO UPDATE SET
         cantidad_citas = EXCLUDED.cantidad_citas,
-        nombre_medico  = EXCLUDED.nombre_medico,
-        programa       = COALESCE(citas_atendidas.programa, EXCLUDED.programa)
+        nombre_medico  = EXCLUDED.nombre_medico
 """
 
 
@@ -334,8 +336,8 @@ def cargar_citas(archivo: Path) -> dict:
 
         cargados = [r for r in lectura.registros if r[0] in catalogo]
         for documento, periodo, cantidad in cargados:
-            nombre, programa = catalogo[documento]
-            cur.execute(SQL_UPSERT, (documento, periodo, cantidad, nombre, programa))
+            nombre, _programa = catalogo[documento]
+            cur.execute(SQL_UPSERT, (documento, periodo, cantidad, nombre))
 
         conn.commit()
         cur.close()

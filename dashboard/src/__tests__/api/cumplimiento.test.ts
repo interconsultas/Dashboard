@@ -111,6 +111,7 @@ describe("POST /api/cumplimiento", () => {
       ["rango de 25 meses", { periodo_desde: 202401, periodo_hasta: 202601 }],
       ["programas que no es una lista", { ...RANGO, programas: "RCV" }],
       ["programa desconocido", { ...RANGO, programas: ["RCV", "OTRO"] }],
+      ["programa TOTAL MGI (no asignable)", { ...RANGO, programas: ["TOTAL MGI"] }],
       ["programa que no es texto", { ...RANGO, programas: [5] }],
       ["documento con letras", { ...RANGO, documento: "12a45" }],
       ["documento con inyección", { ...RANGO, documento: "1 OR 1=1" }],
@@ -147,7 +148,13 @@ describe("POST /api/cumplimiento", () => {
       expect(sql).toContain("LEFT JOIN medicos m ON m.identificacion = c.documento");
       expect(sql).toContain("FROM vm_cumpl_ordenes WHERE periodo BETWEEN $1 AND $2 GROUP BY 1, 2, 3");
       expect(sql).toContain("WHERE c.periodo BETWEEN $1 AND $2");
-      expect(sql).toContain("COALESCE(c.programa, m.programa_meta)");
+      expect(sql).toContain(
+        "LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))"
+      );
+      expect(sql).toContain("map.programa AS programa");
+      expect(sql).not.toContain("c.programa");
+      expect(sql).not.toContain("programa_meta,");
+      expect(sql).not.toContain("m.programa_meta");
       expect(sql).not.toContain("202601");
       expect(sql).not.toContain("202603");
       expect(params).toEqual([202601, 202603]);
@@ -202,11 +209,11 @@ describe("POST /api/cumplimiento", () => {
       expect(params).toEqual([202601, 202603, "10234567"]);
     });
 
-    it("filtra por programa sobre el programa resuelto, con un parámetro", async () => {
+    it("filtra por programa sobre el programa del mapeo, con un parámetro", async () => {
       await POST(req({ ...RANGO, programas: ["RCV", "CPR"] }));
 
       const { sql, params } = consultaFilas();
-      expect(sql).toContain("AND COALESCE(c.programa, m.programa_meta) = ANY($3)");
+      expect(sql).toContain("AND map.programa = ANY($3)");
       expect(sql).not.toContain("RCV");
       expect(params).toEqual([202601, 202603, ["CPR", "RCV"]]);
     });

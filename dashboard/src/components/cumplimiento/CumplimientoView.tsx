@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { postFetcher, FetchError } from "@/lib/fetcher";
 import { fmtPeriodo } from "@/lib/periodo";
-import { PROGRAMAS_META } from "@/lib/cumplimiento/categorias";
+import { PROGRAMAS_META, etiquetaPrograma } from "@/lib/cumplimiento/categorias";
 import { cuerpoConsulta, errorDeRango, type FiltrosCumplimiento } from "@/lib/cumplimiento/filtros";
 import type { RespuestaCumplimiento } from "@/lib/cumplimiento/tipos";
 import CheckDropdown from "@/components/ui/CheckDropdown";
@@ -23,7 +23,7 @@ const selectCls = "w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm 
 const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
 
 const TODOS_LOS_PROGRAMAS: string[] = [...PROGRAMAS_META];
-const OPCIONES_PROGRAMA = PROGRAMAS_META.map((p) => ({ value: p, label: p }));
+const OPCIONES_PROGRAMA = PROGRAMAS_META.map((p) => ({ value: p, label: etiquetaPrograma(p) }));
 
 /* ── Component ──────────────────────────────────── */
 

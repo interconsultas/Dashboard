@@ -2,7 +2,7 @@
 -- Dashboard de Autorizaciones — IPS Manizales
 -- 013_cumplimiento.sql
 -- Infraestructura del módulo de cumplimiento: órdenes por médico
--- y periodo en 7 categorías, programa de cada médico y metas 2026.
+-- y periodo en 7 categorías y metas 2026.
 -- Idempotente: se puede ejecutar varias veces sin efectos adversos.
 --
 -- IMPORTANTE: 006_create_subviews.sql elimina las subvistas
@@ -78,11 +78,8 @@ CREATE INDEX idx_vm_cumpl_ordenes_periodo_nombre ON vm_cumpl_ordenes (periodo, n
 -- ─────────────────────────────────────────────
 -- PROGRAMA DE CADA MÉDICO
 -- ─────────────────────────────────────────────
--- Programa por defecto con el que se eligen las metas del médico
-ALTER TABLE medicos ADD COLUMN IF NOT EXISTS programa_meta VARCHAR(80);
-
--- Programa vigente para ese médico en ese periodo
-ALTER TABLE citas_atendidas ADD COLUMN IF NOT EXISTS programa VARCHAR(80);
+-- El programa de metas se resuelve solo desde medicos.programa_especialidad
+-- con la tabla programa_meta_mapeo (ver 014_metas_v5.sql).
 
 -- ─────────────────────────────────────────────
 -- SEED: metas 2026 por programa y categoría

@@ -127,7 +127,7 @@ describe("ImportarCitasExcel", () => {
     );
   });
 
-  it("avisa cuántos profesionales no tienen programa y enlaza a Profesionales", async () => {
+  it("avisa cuántos profesionales no tienen programa y enlaza al mapeo por especialidad", async () => {
     responder({ ...RESULTADO, sin_programa: 4 });
     renderImportar();
 
@@ -135,7 +135,10 @@ describe("ImportarCitasExcel", () => {
 
     const nota = (await screen.findByText(/4 profesionales cargados no tienen programa/i))
       .closest("p") as HTMLElement;
-    expect(within(nota).getByRole("link")).toHaveAttribute("href", "/admin/medicos");
+    expect(within(nota).getByRole("link", { name: "Asignar la meta por especialidad" })).toHaveAttribute(
+      "href",
+      "/admin/metas/programas"
+    );
   });
 
   it("muestra las advertencias del archivo", async () => {

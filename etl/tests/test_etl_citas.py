@@ -42,7 +42,8 @@ def _filas_cliente():
 
 
 def _conn_mock(medicos):
-    """`medicos`: filas (identificacion, nombre, programa_meta) del catálogo."""
+    """`medicos`: filas (identificacion, nombre, programa) del catálogo, con el
+    programa resuelto desde programa_especialidad por programa_meta_mapeo."""
     conn = MagicMock()
     cur = conn.cursor.return_value
     cur.fetchall.return_value = medicos
@@ -377,30 +378,35 @@ class TestCargarCitas:
         sql, params = consultas[0].args
         assert "FROM medicos" in sql
         assert "75085184" not in sql
+        assert "programa_meta " not in sql and "m.programa_meta" not in sql
+        assert (
+            "LEFT JOIN programa_meta_mapeo map "
+            "ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))"
+        ) in " ".join(sql.split())
         assert params == ([75085184, 24334178],)
 
-    def test_el_upsert_toma_el_nombre_y_el_programa_del_catalogo(self, tmp_path):
+    def test_el_upsert_toma_el_nombre_del_catalogo_y_no_guarda_programa(self, tmp_path):
         _, _, cur = self._cargar(tmp_path)
 
         inserts = _inserts(cur)
         assert [c.args[1] for c in inserts] == [
-            (75085184, 202601, 335, "SOLARTE MEJIA ABDIEL MILOVAN", "RCV"),
-            (75085184, 202602, 360, "SOLARTE MEJIA ABDIEL MILOVAN", "RCV"),
-            (24334178, 202601, 287, "GAÑAN LUQUE ALEJANDRA", None),
+            (75085184, 202601, 335, "SOLARTE MEJIA ABDIEL MILOVAN"),
+            (75085184, 202602, 360, "SOLARTE MEJIA ABDIEL MILOVAN"),
+            (24334178, 202601, 287, "GAÑAN LUQUE ALEJANDRA"),
         ]
 
-    def test_el_upsert_es_parametrizado_y_no_sobrescribe_el_programa_guardado(self, tmp_path):
+    def test_el_upsert_es_parametrizado_y_no_toca_el_programa(self, tmp_path):
         _, _, cur = self._cargar(tmp_path)
 
         sql = " ".join(_inserts(cur)[0].args[0].split())
         assert (
-            "INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico, programa) "
-            "VALUES (%s, %s, %s, %s, %s)"
+            "INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico) "
+            "VALUES (%s, %s, %s, %s)"
         ) in sql
         assert "ON CONFLICT (documento, periodo) DO UPDATE SET" in sql
         assert "cantidad_citas = EXCLUDED.cantidad_citas" in sql
         assert "nombre_medico = EXCLUDED.nombre_medico" in sql
-        assert "programa = COALESCE(citas_atendidas.programa, EXCLUDED.programa)" in sql
+        assert "programa" not in sql
         assert "335" not in sql
 
     def test_no_borra_nada(self, tmp_path):

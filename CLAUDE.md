@@ -11,9 +11,11 @@ El dashboard invoca al ETL vía `child_process.spawn()` en `dashboard/src/lib/et
 
 ## Base de datos
 
-PostgreSQL 16. Tabla principal `autorizaciones` particionada por `periodo` (YYYYMM). 9 vistas materializadas (`vm_*`) para analítica. Migraciones en `etl/sql/001-013`.
+PostgreSQL 16. Tabla principal `autorizaciones` particionada por `periodo` (YYYYMM). 9 vistas materializadas (`vm_*`) para analítica. Migraciones en `etl/sql/001-014`.
 
 `013_cumplimiento.sql` crea `vm_cumpl_ordenes` a partir de las 7 vistas `vm_dash_*`. Como `006_create_subviews.sql` las elimina con `CASCADE`, hay que volver a ejecutar `013` cada vez que se re-ejecute `006`.
+
+`014_metas_v5.sql` crea `programa_meta_mapeo` (especialidad → programa de metas, editable en Metas › Programas por especialidad), siembra la fila informativa `TOTAL MGI` y elimina `medicos.programa_meta` y `citas_atendidas.programa`: el programa de metas sale solo del mapeo.
 
 ## Roles de usuario
 

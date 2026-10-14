@@ -1,9 +1,13 @@
 import {
   CATEGORIAS,
   PROGRAMAS_META,
+  PROGRAMAS_EDITABLES,
+  PROGRAMA_TOTAL_MGI,
   esCategoria,
+  esProgramaEditable,
   esProgramaMeta,
   escalaDe,
+  etiquetaPrograma,
   normalizarProgramaMeta,
 } from "@/lib/cumplimiento/categorias";
 
@@ -23,14 +27,63 @@ describe("cumplimiento/categorias", () => {
   });
 
   describe("PROGRAMAS_META", () => {
-    it("contiene los 5 programas en el orden esperado", () => {
+    it("contiene los 9 programas asignables en el orden de la hoja METAS", () => {
       expect(PROGRAMAS_META).toEqual([
         "PROGRAMADA",
         "NO PROGRAMADA",
         "RCV",
         "CyD-RIAS-PF-SALUD PÚBLICA",
         "CPR",
+        "DERMATOLOGÍA",
+        "MEDICINA INTERNA",
+        "GINECOLOGÍA Y OBSTETRICIA",
+        "PEDIATRÍA",
       ]);
+    });
+
+    it("no incluye la fila informativa del total de médicos generales integradores", () => {
+      expect(PROGRAMAS_META).not.toContain(PROGRAMA_TOTAL_MGI);
+    });
+  });
+
+  describe("PROGRAMAS_EDITABLES", () => {
+    it("pone el total primero y luego los programas asignables, como en el Excel", () => {
+      expect(PROGRAMA_TOTAL_MGI).toBe("TOTAL MGI");
+      expect(PROGRAMAS_EDITABLES).toEqual([PROGRAMA_TOTAL_MGI, ...PROGRAMAS_META]);
+    });
+  });
+
+  describe("etiquetaPrograma", () => {
+    it.each([
+      ["TOTAL MGI", "TOTAL MÉDICOS GENERALES INTEGRADORES"],
+      ["PROGRAMADA", "PROGRAMADA"],
+      ["NO PROGRAMADA", "NO PROGRAMADA"],
+      ["RCV", "RCV"],
+      ["CyD-RIAS-PF-SALUD PÚBLICA", "CyD-RIAS-PF-SALUD PÚBLICA"],
+      ["CPR", "CPR"],
+      ["DERMATOLOGÍA", "Dermatología"],
+      ["MEDICINA INTERNA", "Medicina interna"],
+      ["GINECOLOGÍA Y OBSTETRICIA", "Ginecología y obstetricia"],
+      ["PEDIATRÍA", "Pediatría"],
+    ])("retorna la etiqueta del Excel para %s", (clave, etiqueta) => {
+      expect(etiquetaPrograma(clave)).toBe(etiqueta);
+    });
+
+    it("retorna la misma clave cuando el programa no está en el catálogo", () => {
+      expect(etiquetaPrograma("OTRO")).toBe("OTRO");
+    });
+  });
+
+  describe("esProgramaEditable", () => {
+    it("acepta el total y los programas asignables", () => {
+      expect(esProgramaEditable("TOTAL MGI")).toBe(true);
+      expect(esProgramaEditable("PEDIATRÍA")).toBe(true);
+    });
+
+    it("rechaza valores desconocidos o que no son texto", () => {
+      expect(esProgramaEditable("total mgi")).toBe(false);
+      expect(esProgramaEditable("")).toBe(false);
+      expect(esProgramaEditable(null)).toBe(false);
     });
   });
 
@@ -53,6 +106,11 @@ describe("cumplimiento/categorias", () => {
     it("acepta los programas definidos", () => {
       expect(esProgramaMeta("RCV")).toBe(true);
       expect(esProgramaMeta("CyD-RIAS-PF-SALUD PÚBLICA")).toBe(true);
+      expect(esProgramaMeta("MEDICINA INTERNA")).toBe(true);
+    });
+
+    it("rechaza el total: no se puede asignar a un profesional", () => {
+      expect(esProgramaMeta("TOTAL MGI")).toBe(false);
     });
 
     it("rechaza variantes de mayúsculas, valores vacíos y valores que no son texto", () => {
@@ -90,6 +148,7 @@ describe("cumplimiento/categorias", () => {
     it("marca como no válido cualquier otro valor", () => {
       expect(normalizarProgramaMeta("OTRO")).toEqual({ valido: false });
       expect(normalizarProgramaMeta(5)).toEqual({ valido: false });
+      expect(normalizarProgramaMeta("TOTAL MGI")).toEqual({ valido: false });
     });
   });
 });

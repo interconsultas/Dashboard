@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { CATEGORIAS, PROGRAMAS_META } from "@/lib/cumplimiento/categorias";
+import {
+  CATEGORIAS,
+  PROGRAMAS_EDITABLES,
+  PROGRAMA_TOTAL_MGI,
+  etiquetaPrograma,
+} from "@/lib/cumplimiento/categorias";
+import { celdaValida } from "@/lib/cumplimiento/metas-matriz";
 import { fmtDecimal, parseDecimal } from "@/lib/cumplimiento/decimal";
 import { parseAnio } from "@/lib/cumplimiento/periodo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -38,13 +45,8 @@ function aValores(metas: Meta[]): Valores {
   return valores;
 }
 
-/** Una celda es válida si contiene un número mayor que cero. */
-function celdaValida(texto: string | undefined) {
-  const n = parseDecimal(texto ?? "");
-  return n !== null && !Number.isNaN(n) && n > 0;
-}
-
-const CELDAS = PROGRAMAS_META.flatMap((programa) =>
+// Filas en el orden de la hoja METAS: TOTAL MGI (informativa) y los programas
+const CELDAS = PROGRAMAS_EDITABLES.flatMap((programa) =>
   CATEGORIAS.map((c) => ({ programa, categoria: c.clave, clave: claveCelda(programa, c.clave) }))
 );
 
@@ -89,7 +91,8 @@ export default function MetasPage() {
     (c) => parseDecimal(valores[c.clave] ?? "") !== parseDecimal(originales[c.clave] ?? "")
   );
   const hayCambios = cambiadas.length > 0;
-  const hayInvalidas = CELDAS.some((c) => !celdaValida(valores[c.clave]));
+  // Un programa sin metas (celdas vacías) es válido: sus profesionales quedan sin porcentaje
+  const hayInvalidas = CELDAS.some((c) => !celdaValida(valores[c.clave], originales[c.clave]));
   const sinDatos = !!data && data.metas.length === 0;
 
   function irAAnio(nuevo: number) {
@@ -183,6 +186,12 @@ export default function MetasPage() {
           <p className="text-sm text-gray-400 mt-0.5">
             Metas de órdenes por programa y categoría — {anio}
           </p>
+          <Link
+            href="/admin/metas/programas"
+            className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
+          >
+            Programas por especialidad
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -253,7 +262,7 @@ export default function MetasPage() {
           titulo="No se pudieron cargar las metas"
         />
       ) : isLoading || !data ? (
-        <SkeletonTable rows={5} />
+        <SkeletonTable rows={PROGRAMAS_EDITABLES.length} />
       ) : (
         <>
           {sinDatos && (
@@ -289,7 +298,8 @@ export default function MetasPage() {
           )}
           {hayCambios && hayInvalidas && (
             <p className="text-xs text-red-600">
-              Complete todas las celdas con un valor mayor que cero para poder guardar.
+              Las metas deben ser números mayores que cero y una meta guardada no se puede dejar
+              vacía.
             </p>
           )}
 
@@ -315,15 +325,21 @@ export default function MetasPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {PROGRAMAS_META.map((programa, idx) => (
+                {PROGRAMAS_EDITABLES.map((programa, idx) => (
                   <tr key={programa} className={idx % 2 === 0 ? "bg-white" : "bg-surface-alt"}>
-                    <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
-                      {programa}
+                    <td className="px-4 py-3 font-medium text-gray-800 min-w-[14rem] max-w-xs">
+                      {etiquetaPrograma(programa)}
+                      {programa === PROGRAMA_TOTAL_MGI && (
+                        <span className="block text-xs font-normal text-gray-400">
+                          Informativa: no se asigna a profesionales
+                        </span>
+                      )}
                     </td>
                     {CATEGORIAS.map((c) => {
                       const clave = claveCelda(programa, c.clave);
                       // Las celdas se validan en cuanto hay algún cambio en la matriz
-                      const invalida = hayCambios && !celdaValida(valores[clave]);
+                      const invalida =
+                        hayCambios && !celdaValida(valores[clave], originales[clave]);
                       return (
                         <td key={c.clave} className="px-3 py-2">
                           <input
@@ -331,7 +347,7 @@ export default function MetasPage() {
                               invalida ? "border-red-400 bg-red-50" : "border-gray-200"
                             }`}
                             inputMode="decimal"
-                            aria-label={`${programa} — ${c.etiqueta}`}
+                            aria-label={`${etiquetaPrograma(programa)} — ${c.etiqueta}`}
                             aria-invalid={invalida}
                             value={valores[clave] ?? ""}
                             onChange={(e) => {
@@ -349,7 +365,8 @@ export default function MetasPage() {
           </div>
           <p className="text-xs text-gray-400">
             «Por cita»: órdenes por cada cita atendida. «×100»: órdenes por cada 100 citas
-            atendidas. Se acepta coma o punto como separador decimal.
+            atendidas. Se acepta coma o punto como separador decimal. Un programa sin metas deja
+            a sus profesionales sin porcentaje.
           </p>
         </>
       )}

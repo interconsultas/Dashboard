@@ -19,6 +19,8 @@ interface Props {
 }
 
 const RUTA_PROFESIONALES = "/admin/medicos";
+/** El programa de metas se resuelve desde la especialidad del profesional. */
+const RUTA_MAPEO_PROGRAMAS = "/admin/metas/programas";
 const ERROR_GENERICO = "Error al importar el archivo";
 
 function plural(n: number, singular: string, pluralTxt: string) {
@@ -133,8 +135,8 @@ export function ImportarCitasExcel({ onImportado }: Props) {
                 "profesionales cargados no tienen programa"
               )}
               ; sin programa no hay meta con la cual medir el cumplimiento.{" "}
-              <Link href={RUTA_PROFESIONALES} className={enlaceCls}>
-                Asignar el programa en Profesionales
+              <Link href={RUTA_MAPEO_PROGRAMAS} className={enlaceCls}>
+                Asignar la meta por especialidad
               </Link>
             </p>
           )}

@@ -74,11 +74,11 @@ describe("/api/admin/citas-atendidas", () => {
       const filas = [
         {
           documento: "10234567", nombre: "PEREZ JUAN", estado: "ACTIVO",
-          programa_meta: "RCV", cantidad_citas: 120, programa: "RCV",
+          programa: "RCV", cantidad_citas: 120,
         },
         {
           documento: "30345678", nombre: "GOMEZ ANA", estado: "ACTIVO",
-          programa_meta: null, cantidad_citas: null, programa: null,
+          programa: null, cantidad_citas: null,
         },
       ];
       mockQuery.mockResolvedValue(filas as never);
@@ -98,6 +98,12 @@ describe("/api/admin/citas-atendidas", () => {
       expect(sql).toContain("c.documento = m.identificacion AND c.periodo = $1");
       expect(sql).toContain("m.estado = 'ACTIVO'");
       expect(sql).toContain("ORDER BY nombre");
+      expect(sql).not.toContain("programa_meta,");
+      expect(sql).not.toContain("c.programa");
+      expect(sql).toContain("map.programa AS programa");
+      expect(sql).toContain(
+        "LEFT JOIN programa_meta_mapeo map ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))"
+      );
       expect(sql).not.toContain("202602");
       expect(params).toEqual([202602]);
     });
@@ -115,7 +121,7 @@ describe("/api/admin/citas-atendidas", () => {
   });
 
   describe("PUT", () => {
-    const FILA = { documento: "10234567", cantidad_citas: 120, programa: "RCV" };
+    const FILA = { documento: "10234567", cantidad_citas: 120 };
 
     it("permite solo el rol admin", async () => {
       await PUT(reqPut({ periodo: 202602, filas: [FILA] }));
@@ -138,8 +144,8 @@ describe("/api/admin/citas-atendidas", () => {
         reqPut({
           periodo: 202602,
           filas: [
-            { documento: "10234567", cantidad_citas: 120, programa: "RCV" },
-            { documento: 30345678, cantidad_citas: 0, programa: null },
+            { documento: "10234567", cantidad_citas: 120 },
+            { documento: 30345678, cantidad_citas: 0 },
           ],
         })
       );
@@ -150,23 +156,32 @@ describe("/api/admin/citas-atendidas", () => {
       const inserts = sentencias().filter((s) => s.includes("INSERT INTO citas_atendidas"));
       expect(inserts).toHaveLength(1);
       const [sql, params] = llamadaCon("INSERT INTO citas_atendidas");
-      expect(sql).toContain("(documento, periodo, cantidad_citas, programa, nombre_medico)");
-      expect(sql).toContain("($1, $2, $3, $4, $5), ($6, $7, $8, $9, $10)");
+      expect(sql).toContain("(documento, periodo, cantidad_citas, nombre_medico)");
+      expect(sql).toContain("($1, $2, $3, $4), ($5, $6, $7, $8)");
+      expect(sql).not.toContain("programa");
       expect(sql).toContain("ON CONFLICT (documento, periodo) DO UPDATE");
       expect(sql).toContain("cantidad_citas = EXCLUDED.cantidad_citas");
-      expect(sql).toContain("programa = EXCLUDED.programa");
       expect(sql).toContain("nombre_medico = EXCLUDED.nombre_medico");
       expect(params).toEqual([
-        "10234567", 202602, 120, "RCV", "PEREZ JUAN",
-        "30345678", 202602, 0, null, "GOMEZ ANA",
+        "10234567", 202602, 120, "PEREZ JUAN",
+        "30345678", 202602, 0, "GOMEZ ANA",
       ]);
+    });
+
+    it("ignora un programa enviado en la fila: el programa sale del mapeo por especialidad", async () => {
+      const res = await PUT(reqPut({ periodo: 202602, filas: [{ ...FILA, programa: "OTRO" }] }));
+
+      expect(res.status).toBe(200);
+      const [sql, params] = llamadaCon("INSERT INTO citas_atendidas");
+      expect(sql).not.toContain("programa");
+      expect(params).not.toContain("OTRO");
     });
 
     it("no interpola los valores en el SQL", async () => {
       await PUT(
         reqPut({
           periodo: 202602,
-          filas: [FILA, { documento: "30345678", cantidad_citas: null, programa: null }],
+          filas: [FILA, { documento: "30345678", cantidad_citas: null }],
         })
       );
 
@@ -183,7 +198,7 @@ describe("/api/admin/citas-atendidas", () => {
       await PUT(
         reqPut({
           periodo: 202602,
-          filas: [FILA, { documento: "30345678", cantidad_citas: 5, programa: null }],
+          filas: [FILA, { documento: "30345678", cantidad_citas: 5 }],
         })
       );
 
@@ -202,8 +217,8 @@ describe("/api/admin/citas-atendidas", () => {
           periodo: 202602,
           filas: [
             FILA,
-            { documento: "999", cantidad_citas: 5, programa: null },
-            { documento: "888", cantidad_citas: 1, programa: null },
+            { documento: "999", cantidad_citas: 5 },
+            { documento: "888", cantidad_citas: 1 },
           ],
         })
       );
@@ -221,8 +236,8 @@ describe("/api/admin/citas-atendidas", () => {
         reqPut({
           periodo: 202602,
           filas: [
-            { documento: "10234567", cantidad_citas: null, programa: null },
-            { documento: "30345678", cantidad_citas: null, programa: "RCV" },
+            { documento: "10234567", cantidad_citas: null },
+            { documento: "30345678", cantidad_citas: null },
           ],
         })
       );
@@ -237,7 +252,7 @@ describe("/api/admin/citas-atendidas", () => {
 
     it("permite eliminar el registro de una cédula que ya no está en medicos", async () => {
       const res = await PUT(
-        reqPut({ periodo: 202602, filas: [{ documento: "999", cantidad_citas: null, programa: null }] })
+        reqPut({ periodo: 202602, filas: [{ documento: "999", cantidad_citas: null }] })
       );
 
       expect(res.status).toBe(200);
@@ -249,7 +264,7 @@ describe("/api/admin/citas-atendidas", () => {
       await PUT(
         reqPut({
           periodo: 202602,
-          filas: [FILA, { documento: "30345678", cantidad_citas: null, programa: null }],
+          filas: [FILA, { documento: "30345678", cantidad_citas: null }],
         })
       );
 
@@ -268,7 +283,7 @@ describe("/api/admin/citas-atendidas", () => {
         PUT(
           reqPut({
             periodo: 202602,
-            filas: [FILA, { documento: "30345678", cantidad_citas: null, programa: null }],
+            filas: [FILA, { documento: "30345678", cantidad_citas: null }],
           })
         )
       ).rejects.toThrow("fallo de base de datos");
@@ -297,18 +312,16 @@ describe("/api/admin/citas-atendidas", () => {
       ["filas vacío", { periodo: 202602, filas: [] }],
       ["filas que no es una lista", { periodo: 202602, filas: {} }],
       ["fila que no es un objeto", { periodo: 202602, filas: [7] }],
-      ["documento ausente", { periodo: 202602, filas: [{ cantidad_citas: 1, programa: null }] }],
+      ["documento ausente", { periodo: 202602, filas: [{ cantidad_citas: 1 }] }],
       ["documento no numérico", { periodo: 202602, filas: [{ ...FILA, documento: "12a" }] }],
       ["documento decimal", { periodo: 202602, filas: [{ ...FILA, documento: 12.5 }] }],
       ["documento cero", { periodo: 202602, filas: [{ ...FILA, documento: 0 }] }],
       ["documento con intento de inyección", { periodo: 202602, filas: [{ ...FILA, documento: "1); DROP TABLE medicos;--" }] }],
-      ["citas ausentes", { periodo: 202602, filas: [{ documento: "10234567", programa: null }] }],
+      ["citas ausentes", { periodo: 202602, filas: [{ documento: "10234567" }] }],
       ["citas negativas", { periodo: 202602, filas: [{ ...FILA, cantidad_citas: -1 }] }],
       ["citas decimales", { periodo: 202602, filas: [{ ...FILA, cantidad_citas: 1.5 }] }],
       ["citas como texto", { periodo: 202602, filas: [{ ...FILA, cantidad_citas: "12" }] }],
       ["citas fuera del rango de la columna", { periodo: 202602, filas: [{ ...FILA, cantidad_citas: 2147483648 }] }],
-      ["programa desconocido", { periodo: 202602, filas: [{ ...FILA, programa: "OTRO" }] }],
-      ["programa que no es texto", { periodo: 202602, filas: [{ ...FILA, programa: 3 }] }],
       ["documento repetido", { periodo: 202602, filas: [FILA, { ...FILA, cantidad_citas: 3 }] }],
     ])("rechaza con 400 y no consulta ni escribe: %s", async (_caso, body) => {
       const res = await PUT(reqPut(body));
@@ -323,7 +336,7 @@ describe("/api/admin/citas-atendidas", () => {
       const res = await PUT(
         reqPut({
           periodo: 202602,
-          filas: [FILA, { documento: "30345678", cantidad_citas: -3, programa: null }],
+          filas: [FILA, { documento: "30345678", cantidad_citas: -3 }],
         })
       );
 

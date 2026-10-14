@@ -153,6 +153,16 @@ class TestVistaCumplimientoOrdenes:
         assert "vm_cumplimiento_mensual" not in sql
         assert "vm_tasas_por_medico" not in sql
 
+    def test_no_vuelve_a_crear_medicos_programa_meta(self):
+        # 014_metas_v5.sql elimina la columna; re-ejecutar 013 no debe recrearla
+        sql = _leer("013_cumplimiento.sql")
+        assert "programa_meta" not in sql
+
+    def test_no_vuelve_a_crear_citas_atendidas_programa(self):
+        # 014_metas_v5.sql elimina el programa por periodo; re-ejecutar 013 no debe recrearlo
+        sql = _leer("013_cumplimiento.sql")
+        assert not re.search(r"ALTER TABLE citas_atendidas", sql)
+
     def test_es_sql_plano_sin_metacomandos_psql(self):
         sql = (SQL_DIR / "013_cumplimiento.sql").read_text(encoding="utf-8")
         assert not re.search(r"^\s*\\", sql, re.M)
@@ -170,6 +180,13 @@ class TestVistaCumplimientoOrdenes:
 
 
 class TestOrdenDeMigraciones:
+
+    def test_init_db_ejecuta_014_despues_de_013(self):
+        script = (RAIZ / "docker" / "init-db.sh").read_text(encoding="utf-8")
+        assert "/sql/014_metas_v5.sql" in script
+        assert script.index("/sql/013_cumplimiento.sql") < script.index(
+            "/sql/014_metas_v5.sql"
+        )
 
     def test_init_db_ejecuta_013_despues_de_006(self):
         script = (RAIZ / "docker" / "init-db.sh").read_text(encoding="utf-8")

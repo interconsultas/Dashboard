@@ -173,6 +173,25 @@ describe("/api/admin/metas", () => {
       ]);
     });
 
+    it("acepta la fila informativa TOTAL MGI y los programas de especialidad", async () => {
+      const res = await PUT(
+        reqPut({
+          anio: 2026,
+          metas: [
+            { programa: "TOTAL MGI", tipo_prestacion: "medicamentos", valor_meta: 2.69863 },
+            { programa: "PEDIATRÍA", tipo_prestacion: "rx", valor_meta: 3 },
+          ],
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const [, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual([
+        2026, "TOTAL MGI", "medicamentos", 2.69863, "ratio",
+        2026, "PEDIATRÍA", "rx", 3, "x100",
+      ]);
+    });
+
     it("rechaza un cuerpo que no es JSON", async () => {
       const res = await PUT({
         json: async () => {

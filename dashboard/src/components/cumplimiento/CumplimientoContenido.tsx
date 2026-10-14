@@ -21,7 +21,8 @@ interface Props {
 }
 
 const RUTA_CITAS = "/admin/citas-atendidas";
-const RUTA_PROFESIONALES = "/admin/medicos";
+/** El programa de metas se resuelve desde la especialidad del profesional. */
+const RUTA_MAPEO_PROGRAMAS = "/admin/metas/programas";
 
 export const TEXTO_ATRIBUCION: Record<RespuestaCumplimiento["atribucion"], string> = {
   ordenador: "Órdenes atribuidas al médico ordenador",
@@ -116,8 +117,8 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
           <p role="note" className="print:break-inside-avoid rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
             Este profesional tiene citas atendidas en periodos sin programa asignado. Sin programa no hay
             meta y no se calcula el porcentaje de esos periodos.{" "}
-            <Link href={RUTA_PROFESIONALES} className="font-semibold underline">
-              Asignar el programa en Profesionales
+            <Link href={RUTA_MAPEO_PROGRAMAS} className="font-semibold underline">
+              Asignar la meta por especialidad
             </Link>
           </p>
         )}
@@ -159,8 +160,8 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
             ? "1 profesional del listado tiene citas atendidas pero no tiene programa asignado."
             : `${sinPrograma} profesionales del listado tienen citas atendidas pero no tienen programa asignado.`}{" "}
           Sin programa no hay meta y no se calcula su porcentaje.{" "}
-          <Link href={RUTA_PROFESIONALES} className="font-semibold underline">
-            Asignar el programa en Profesionales
+          <Link href={RUTA_MAPEO_PROGRAMAS} className="font-semibold underline">
+            Asignar la meta por especialidad
           </Link>
         </p>
       )}

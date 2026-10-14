@@ -246,6 +246,17 @@ describe("CumplimientoView", () => {
       expect(encabezado).not.toHaveTextContent("Profesional");
     });
 
+    it("el filtro de programas muestra las etiquetas del Excel y no ofrece el total", () => {
+      swr({ data: DATOS });
+      render(<CumplimientoView exportarPdf />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Todos" }));
+
+      expect(screen.getByLabelText("CPR")).toBeInTheDocument();
+      expect(screen.getByLabelText("Pediatría")).toBeInTheDocument();
+      expect(screen.queryByLabelText(/TOTAL/)).not.toBeInTheDocument();
+    });
+
     it("el encabezado de impresión incluye el programa cuando hay un filtro aplicado", () => {
       swr({ data: DATOS });
       render(<CumplimientoView exportarPdf />);

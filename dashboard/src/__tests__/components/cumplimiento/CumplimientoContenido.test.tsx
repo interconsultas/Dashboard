@@ -120,9 +120,9 @@ describe("CumplimientoContenido", () => {
       const aviso = screen.getByRole("note");
       expect(aviso).toHaveTextContent("1 profesional del listado tiene citas atendidas pero no tiene programa asignado");
       expect(aviso).toHaveTextContent(/sin programa no hay meta/i);
-      expect(within(aviso).getByRole("link", { name: "Asignar el programa en Profesionales" })).toHaveAttribute(
+      expect(within(aviso).getByRole("link", { name: "Asignar la meta por especialidad" })).toHaveAttribute(
         "href",
-        "/admin/medicos"
+        "/admin/metas/programas"
       );
     });
 
@@ -176,9 +176,9 @@ describe("CumplimientoContenido", () => {
 
       const aviso = screen.getByRole("note");
       expect(aviso).toHaveTextContent(/sin programa no hay meta/i);
-      expect(within(aviso).getByRole("link", { name: "Asignar el programa en Profesionales" })).toHaveAttribute(
+      expect(within(aviso).getByRole("link", { name: "Asignar la meta por especialidad" })).toHaveAttribute(
         "href",
-        "/admin/medicos"
+        "/admin/metas/programas"
       );
     });
 

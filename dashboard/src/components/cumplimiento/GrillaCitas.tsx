@@ -83,7 +83,7 @@ export function GrillaCitas({
                   )}
                 </td>
                 <td className="px-4 py-2">
-                  {/* Solo lectura: el programa se define en Profesionales */}
+                  {/* Solo lectura: el programa sale de la especialidad (Metas › Programas por especialidad) */}
                   <span className={f.programa ? "text-gray-700" : "text-amber-700"}>
                     {f.programa || "Sin asignar"}
                   </span>
