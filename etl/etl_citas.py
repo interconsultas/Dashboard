@@ -1,36 +1,45 @@
 """
 etl_citas.py
-Carga las citas atendidas por profesional desde el Excel del cliente a la
-tabla citas_atendidas. Es idempotente: se puede ejecutar múltiples veces sin
-duplicar datos, y nunca elimina periodos.
+Carga las citas por profesional. Formatos aceptados (se detectan por el
+contenido, no por la extensión):
 
-Formato esperado: una hoja (por defecto 'Tabla_CitasConfirmadas') con una
-columna de cédula ('ID MD' o 'ID') y una columna por periodo ('202601', 'ene-26',
-una fecha o el nombre del mes, 'ENERO', con el año en una celda 'AÑO 2026'
-encima del encabezado, como en el informe mensual del cliente). Las demás
-columnas se ignoran. Las filas con nombre y valores pero sin cédula se omiten y
-se informan.
+- El "INFORME GENERAL DE CITAS DETALLADO POR PROFESIONAL" de Agenda Web
+  (texto separado por tabuladores con extensión .xls, o el mismo informe
+  guardado como .xlsx/.xls). Lo procesa citas_detallado.py: guarda el detalle
+  por servicio y, si el rango es un mes completo, alimenta citas_atendidas.
+- El Excel de citas confirmadas por médico que se usaba antes, a la tabla
+  citas_atendidas. Es idempotente: se puede ejecutar múltiples veces sin
+  duplicar datos, y nunca elimina periodos. Una hoja (por defecto
+  'Tabla_CitasConfirmadas') con una columna de cédula ('ID MD' o 'ID') y una
+  columna por periodo ('202601', 'ene-26', una fecha o el nombre del mes,
+  'ENERO', con el año en una celda 'AÑO 2026' encima del encabezado, como en
+  el informe mensual del cliente). Las demás columnas se ignoran. Las filas
+  con nombre y valores pero sin cédula se omiten y se informan.
 
 Uso:
-    python etl_citas.py --archivo "ruta/al/archivo.xlsx"
+    python etl_citas.py --archivo "ruta/al/archivo.xls"
 """
 import re
 import sys
 import json
 import argparse
-import unicodedata
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
 import openpyxl
 
+import citas_detallado
+from citas_comun import (
+    CEDULA_MAX, CITAS_MAX, SQL_CATALOGO, ErrorArchivo,
+    limitar_advertencias, normalizar as _normalizar,
+)
+from citas_comun import SQL_UPSERT_CITAS_ATENDIDAS as SQL_UPSERT
 from config import get_db_conn
 
 
 HOJA_PREFERIDA = "tabla_citasconfirmadas"
 FILAS_ENCABEZADO = 10
-MAX_ADVERTENCIAS = 50
 
 # Encabezados normalizados (mayúsculas, sin tildes, espacios simples)
 ENCABEZADOS_ID = {"ID MD", "ID", "CEDULA", "DOCUMENTO", "IDENTIFICACION"}
@@ -61,34 +70,6 @@ NOMBRES_MES = {
 RE_ANIO = re.compile(r"^ANO\s*:?\s*(\d{4})$")
 
 ANIO_MIN, ANIO_MAX = 2000, 2100
-CEDULA_MAX = 10 ** 15 - 1     # misma cota que la API del dashboard (15 dígitos)
-CITAS_MAX = 2147483647        # cantidad_citas es INT
-
-# El programa de metas se resuelve desde programa_especialidad (014_metas_v5.sql);
-# solo se usa para informar cuántos profesionales cargados no tienen meta.
-SQL_CATALOGO = """
-    SELECT m.identificacion, m.nombre, map.programa
-    FROM medicos m
-    LEFT JOIN programa_meta_mapeo map
-           ON UPPER(TRIM(map.programa_especialidad)) = UPPER(TRIM(m.programa_especialidad))
-    WHERE m.identificacion = ANY(%s)
-"""
-
-SQL_UPSERT = """
-    INSERT INTO citas_atendidas (documento, periodo, cantidad_citas, nombre_medico)
-    VALUES (%s, %s, %s, %s)
-    ON CONFLICT (documento, periodo) DO UPDATE SET
-        cantidad_citas = EXCLUDED.cantidad_citas,
-        nombre_medico  = EXCLUDED.nombre_medico
-"""
-
-
-class ErrorArchivo(Exception):
-    """El archivo no tiene el formato esperado. El mensaje se muestra al usuario."""
-
-    def __init__(self, mensaje: str, tiene_cedula: bool = False):
-        super().__init__(mensaje)
-        self.tiene_cedula = tiene_cedula
 
 
 @dataclass
@@ -110,16 +91,6 @@ class Lectura:
 # ─────────────────────────────────────────────
 # Interpretación de celdas
 # ─────────────────────────────────────────────
-
-def _normalizar(valor) -> str:
-    """Texto en mayúsculas, sin tildes y con espacios simples."""
-    if not isinstance(valor, str):
-        return ""
-    sin_tildes = "".join(
-        c for c in unicodedata.normalize("NFD", valor) if unicodedata.category(c) != "Mn"
-    )
-    return " ".join(sin_tildes.split()).upper()
-
 
 def _periodo_valido(anio: int, mes: int) -> int | None:
     if ANIO_MIN <= anio <= ANIO_MAX and 1 <= mes <= 12:
@@ -352,15 +323,6 @@ def leer_registros(ws, enc: Encabezado) -> Lectura:
     return lectura
 
 
-def limitar_advertencias(advertencias: list[str]) -> list[str]:
-    """Como máximo MAX_ADVERTENCIAS elementos; el último indica cuántas se omiten."""
-    if len(advertencias) <= MAX_ADVERTENCIAS:
-        return list(advertencias)
-    visibles = advertencias[:MAX_ADVERTENCIAS - 1]
-    omitidas = len(advertencias) - len(visibles)
-    return visibles + [f"Hay {omitidas} advertencias más que no se muestran"]
-
-
 # ─────────────────────────────────────────────
 # Carga
 # ─────────────────────────────────────────────
@@ -377,6 +339,10 @@ def leer_archivo(archivo: Path) -> Lectura:
 
 def cargar_citas(archivo: Path) -> dict:
     print(f"[INFO] Leyendo: {archivo.name}")
+
+    filas_detallado = citas_detallado.leer_filas_detallado(archivo)
+    if filas_detallado is not None:
+        return citas_detallado.cargar_detallado(archivo, filas_detallado)
 
     lectura = leer_archivo(archivo)
     documentos = list(lectura.nombres)
@@ -447,7 +413,7 @@ def cargar_citas(archivo: Path) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Carga de citas atendidas por profesional")
     parser.add_argument("--archivo", type=str, required=True,
-                        help="Ruta al archivo Excel con las citas atendidas")
+                        help="Ruta al informe detallado por profesional o al Excel de citas atendidas")
     args = parser.parse_args(argv)
 
     archivo = Path(args.archivo)
