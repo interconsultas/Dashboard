@@ -33,7 +33,7 @@ function renderImportar() {
 }
 
 function seleccionarArchivo(file = archivo()) {
-  fireEvent.change(screen.getByLabelText("Importar Excel"), { target: { files: [file] } });
+  fireEvent.change(screen.getByLabelText("Importar informe"), { target: { files: [file] } });
 }
 
 describe("ImportarCitasExcel", () => {
@@ -42,12 +42,12 @@ describe("ImportarCitasExcel", () => {
     global.fetch = mockFetch as unknown as typeof fetch;
   });
 
-  it("muestra el selector de archivo limitado a .xlsx", () => {
+  it("muestra el selector de archivo limitado a .xlsx y .xls", () => {
     renderImportar();
 
-    const input = screen.getByLabelText("Importar Excel");
+    const input = screen.getByLabelText("Importar informe");
     expect(input).toHaveAttribute("type", "file");
-    expect(input).toHaveAttribute("accept", ".xlsx");
+    expect(input).toHaveAttribute("accept", ".xlsx,.xls");
   });
 
   it("envía el archivo en el campo «archivo» al endpoint de importación", async () => {
@@ -75,7 +75,7 @@ describe("ImportarCitasExcel", () => {
     expect(screen.getByLabelText("Importando…")).toBeDisabled();
 
     resolver({ ok: true, json: async () => RESULTADO });
-    expect(await screen.findByText("Importar Excel")).toBeInTheDocument();
+    expect(await screen.findByText("Importar informe")).toBeInTheDocument();
   });
 
   it("muestra el resumen con registros, periodos formateados y profesionales", async () => {
@@ -225,8 +225,143 @@ describe("ImportarCitasExcel", () => {
   it("no hace nada si no se selecciona ningún archivo", () => {
     renderImportar();
 
-    fireEvent.change(screen.getByLabelText("Importar Excel"), { target: { files: [] } });
+    fireEvent.change(screen.getByLabelText("Importar informe"), { target: { files: [] } });
 
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  describe("informe detallado por profesional", () => {
+    const DETALLADO = {
+      formato: "detallado",
+      periodo: 202610,
+      fecha_inicial: "2026-10-01",
+      fecha_final: "2026-10-31",
+      granularidad: "mensual",
+      filas: 1007,
+      registros: 990,
+      filas_agrupadas: 17,
+      profesionales: 174,
+      servicios: 83,
+      servicios_nuevos: [],
+      citas_atendidas: 78,
+      periodos: [202610],
+      sin_catalogo: [],
+      sin_programa: 0,
+      advertencias: [],
+    };
+
+    it("muestra el rango, la granularidad y los totales del informe", async () => {
+      responder(DETALLADO);
+      const { onImportado } = renderImportar();
+
+      seleccionarArchivo(archivo("INFORME DETALLADO POR PROFESIONAL.xls"));
+
+      const resumen = await screen.findByRole("status");
+      expect(resumen).toHaveTextContent("01/10/2026 – 31/10/2026 (mensual)");
+      expect(resumen).toHaveTextContent("1007 filas");
+      expect(resumen).toHaveTextContent("174 profesionales");
+      expect(resumen).toHaveTextContent("83 servicios");
+      expect(resumen).toHaveTextContent("17 filas repetidas se sumaron");
+      expect(resumen).toHaveTextContent("Citas atendidas de Oct 2026 actualizadas para 78 profesionales");
+      expect(onImportado).toHaveBeenCalledWith([202610]);
+      expect(screen.queryByText(/servicios? nuevos?/i)).not.toBeInTheDocument();
+    });
+
+    it("aclara que una carga semanal no modifica las citas atendidas", async () => {
+      responder({
+        ...DETALLADO,
+        fecha_final: "2026-10-07",
+        granularidad: "semanal",
+        filas_agrupadas: 0,
+        citas_atendidas: 0,
+        periodos: [],
+      });
+      const { onImportado } = renderImportar();
+
+      seleccionarArchivo(archivo("detallado.xls"));
+
+      const resumen = await screen.findByRole("status");
+      expect(resumen).toHaveTextContent("01/10/2026 – 07/10/2026 (semanal)");
+      expect(resumen).toHaveTextContent(/no modifican las citas atendidas/i);
+      expect(resumen).not.toHaveTextContent(/repetidas/i);
+      expect(onImportado).toHaveBeenCalledWith([]);
+    });
+
+    it("informa los servicios nuevos con un conteo y la lista colapsada, sin estilo de advertencia", async () => {
+      responder({
+        ...DETALLADO,
+        servicios_nuevos: [
+          { codigo: "50110", nombre: "CONSULTA MEDICINA GENERAL" },
+          { codigo: "50120", nombre: "CONSULTA PEDIATRIA" },
+        ],
+      });
+      renderImportar();
+
+      seleccionarArchivo(archivo("detallado.xls"));
+
+      const aviso = (await screen.findByText("2 servicios nuevos en el catálogo"))
+        .closest("[data-aviso]") as HTMLElement;
+      expect(aviso).toHaveAttribute("data-aviso", "info");
+      expect(aviso).not.toHaveClass("bg-amber-50");
+      const items = within(aviso).getAllByRole("listitem");
+      expect(items[0]).toHaveTextContent("50110 — CONSULTA MEDICINA GENERAL");
+      expect(items[0]).not.toBeVisible();
+      expect(aviso.querySelector("details")).not.toHaveAttribute("open");
+    });
+
+    it("usa el singular cuando hay un solo servicio nuevo", async () => {
+      responder({
+        ...DETALLADO,
+        servicios_nuevos: [{ codigo: "50110", nombre: "CONSULTA MEDICINA GENERAL" }],
+      });
+      renderImportar();
+
+      seleccionarArchivo(archivo("detallado.xls"));
+
+      expect(await screen.findByText("1 servicio nuevo en el catálogo")).toBeInTheDocument();
+    });
+
+    it("explica que los profesionales fuera de Profesionales no se miden en cumplimiento, con la lista colapsada", async () => {
+      responder({
+        ...DETALLADO,
+        sin_catalogo: [
+          { documento: "2000002", nombre: "JUAN NUÑEZ" },
+          { documento: "2000003", nombre: null },
+        ],
+      });
+      renderImportar();
+
+      seleccionarArchivo(archivo("detallado.xls"));
+
+      const aviso = (
+        await screen.findByText(
+          "2 profesionales del informe no se miden en cumplimiento porque no están registrados en Profesionales"
+        )
+      ).closest("[data-aviso]") as HTMLElement;
+      expect(aviso).toHaveAttribute("data-aviso", "info");
+      expect(aviso).not.toHaveClass("bg-amber-50");
+      expect(aviso).toHaveTextContent(/detalle .*tablero de citas/i);
+      const items = within(aviso).getAllByRole("listitem");
+      expect(items[0]).toHaveTextContent("JUAN NUÑEZ — cédula 2000002");
+      expect(items[1]).toHaveTextContent("Cédula 2000003");
+      expect(items[0]).not.toBeVisible();
+      expect(within(aviso).getByRole("link", { name: "Profesionales" })).toHaveAttribute(
+        "href",
+        "/admin/medicos"
+      );
+    });
+
+    it("usa el singular cuando un solo profesional no está registrado", async () => {
+      responder({ ...DETALLADO, sin_catalogo: [{ documento: "2000002", nombre: "JUAN NUÑEZ" }] });
+      renderImportar();
+
+      seleccionarArchivo(archivo("detallado.xls"));
+
+      expect(
+        await screen.findByText(
+          "1 profesional del informe no se mide en cumplimiento porque no está registrado en Profesionales"
+        )
+      ).toBeInTheDocument();
+    });
   });
 });

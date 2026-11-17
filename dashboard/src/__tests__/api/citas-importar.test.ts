@@ -85,7 +85,17 @@ describe("POST /api/admin/citas-atendidas/importar", () => {
     expect(mockRunEtl).not.toHaveBeenCalled();
   });
 
-  it("rechaza archivos que no son .xlsx", async () => {
+  it.each(["INFORME DETALLADO POR PROFESIONAL.xls", "citas.XLS", "citas.XLSX"])(
+    "acepta el informe detallado .xls y las extensiones en mayúsculas (%s)",
+    async (nombre) => {
+      const res = await POST(reqConFormData(formConArchivo(archivoValido(nombre))));
+
+      expect(res.status).toBe(200);
+      expect(mockRunEtl).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("rechaza archivos que no son .xlsx ni .xls", async () => {
     const res = await POST(reqConFormData(formConArchivo(archivoValido("citas.csv"))));
 
     expect(res.status).toBe(400);
