@@ -21,7 +21,7 @@ interface Props {
   onSeleccionar: (documento: string | null) => void;
 }
 
-const RUTA_CITAS = "/admin/citas-atendidas";
+const RUTA_CITAS = "/admin/citas";
 /** El programa de metas se resuelve desde la especialidad del profesional. */
 const RUTA_MAPEO_PROGRAMAS = "/admin/metas/programas";
 
@@ -55,7 +55,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
           href={RUTA_CITAS}
           className="inline-flex px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
         >
-          Ir a Citas atendidas
+          Ir a Citas
         </Link>
       </div>
     );

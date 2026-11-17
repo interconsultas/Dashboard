@@ -8,6 +8,7 @@ import { runEtlCitasSync } from "@/lib/etl-run-sync";
 import { clearCache } from "@/lib/cache";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, el mismo límite que la importación de profesionales
+const EXTENSIONES = /\.xlsx?$/i;
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth(["admin"]);
@@ -24,8 +25,10 @@ export async function POST(req: NextRequest) {
   if (!archivo) {
     return NextResponse.json({ error: "No se recibió ningún archivo" }, { status: 400 });
   }
-  if (!archivo.name.endsWith(".xlsx")) {
-    return NextResponse.json({ error: "Solo se aceptan archivos .xlsx" }, { status: 400 });
+  // .xls: el informe detallado por profesional de Agenda Web (texto con esa
+  // extensión). El ETL detecta el formato por el contenido.
+  if (!EXTENSIONES.test(archivo.name)) {
+    return NextResponse.json({ error: "Solo se aceptan archivos .xlsx o .xls" }, { status: 400 });
   }
   if (archivo.size > MAX_FILE_SIZE) {
     return NextResponse.json(

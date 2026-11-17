@@ -54,7 +54,7 @@ describe("CumplimientoContenido", () => {
 
       expect(screen.getByText("Aún no hay citas atendidas cargadas")).toBeInTheDocument();
       expect(screen.getByText(/cargue primero las citas atendidas/i)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /Citas atendidas/ })).toHaveAttribute("href", "/admin/citas-atendidas");
+      expect(screen.getByRole("link", { name: "Ir a Citas" })).toHaveAttribute("href", "/admin/citas");
       expect(screen.queryByText("Cumplimiento global")).not.toBeInTheDocument();
     });
   });

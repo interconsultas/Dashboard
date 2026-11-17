@@ -21,6 +21,23 @@ function enlace(nombre: string) {
   return screen.getByRole("link", { name: nombre });
 }
 
+describe("Sidebar — entrada Citas", () => {
+  it("se llama Citas y enlaza a /admin/citas", () => {
+    mockUsePathname.mockReturnValue("/admin/carga");
+    render(<Sidebar />);
+
+    expect(enlace("Citas")).toHaveAttribute("href", "/admin/citas");
+    expect(screen.queryByRole("link", { name: "Citas atendidas" })).not.toBeInTheDocument();
+  });
+
+  it("en /admin/citas resalta Citas", () => {
+    mockUsePathname.mockReturnValue("/admin/citas");
+    render(<Sidebar />);
+
+    expect(enlace("Citas")).toHaveClass("bg-brand-green");
+  });
+});
+
 describe("Sidebar — entrada Cumplimiento", () => {
   it("enlaza a /dashboard/cumplimiento", () => {
     mockUsePathname.mockReturnValue("/dashboard");
