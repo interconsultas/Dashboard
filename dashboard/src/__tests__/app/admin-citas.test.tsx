@@ -65,6 +65,15 @@ describe("/admin/citas", () => {
     ).toBeInTheDocument();
   });
 
+  it("enlaza a la edición de las áreas de servicio", () => {
+    render(<CitasPage />);
+
+    expect(screen.getByRole("link", { name: "Áreas de servicio" })).toHaveAttribute(
+      "href",
+      "/admin/citas/areas"
+    );
+  });
+
   it("separa la carga del informe de la grilla de citas atendidas para cumplimiento", () => {
     render(<CitasPage />);
 

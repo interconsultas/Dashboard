@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { fmtPeriodo } from "@/lib/periodo";
@@ -144,6 +145,12 @@ export default function CitasPage() {
         <p className="text-sm text-gray-400 mt-0.5">
           Carga del informe de Agenda Web y citas atendidas para cumplimiento
         </p>
+        <Link
+          href="/admin/citas/areas"
+          className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
+        >
+          Áreas de servicio
+        </Link>
       </div>
 
       <section

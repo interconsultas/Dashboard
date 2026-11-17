@@ -91,10 +91,12 @@ SQL_SERVICIOS_EXISTENTES = """
     SELECT codigo_servicio FROM servicios_citas WHERE codigo_servicio = ANY(%s)
 """
 
-# El nombre del servicio es el de su carga más reciente; los periodos solo se amplían
+# El nombre del servicio es el de su carga más reciente; los periodos solo se amplían.
+# Un servicio nuevo recibe el área de la regla en SQL (017); uno existente conserva
+# la suya, la haya editado un administrador o no: las cargas nunca lo reclasifican.
 SQL_UPSERT_SERVICIO = """
-    INSERT INTO servicios_citas (codigo_servicio, nombre_servicio, primer_periodo, ultimo_periodo)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO servicios_citas (codigo_servicio, nombre_servicio, primer_periodo, ultimo_periodo, area)
+    VALUES (%(codigo)s, %(nombre)s, %(primer)s, %(ultimo)s, clasificar_area_servicio(%(nombre)s))
     ON CONFLICT (codigo_servicio) DO UPDATE SET
         nombre_servicio = CASE WHEN EXCLUDED.ultimo_periodo >= servicios_citas.ultimo_periodo
                                THEN EXCLUDED.nombre_servicio
@@ -494,7 +496,9 @@ def cargar_detallado(archivo: Path, filas: list[list]) -> dict:
         cur.execute(SQL_SERVICIOS_EXISTENTES, (codigos,))
         existentes = {fila[0] for fila in cur.fetchall()}
         cur.executemany(SQL_UPSERT_SERVICIO, [
-            (codigo, informe.servicios[codigo], _periodo(ini), _periodo(fin)) for codigo in codigos
+            {"codigo": codigo, "nombre": informe.servicios[codigo],
+             "primer": _periodo(ini), "ultimo": _periodo(fin)}
+            for codigo in codigos
         ])
 
         cur.execute(SQL_BORRAR_RANGO, (ini, fin))
