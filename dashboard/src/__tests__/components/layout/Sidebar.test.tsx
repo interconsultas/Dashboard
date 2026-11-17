@@ -72,3 +72,24 @@ describe("Sidebar — entrada Cumplimiento", () => {
     expect(enlace("Cumplimiento")).not.toHaveClass("bg-brand-green");
   });
 });
+
+describe("Sidebar — entrada Productividad", () => {
+  it("enlaza a /dashboard/productividad justo debajo de Cumplimiento", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    render(<Sidebar />);
+
+    expect(enlace("Productividad")).toHaveAttribute("href", "/dashboard/productividad");
+    const nombres = screen.getAllByRole("link").map((l) => l.textContent?.trim());
+    expect(nombres.indexOf("Productividad")).toBe(nombres.indexOf("Cumplimiento") + 1);
+  });
+
+  it("en /dashboard/productividad resalta Productividad y no Dashboard ni Cumplimiento", () => {
+    mockUsePathname.mockReturnValue("/dashboard/productividad");
+    render(<Sidebar />);
+
+    expect(enlace("Productividad")).toHaveClass("bg-brand-green");
+    expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
+    expect(enlace("Cumplimiento")).not.toHaveClass("bg-brand-green");
+  });
+});

@@ -1,0 +1,53 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import ReactEChartsCore from "echarts-for-react/lib/core";
+import { echarts, type EChartsType } from "@/lib/echarts";
+
+export interface PropsGrafico {
+  /** Opción de ECharts (lib/productividad/graficas). */
+  opcion: object;
+  /** Nombre accesible de la gráfica. */
+  etiqueta: string;
+  /** Eventos de ECharts: { click: (params) => void }. */
+  eventos?: Record<string, (params: never) => void>;
+  /** Instancia lista (p. ej. para dispatchAction o clics fuera de los puntos). */
+  onListo?: (chart: EChartsType) => void;
+  className?: string;
+}
+
+/** Envoltura de echarts-for-react con el ECharts modular. Solo navegador. */
+export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, className }: PropsGrafico) {
+  const contenedor = useRef<HTMLDivElement>(null);
+  const instancia = useRef<EChartsType | null>(null);
+
+  // echarts-for-react solo se redimensiona con la ventana; la tarjeta cambia de
+  // ancho al cargar la grilla o al plegar el menú, así que se observa el contenedor.
+  useEffect(() => {
+    const nodo = contenedor.current;
+    if (!nodo || typeof ResizeObserver === "undefined") return;
+    const observador = new ResizeObserver(() => instancia.current?.resize());
+    observador.observe(nodo);
+    return () => observador.disconnect();
+  }, []);
+
+  const alEstarListo = (chart: EChartsType) => {
+    instancia.current = chart;
+    onListo?.(chart);
+  };
+
+  return (
+    <div ref={contenedor} role="img" aria-label={etiqueta} className={className}>
+      <ReactEChartsCore
+        echarts={echarts}
+        option={opcion}
+        notMerge
+        lazyUpdate
+        onEvents={eventos}
+        onChartReady={alEstarListo}
+        style={{ width: "100%", height: "100%" }}
+        opts={{ renderer: "canvas" }}
+      />
+    </div>
+  );
+}

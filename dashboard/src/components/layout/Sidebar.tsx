@@ -77,6 +77,15 @@ function IconCumplimiento({ className }: { className?: string }) {
   );
 }
 
+function IconProductividad({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 2.5a7.5 7.5 0 107.5 7.5H10V2.5z" />
+      <path d="M13 2.8A7.5 7.5 0 0117.2 7H13V2.8z" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -126,7 +135,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
   // Cumplimiento vive bajo /dashboard pero es una entrada propia del menú
   const isCumplimiento = pathname.startsWith("/dashboard/cumplimiento");
-  const isDashboard = pathname.startsWith("/dashboard") && !isCumplimiento;
+  // Productividad, igual que Cumplimiento, es una entrada propia bajo /dashboard
+  const isProductividad = pathname.startsWith("/dashboard/productividad");
+  const isDashboard = pathname.startsWith("/dashboard") && !isCumplimiento && !isProductividad;
   const [subOpen, setSubOpen] = useState(isDashboard);
 
   function handleNav() {
@@ -233,6 +244,20 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         >
           <IconCumplimiento className="w-[18px] h-[18px] flex-shrink-0" />
           Cumplimiento
+        </Link>
+
+        {/* Productividad */}
+        <Link
+          href="/dashboard/productividad"
+          onClick={handleNav}
+          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            isProductividad
+              ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <IconProductividad className="w-[18px] h-[18px] flex-shrink-0" />
+          Productividad
         </Link>
 
         {/* Carga de archivos */}
