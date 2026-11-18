@@ -9,8 +9,15 @@ import { getCached, setCache } from "@/lib/cache";
 import { SQL_CARGAS } from "@/lib/productividad/sql";
 import { cargasDe, type CargaBD } from "@/lib/productividad/construir";
 import { META_INASISTENCIA } from "@/lib/productividad/metricas";
-import type { Granularidad } from "@/lib/productividad/periodos";
-import { evaluarAlertas, type FilaProfesionalPeriodo, type FilaServicioPeriodo } from "./alertas";
+import { claveCarga, type Granularidad, type RangoCarga } from "@/lib/productividad/periodos";
+import {
+  evaluarAlertas,
+  type EntradaAlertas,
+  type FilaProfesionalPeriodo,
+  type FilaServicioPeriodo,
+  type ResultadoAlertas,
+} from "./alertas";
+import { IMPACTO_MINIMO, candidatosPrioridad, ofertaPromedioPorProfesional, priorizar, type Candidato } from "./prioridades";
 import { MIN_PERIODOS_PROYECCION } from "./proyeccion";
 import { CLAVES_REGLAS, filaARegla, type ReglaAlerta } from "./reglas";
 import type { RespuestaAlertas } from "./tipos";
@@ -30,6 +37,36 @@ export async function leerReglas(ejecutar: typeof query = query): Promise<ReglaA
   return CLAVES_REGLAS.filter((c) => porClave.has(c)).map((c) => filaARegla(porClave.get(c)!));
 }
 
+/** Candidatos a prioridad de una evaluación (la oferta promedio es la del periodo evaluado). */
+function candidatosDe(e: EntradaAlertas, r: ResultadoAlertas, ultima: RangoCarga): Candidato[] {
+  const ofertadas = e.servicios.filter((f) => f.fecha_inicial === ultima.fecha_inicial).reduce((s, f) => s + f.ofertadas, 0);
+  return candidatosPrioridad({
+    granularidad: e.granularidad,
+    periodo: claveCarga(ultima),
+    alertas: r.alertas,
+    proyeccionAreas: r.proyeccion.areas,
+    siguiente: r.siguiente,
+    ofertaPorProfesional: ofertaPromedioPorProfesional(ofertadas, e.profesionales.length),
+    meta: e.meta,
+  });
+}
+
+const aServicio = (f: FilaServicioPeriodo): FilaServicioPeriodo => ({
+  ...f,
+  codigo_servicio: String(f.codigo_servicio),
+  asignadas: num(f.asignadas),
+  inasistidas: num(f.inasistidas),
+  ofertadas: num(f.ofertadas),
+  disponibles: num(f.disponibles),
+});
+
+const aProfesional = (p: FilaProfesionalPeriodo): FilaProfesionalPeriodo => ({
+  ...p,
+  documento: String(p.documento),
+  asignadas: num(p.asignadas),
+  inasistidas: num(p.inasistidas),
+});
+
 export async function obtenerAlertas(granularidad: Granularidad): Promise<RespuestaAlertas> {
   const clave = `${PREFIJO_CACHE_ALERTAS}${granularidad}`;
   const cached = getCached<RespuestaAlertas>(clave);
@@ -38,37 +75,41 @@ export async function obtenerAlertas(granularidad: Granularidad): Promise<Respue
   const todas = (await query<CargaBD>(SQL_CARGAS)).map((c) => ({ ...c, periodo: Number(c.periodo) }));
   const cargas = cargasDe(todas, granularidad);
   const ultima = cargas[cargas.length - 1];
+  const anterior = cargas.length > 1 ? cargas[cargas.length - 2] : null;
+  const profesionalesDe = (c: RangoCarga | null | undefined) =>
+    c ? query<FilaProfesionalPeriodo>(SQL_PROFESIONALES_ALERTA, [granularidad, c.fecha_inicial, c.fecha_final]) : Promise.resolve([]);
 
-  const [areasR, reglas, serviciosR, profesionalesR] = await Promise.all([
+  const [areasR, reglas, serviciosR, profesionalesR, profesionalesAnteriorR] = await Promise.all([
     query<{ nombre: string }>(SQL_AREAS),
     leerReglas(),
     ultima ? query<FilaServicioPeriodo>(SQL_SERIE_SERVICIOS, [granularidad]) : Promise.resolve([]),
-    ultima
-      ? query<FilaProfesionalPeriodo>(SQL_PROFESIONALES_ALERTA, [granularidad, ultima.fecha_inicial, ultima.fecha_final])
-      : Promise.resolve([]),
+    profesionalesDe(ultima),
+    profesionalesDe(anterior),
   ]);
 
-  const resultado = evaluarAlertas({
+  const entrada: EntradaAlertas = {
     granularidad,
     cargas,
     areas: areasR.map((r) => r.nombre),
-    servicios: serviciosR.map((f) => ({
-      ...f,
-      codigo_servicio: String(f.codigo_servicio),
-      asignadas: num(f.asignadas),
-      inasistidas: num(f.inasistidas),
-      ofertadas: num(f.ofertadas),
-      disponibles: num(f.disponibles),
-    })),
-    profesionales: profesionalesR.map((p) => ({
-      ...p,
-      documento: String(p.documento),
-      asignadas: num(p.asignadas),
-      inasistidas: num(p.inasistidas),
-    })),
+    servicios: serviciosR.map(aServicio),
+    profesionales: profesionalesR.map(aProfesional),
     reglas,
     meta: META_INASISTENCIA,
-  });
+  };
+  const resultado = evaluarAlertas(entrada);
+
+  // Misma evaluación sobre el periodo anterior, para marcar Nuevo / Empeora / Persiste.
+  let candidatosAnteriores: Candidato[] | null = null;
+  if (anterior) {
+    const entradaAnterior: EntradaAlertas = {
+      ...entrada,
+      cargas: cargas.slice(0, -1),
+      servicios: entrada.servicios.filter((f) => f.fecha_inicial !== ultima.fecha_inicial),
+      profesionales: profesionalesAnteriorR.map(aProfesional),
+    };
+    candidatosAnteriores = candidatosDe(entradaAnterior, evaluarAlertas(entradaAnterior), anterior);
+  }
+  const prioridades = ultima ? priorizar(candidatosDe(entrada, resultado, ultima), candidatosAnteriores) : [];
 
   const respuesta: RespuestaAlertas = {
     ...resultado,
@@ -77,6 +118,9 @@ export async function obtenerAlertas(granularidad: Granularidad): Promise<Respue
     periodos_cargados: cargas.length,
     min_periodos_proyeccion: MIN_PERIODOS_PROYECCION,
     reglas,
+    prioridades,
+    periodo_anterior: anterior ? claveCarga(anterior) : null,
+    impacto_minimo: IMPACTO_MINIMO,
   };
   setCache(clave, respuesta, CACHE_TTL_MS);
   return respuesta;

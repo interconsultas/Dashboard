@@ -4,6 +4,7 @@ import type { Granularidad } from "@/lib/productividad/periodos";
 import type { PeriodoCarga } from "@/lib/productividad/tipos";
 import type { Esquema, ResultadoBusqueda, Vecindario } from "./grafo";
 import type { ResultadoAlertas } from "./alertas";
+import type { Prioridad } from "./prioridades";
 import type { ReglaAlerta } from "./reglas";
 
 export interface ContextoGrafo {
@@ -41,4 +42,10 @@ export interface RespuestaAlertas extends ResultadoAlertas {
   periodos_cargados: number;
   min_periodos_proyeccion: number;
   reglas: ReglaAlerta[];
+  /** Vista ejecutiva: máximo 5, ordenadas (ver ./prioridades). */
+  prioridades: Prioridad[];
+  /** Periodo con el que se comparan las prioridades; null si no hay. */
+  periodo_anterior: string | null;
+  /** Citas por encima del umbral para que una prioridad cuente. */
+  impacto_minimo: number;
 }

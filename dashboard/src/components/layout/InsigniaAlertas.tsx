@@ -7,7 +7,7 @@ export const URL_CONTEO = "/api/inteligencia/alertas/conteo";
 /** El conteo se recalcula en el servidor cada 5 minutos (caché). */
 export const REFRESCO_MS = 180_000;
 
-/** Insignia del menú con el número de alertas activas del último mes. Sin datos o con error no muestra nada. */
+/** Insignia del menú con el número de prioridades (≤ 5) del último mes. Sin datos o con error no muestra nada. */
 export function InsigniaAlertas() {
   const { data, error } = useSWR<{ total: number }>(URL_CONTEO, fetcher, {
     refreshInterval: REFRESCO_MS,
@@ -16,7 +16,7 @@ export function InsigniaAlertas() {
   });
   const total = data?.total ?? 0;
   if (error || total <= 0) return null;
-  const titulo = `${total} ${total === 1 ? "alerta activa" : "alertas activas"}`;
+  const titulo = `${total} ${total === 1 ? "prioridad" : "prioridades"}`;
   return (
     <span className="ml-auto inline-flex items-center">
       <span

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Grafico } from "@/components/productividad/Grafico";
 import type { ResultadoAlertas, SerieProyectada } from "@/lib/inteligencia/alertas";
 import { opcionesProyeccion } from "@/lib/inteligencia/graficaProyeccion";
@@ -19,6 +20,34 @@ function CeldaDireccion({ d }: { d: Direccion }) {
       <span aria-hidden>{e.flecha}</span>
       <span>{e.texto}</span>
     </span>
+  );
+}
+
+function EstadoMeta({ sobre }: { sobre: boolean }) {
+  return sobre ? (
+    <span className="inline-flex items-center gap-1 text-red-700 font-medium">
+      <svg data-testid="icono-meta-sobre" aria-hidden viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
+        <circle cx="8" cy="8" r="6.3" />
+        <path d="M8 4.8v3.6" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="8" cy="11" r=".8" fill="currentColor" stroke="none" />
+      </svg>
+      Sobre la meta
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+      <svg data-testid="icono-meta-bajo" aria-hidden viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="8" r="6.3" strokeWidth="1.4" />
+        <path d="M5.3 8.2l1.9 1.9 3.6-3.8" />
+      </svg>
+      Bajo la meta
+    </span>
+  );
+}
+
+/** Proyección descendente; las series sin proyección al final. */
+export function ordenarPorProyeccion(filas: readonly SerieProyectada[]): SerieProyectada[] {
+  return [...filas].sort(
+    (a, b) => (b.inasistencia?.valor ?? -1) - (a.inasistencia?.valor ?? -1) || a.nombre.localeCompare(b.nombre, "es")
   );
 }
 
@@ -56,11 +85,7 @@ function Tabla({ titulo, filas, meta, conArea }: { titulo: string; filas: readon
                     <td className="py-2 pr-3 tabular-nums text-gray-500 whitespace-nowrap">{`${fmtPct(p.min)}–${fmtPct(p.max)}`}</td>
                     <td className="py-2 pr-3"><CeldaDireccion d={p.direccion} /></td>
                     <td className="py-2 pr-3">
-                      {p.valor > meta ? (
-                        <span className="text-red-700 font-medium">Sobre la meta</span>
-                      ) : (
-                        <span className="text-emerald-700 font-medium">Bajo la meta</span>
-                      )}
+                      <EstadoMeta sobre={p.valor > meta} />
                     </td>
                     <td className="py-2 text-right tabular-nums text-gray-600">{s.asignadas ? fmtNumero(s.asignadas.valor) : "—"}</td>
                   </>
@@ -76,7 +101,10 @@ function Tabla({ titulo, filas, meta, conArea }: { titulo: string; filas: readon
   );
 }
 
-/** Proyección del siguiente periodo por área (tabla + mini gráficas) y por servicio principal. */
+/**
+ * Resumen de la proyección del siguiente periodo: tabla por área ordenada de
+ * mayor a menor; las mini gráficas y los servicios principales, al expandir.
+ */
 export function PanelProyeccion({
   areas,
   servicios,
@@ -92,8 +120,10 @@ export function PanelProyeccion({
   minPeriodos: number;
   periodosCargados: number;
 }) {
+  const [expandida, setExpandida] = useState(false);
   const nombresAreas = areas.map((a) => a.id);
   const conProyeccion = areas.filter((a) => a.inasistencia);
+  const hayMas = (siguiente !== null && conProyeccion.length > 0) || servicios.length > 0;
   return (
     <section aria-labelledby="titulo-proyeccion" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
       <div>
@@ -111,27 +141,43 @@ export function PanelProyeccion({
         )}
       </div>
 
-      <Tabla titulo="Proyección por área" filas={areas} meta={meta} />
+      <Tabla titulo="Proyección por área" filas={ordenarPorProyeccion(areas)} meta={meta} />
 
-      {siguiente && conProyeccion.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          {conProyeccion.map((a) => (
-            <figure key={a.id} className="rounded-xl border border-gray-100 p-2">
-              <figcaption className="text-xs font-semibold text-brand-navy px-1">{a.nombre}</figcaption>
-              <Grafico
-                etiqueta={`Proyección de inasistencia: ${a.nombre}`}
-                opcion={opcionesProyeccion(a, siguiente, meta, colorArea(a.id, nombresAreas))}
-                className="h-36 w-full"
-              />
-            </figure>
-          ))}
-        </div>
+      {hayMas && (
+        <button
+          type="button"
+          aria-expanded={expandida}
+          aria-controls="proyeccion-detalle"
+          onClick={() => setExpandida((v) => !v)}
+          className="text-xs font-semibold text-brand-navy underline"
+        >
+          {expandida ? "Ocultar gráficas y servicios" : "Ver gráficas y servicios"}
+        </button>
       )}
 
-      {servicios.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-brand-navy mb-1">Servicios con más citas asignadas</h3>
-          <Tabla titulo="Proyección por servicio" filas={servicios} meta={meta} conArea />
+      {expandida && (
+        <div id="proyeccion-detalle" className="space-y-4">
+          {siguiente && conProyeccion.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              {conProyeccion.map((a) => (
+                <figure key={a.id} className="rounded-xl border border-gray-100 p-2">
+                  <figcaption className="text-xs font-semibold text-brand-navy px-1">{a.nombre}</figcaption>
+                  <Grafico
+                    etiqueta={`Proyección de inasistencia: ${a.nombre}`}
+                    opcion={opcionesProyeccion(a, siguiente, meta, colorArea(a.id, nombresAreas))}
+                    className="h-36 w-full"
+                  />
+                </figure>
+              ))}
+            </div>
+          )}
+
+          {servicios.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-brand-navy mb-1">Servicios con más citas asignadas</h3>
+              <Tabla titulo="Proyección por servicio" filas={servicios} meta={meta} conArea />
+            </div>
+          )}
         </div>
       )}
     </section>

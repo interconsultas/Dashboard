@@ -16,7 +16,9 @@ jest.mock("@/components/productividad/Grafico", () => ({
 
 import { ListaAlertas } from "@/components/inteligencia/ListaAlertas";
 import { PanelProyeccion } from "@/components/inteligencia/PanelProyeccion";
+import { PanelPrioridades } from "@/components/inteligencia/PanelPrioridades";
 import { PanelReglas } from "@/components/inteligencia/PanelReglas";
+import type { Prioridad } from "@/lib/inteligencia/prioridades";
 import type { Alerta, SerieProyectada } from "@/lib/inteligencia/alertas";
 import { CLAVES_REGLAS, REGLAS_POR_DEFECTO, type ReglaAlerta } from "@/lib/inteligencia/reglas";
 
@@ -134,9 +136,47 @@ describe("PanelProyeccion", () => {
     expect(fila("Salud oral").getByText("Baja")).toBeInTheDocument();
     expect(fila("Salud oral").getByText("Bajo la meta")).toBeInTheDocument();
     expect(fila("Nutrición").getByText("Sin datos suficientes")).toBeInTheDocument();
+    // Estado frente a la meta con ícono además del texto
+    expect(fila("Psicosocial").getByTestId("icono-meta-sobre")).toBeInTheDocument();
+    expect(fila("Salud oral").getByTestId("icono-meta-bajo")).toBeInTheDocument();
+  });
+
+  it("compacta: áreas ordenadas por proyección descendente (sin datos al final)", () => {
+    render(
+      <PanelProyeccion
+        areas={[serie("Salud oral", 0.08, "baja"), serie("Nutrición", null), serie("Psicosocial", 0.16), serie("Medicina", 0.12)]}
+        servicios={[]}
+        siguiente={SIGUIENTE}
+        meta={0.1}
+        minPeriodos={3}
+        periodosCargados={4}
+      />
+    );
+    const filas = within(screen.getByRole("table", { name: "Proyección por área" })).getAllByRole("row").slice(1);
+    expect(filas.map((f) => within(f).getByRole("rowheader").textContent)).toEqual(["Psicosocial", "Medicina", "Salud oral", "Nutrición"]);
+  });
+
+  it("las gráficas y los servicios aparecen al expandir", () => {
+    render(
+      <PanelProyeccion
+        areas={[serie("Psicosocial", 0.16), serie("Nutrición", null)]}
+        servicios={[{ ...serie("890", 0.2), nombre: "PSICOLOGIA", area: "Psicosocial" }]}
+        siguiente={SIGUIENTE}
+        meta={0.1}
+        minPeriodos={3}
+        periodosCargados={4}
+      />
+    );
+    const boton = screen.getByRole("button", { name: /Ver gráficas y servicios/ });
+    expect(boton).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: /PSICOLOGIA/ })).not.toBeInTheDocument();
+    fireEvent.click(boton);
+    expect(boton).toHaveAttribute("aria-expanded", "true");
     // Una gráfica por área con proyección
     expect(screen.getByRole("img", { name: "Proyección de inasistencia: Psicosocial" })).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /Nutrición/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /PSICOLOGIA/ })).toHaveTextContent("20,0 %");
   });
 
   it("con menos periodos que el mínimo explica por qué no hay proyección", () => {
@@ -146,18 +186,97 @@ describe("PanelProyeccion", () => {
     expect(screen.getByText(/Hay 2 periodos cargados; la proyección necesita al menos 3/)).toBeInTheDocument();
   });
 
-  it("lista los servicios principales", () => {
+});
+
+/* ── PanelPrioridades ── */
+
+const prioridad = (extra: Partial<Prioridad>): Prioridad => ({
+  id: "inasistencia|Psicosocial",
+  tipo: "inasistencia_area",
+  area: "Psicosocial",
+  titular: "Psicosocial: 2 servicios con inasistencia sostenida sobre 20 % — PSICOLOGIA (36 %) y TRABAJO SOCIAL (31 %)",
+  citas: 1234,
+  referencia: "por encima de la meta del 10 %",
+  profesionales: 2.46,
+  revisar: "Revisar recordatorios y sobreagenda en Psicosocial",
+  enlace: "/dashboard/productividad?periodo=202610&area=Psicosocial",
+  detalle: [
+    { nombre: "PSICOLOGIA", texto: "36,0 % · 80 citas de más", enlace: "/dashboard/productividad?periodo=202610&area=Psicosocial&servicio=890" },
+  ],
+  novedad: "nuevo",
+  citas_anterior: null,
+  ...extra,
+});
+
+describe("PanelPrioridades", () => {
+  it("cada prioridad: titular, impacto en citas y profesionales, novedad con ícono, qué revisar y enlace", () => {
+    render(<PanelPrioridades prioridades={[prioridad({})]} impactoMinimo={50} veProductividad />);
+    expect(screen.getByRole("heading", { name: "Prioridades" })).toBeInTheDocument();
+    const item = within(screen.getAllByRole("listitem")[0]);
+    expect(item.getByText(/Psicosocial: 2 servicios con inasistencia sostenida/)).toBeInTheDocument();
+    expect(item.getByText("≈ 1.234 citas por encima de la meta del 10 %")).toBeInTheDocument();
+    expect(item.getByText("≈ 2,5 profesionales equivalentes")).toBeInTheDocument();
+    expect(item.getByText("Nuevo")).toBeInTheDocument();
+    expect(item.getByTestId("icono-novedad")).toBeInTheDocument();
+    expect(item.getByText("Revisar recordatorios y sobreagenda en Psicosocial")).toBeInTheDocument();
+    expect(item.getByRole("link", { name: "Ver en Productividad" })).toHaveAttribute("href", prioridad({}).enlace);
+  });
+
+  it("Empeora muestra el impacto anterior; Persiste también se distingue", () => {
     render(
-      <PanelProyeccion
-        areas={[]}
-        servicios={[{ ...serie("890", 0.2), nombre: "PSICOLOGIA", area: "Psicosocial" }]}
-        siguiente={SIGUIENTE}
-        meta={0.1}
-        minPeriodos={3}
-        periodosCargados={4}
+      <PanelPrioridades
+        prioridades={[prioridad({ novedad: "empeora", citas_anterior: 900 }), prioridad({ id: "x", novedad: "persiste", citas_anterior: 1200 })]}
+        impactoMinimo={50}
+        veProductividad
       />
     );
-    expect(screen.getByRole("row", { name: /PSICOLOGIA/ })).toHaveTextContent("20,0 %");
+    const [a, b] = screen.getAllByRole("listitem").filter((li) => li.closest("ul")?.getAttribute("aria-label") === "Prioridades");
+    expect(within(a).getByText("Empeora")).toBeInTheDocument();
+    expect(within(a).getByText(/antes 900/)).toBeInTheDocument();
+    expect(within(b).getByText("Persiste")).toBeInTheDocument();
+  });
+
+  it("el detalle se despliega con sus enlaces", () => {
+    render(<PanelPrioridades prioridades={[prioridad({})]} impactoMinimo={50} veProductividad />);
+    const boton = screen.getByRole("button", { name: /Ver detalle/ });
+    expect(screen.queryByText("36,0 % · 80 citas de más")).not.toBeInTheDocument();
+    fireEvent.click(boton);
+    expect(boton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("36,0 % · 80 citas de más")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver PSICOLOGIA en Productividad" })).toHaveAttribute("href", prioridad({}).detalle[0].enlace);
+  });
+
+  it("profesionales: el detalle enlaza a la ficha", () => {
+    render(
+      <PanelPrioridades
+        prioridades={[
+          prioridad({
+            id: "profesionales",
+            tipo: "profesionales",
+            area: null,
+            titular: "3 profesionales con inasistencia sobre 30 %",
+            detalle: [{ nombre: "PROFESIONAL A", texto: "45,0 % · 30 citas de más", enlace: "/dashboard/productividad?periodo=202610&ficha=1" }],
+          }),
+        ]}
+        impactoMinimo={50}
+        veProductividad
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Ver detalle/ }));
+    expect(screen.getByRole("link", { name: "Ver ficha de PROFESIONAL A" })).toHaveAttribute("href", "/dashboard/productividad?periodo=202610&ficha=1");
+  });
+
+  it("sin acceso a Productividad no muestra enlaces; sin profesionales equivalentes no los menciona", () => {
+    render(<PanelPrioridades prioridades={[prioridad({ profesionales: null })]} impactoMinimo={50} veProductividad={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Ver detalle/ }));
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByText(/profesionales equivalentes/)).not.toBeInTheDocument();
+  });
+
+  it("sin prioridades: estado vacío positivo", () => {
+    render(<PanelPrioridades prioridades={[]} impactoMinimo={50} veProductividad />);
+    expect(screen.getByText("Sin prioridades: nada supera el impacto mínimo este periodo")).toBeInTheDocument();
+    expect(screen.getByText(/50 citas/)).toBeInTheDocument();
   });
 });
 

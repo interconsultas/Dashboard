@@ -18,21 +18,21 @@ describe("InsigniaAlertas", () => {
     render(<InsigniaAlertas />);
     expect(mockUseSWR).toHaveBeenCalledWith(URL_CONTEO, expect.any(Function), expect.objectContaining({ refreshInterval: REFRESCO_MS }));
     expect(REFRESCO_MS).toBeGreaterThanOrEqual(60_000);
-    expect(screen.getByText("3")).toHaveAttribute("title", "3 alertas activas");
-    expect(screen.getByText("alertas activas", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("3")).toHaveAttribute("title", "3 prioridades");
+    expect(screen.getByText("prioridades", { exact: false })).toBeInTheDocument();
   });
 
-  it("una sola alerta en singular y más de 99 abreviado", () => {
+  it("una sola prioridad en singular y más de 99 abreviado", () => {
     mockUseSWR.mockReturnValue({ data: { total: 1 } });
     const { rerender } = render(<InsigniaAlertas />);
-    expect(screen.getByText("1")).toHaveAttribute("title", "1 alerta activa");
+    expect(screen.getByText("1")).toHaveAttribute("title", "1 prioridad");
     mockUseSWR.mockReturnValue({ data: { total: 250 } });
     rerender(<InsigniaAlertas />);
     expect(screen.getByText("99+")).toBeInTheDocument();
   });
 
   it.each([
-    ["sin alertas", { data: { total: 0 } }],
+    ["sin prioridades", { data: { total: 0 } }],
     ["con error", { data: undefined, error: new Error("x") }],
     ["cargando", { data: undefined }],
   ])("%s no muestra insignia", (_n, r) => {

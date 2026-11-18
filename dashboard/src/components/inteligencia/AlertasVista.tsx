@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { fetcher, FetchError } from "@/lib/fetcher";
 import { leerEstadoAlertas, queryEstadoAlertas, queryPestana, type Pestana } from "@/lib/inteligencia/parametros";
@@ -11,6 +11,7 @@ import { GRANULARIDADES, type Granularidad } from "@/lib/productividad/periodos"
 import { usePuedeEditar, usePuedeVer } from "@/components/layout/RolContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { ListaAlertas } from "./ListaAlertas";
+import { PanelPrioridades } from "./PanelPrioridades";
 import { PanelProyeccion } from "./PanelProyeccion";
 import { PanelReglas } from "./PanelReglas";
 import { EncabezadoInteligencia } from "./PestanasInteligencia";
@@ -42,8 +43,9 @@ async function guardarReglas(cambios: CambioRegla[]): Promise<void> {
 }
 
 /**
- * Inteligencia › Alertas: reglas evaluadas sobre el último periodo cargado
- * de la granularidad y proyección del siguiente. La granularidad vive en la
+ * Inteligencia › Alertas, vista ejecutiva: primero la proyección del
+ * siguiente periodo, luego las prioridades (máximo 5), la lista completa de
+ * alertas plegada y las reglas. La granularidad vive en la
  * URL (`?pestana=alertas&granularidad=semanal`).
  */
 export function AlertasVista() {
@@ -52,6 +54,7 @@ export function AlertasVista() {
   const searchParams = useSearchParams();
   const veProductividad = usePuedeVer("/dashboard/productividad");
   const editable = usePuedeEditar("inteligencia");
+  const [verTodas, setVerTodas] = useState(false);
   const estado = useMemo(() => leerEstadoAlertas(new URLSearchParams(searchParams.toString())), [searchParams]);
 
   const { data, error, isValidating, isLoading, mutate } = useSWR<RespuestaAlertas>(
@@ -120,14 +123,6 @@ export function AlertasVista() {
             No hay cargas de citas {estado.granularidad === "mensual" ? "mensuales" : "semanales"}: no hay nada que evaluar.
           </div>
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-          <div className="lg:col-span-7 min-w-0">
-            <ListaAlertas alertas={data.alertas} reglas={data.reglas} veProductividad={veProductividad} />
-          </div>
-          <div className="lg:col-span-5 min-w-0">
-            <PanelReglas reglas={data.reglas} editable={editable} meta={data.meta} onGuardar={onGuardar} />
-          </div>
-        </div>
         {data.periodo && (
           <PanelProyeccion
             areas={data.proyeccion.areas}
@@ -138,6 +133,27 @@ export function AlertasVista() {
             periodosCargados={data.periodos_cargados}
           />
         )}
+        {data.periodo && (
+          <PanelPrioridades prioridades={data.prioridades} impactoMinimo={data.impacto_minimo} veProductividad={veProductividad} />
+        )}
+        <div className="space-y-3">
+          <button
+            type="button"
+            aria-expanded={verTodas}
+            aria-controls="todas-las-alertas"
+            onClick={() => setVerTodas((v) => !v)}
+            className="w-full flex items-center justify-between gap-2 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-sm font-semibold text-brand-navy"
+          >
+            <span>{`${verTodas ? "Ocultar" : "Ver"} todas las alertas (${data.total})`}</span>
+            <span aria-hidden className={`transition-transform ${verTodas ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          {verTodas && (
+            <div id="todas-las-alertas">
+              <ListaAlertas alertas={data.alertas} reglas={data.reglas} veProductividad={veProductividad} />
+            </div>
+          )}
+        </div>
+        <PanelReglas reglas={data.reglas} editable={editable} meta={data.meta} onGuardar={onGuardar} />
       </div>
     );
   }

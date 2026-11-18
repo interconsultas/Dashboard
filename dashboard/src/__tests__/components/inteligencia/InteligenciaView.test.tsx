@@ -500,6 +500,9 @@ describe("InteligenciaView — Alertas", () => {
       },
     ],
     proyeccion: { areas: [], servicios: [] },
+    prioridades: [],
+    periodo_anterior: "202609",
+    impacto_minimo: 50,
   };
   const mutate = jest.fn();
   const fetchOriginal = global.fetch;
@@ -522,10 +525,13 @@ describe("InteligenciaView — Alertas", () => {
     global.fetch = fetchOriginal;
   });
 
-  it("selecciona la pestaña, consulta las alertas de la granularidad y muestra lista, proyección y reglas", () => {
+  it("selecciona la pestaña, consulta las alertas de la granularidad y muestra proyección, prioridades, lista y reglas", () => {
     renderVista();
     expect(screen.getByRole("tab", { name: "Alertas" })).toHaveAttribute("aria-selected", "true");
     expect(claves()).toEqual(["/api/inteligencia/alertas?granularidad=mensual"]);
+    expect(screen.getByRole("heading", { name: "Prioridades" })).toBeInTheDocument();
+    expect(screen.getByText("Sin prioridades: nada supera el impacto mínimo este periodo")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ver todas las alertas (1)" }));
     expect(screen.getByText(ALERTAS.alertas[0].mensaje)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Proyección para Noviembre 2026/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Reglas de alerta" })).toBeInTheDocument();

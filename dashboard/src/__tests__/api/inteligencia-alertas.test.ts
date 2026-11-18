@@ -45,14 +45,21 @@ const SERVICIOS = [
 
 const PROFESIONALES = [{ documento: "1053", nombre: "PROFESIONAL A", area_principal: "Psicosocial", asignadas: "60", inasistidas: "30" }];
 
-function mockBD(opciones: { cargas?: unknown[] } = {}) {
+/** Inasistencia sostenida y en alza con impacto material en octubre (30 % → 30 % → 40 %). */
+const SERVICIOS_MATERIAL = [
+  { fecha_inicial: "2026-08-01", area: "Psicosocial", codigo_servicio: "890", nombre_servicio: "PSICOLOGIA", asignadas: 300, inasistidas: 90, ofertadas: 300, disponibles: 0 },
+  { fecha_inicial: "2026-09-01", area: "Psicosocial", codigo_servicio: "890", nombre_servicio: "PSICOLOGIA", asignadas: 300, inasistidas: 90, ofertadas: 300, disponibles: 0 },
+  { fecha_inicial: "2026-10-01", area: "Psicosocial", codigo_servicio: "890", nombre_servicio: "PSICOLOGIA", asignadas: 400, inasistidas: 160, ofertadas: 400, disponibles: 0 },
+];
+
+function mockBD(opciones: { cargas?: unknown[]; servicios?: unknown[] } = {}) {
   mockQuery.mockImplementation((async (sql: string) => {
     const s = plano(sql);
     if (s.includes("SELECT DISTINCT granularidad")) return opciones.cargas ?? CARGAS;
     if (s.includes("FROM areas_servicio")) return [{ nombre: "Psicosocial" }, { nombre: "Salud oral" }];
     if (s.includes("FROM reglas_alerta")) return REGLAS;
     if (s.includes("v_citas_area_principal")) return PROFESIONALES;
-    if (s.includes("FROM v_citas_area")) return SERVICIOS;
+    if (s.includes("FROM v_citas_area")) return opciones.servicios ?? SERVICIOS;
     return [];
   }) as never);
 }
@@ -124,6 +131,34 @@ describe("GET /api/inteligencia/alertas", () => {
     expect(llamada("v_citas_area_principal").params).toEqual(["mensual", "2026-10-01", "2026-10-31"]);
   });
 
+  it("prioridades: consolida, mide el impacto y compara con el periodo anterior", async () => {
+    mockBD({ servicios: SERVICIOS_MATERIAL });
+    const { body } = await json(await GET(req()));
+    expect(body.impacto_minimo).toBe(50);
+    expect(body.periodo_anterior).toBe("202609");
+    expect(body.prioridades).toHaveLength(1);
+    const [p] = body.prioridades;
+    expect(p.id).toBe("inasistencia|Psicosocial");
+    expect(p.titular).toMatch(/^Psicosocial: 1 servicio con inasistencia sostenida sobre 20 % — PSICOLOGIA \(40 %\), y se proyecta \d+ % para Noviembre 2026$/);
+    // Inasistencia frente a la meta: 160 − 400 × 10 % = 120 (la proyección queda solo en el texto)
+    expect(p.citas).toBe(120);
+    expect(p.referencia).toBe("por encima de la meta del 10 %");
+    // Oferta promedio: 400 ofertadas ÷ 1 profesional
+    expect(p.profesionales).toBeCloseTo(p.citas / 400);
+    // Septiembre (agosto y septiembre al 30 %): 90 − 300 × 10 % = 60 → de 60 a 120: Empeora
+    expect(p.novedad).toBe("empeora");
+    expect(p.citas_anterior).toBe(60);
+    expect(llamada("v_citas_area_principal").params).toEqual(["mensual", "2026-10-01", "2026-10-31"]);
+    const profesionales = mockQuery.mock.calls.filter(([sql]) => plano(sql).includes("v_citas_area_principal")).map((c) => c[1]);
+    expect(profesionales).toContainEqual(["mensual", "2026-09-01", "2026-09-30"]);
+  });
+
+  it("sin impacto material no hay prioridades", async () => {
+    const { body } = await json(await GET(req()));
+    expect(body.total).toBe(4);
+    expect(body.prioridades).toEqual([]);
+  });
+
   it("semanal con una sola semana: sin proyección ni racha", async () => {
     mockBD();
     const { body } = await json(await GET(req("granularidad=semanal")));
@@ -138,6 +173,8 @@ describe("GET /api/inteligencia/alertas", () => {
     expect(status).toBe(200);
     expect(body.periodo).toBeNull();
     expect(body.alertas).toEqual([]);
+    expect(body.prioridades).toEqual([]);
+    expect(body.periodo_anterior).toBeNull();
     expect(mockQuery.mock.calls.some(([sql]) => plano(sql).includes("FROM v_citas_area"))).toBe(false);
   });
 
@@ -171,11 +208,17 @@ describe("GET /api/inteligencia/alertas/conteo", () => {
     mockBD();
   });
 
-  it("pide ver Inteligencia y devuelve solo el total mensual", async () => {
+  it("pide ver Inteligencia y devuelve el número de prioridades del mes (no el de alertas)", async () => {
+    mockBD({ servicios: SERVICIOS_MATERIAL });
     const { status, body } = await json(await GET_CONTEO());
     expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["inteligencia"], nivel: "ver" });
     expect(status).toBe(200);
-    expect(body).toEqual({ total: 4, granularidad: "mensual", periodo: "202610" });
+    expect(body).toEqual({ total: 1, granularidad: "mensual", periodo: "202610" });
+  });
+
+  it("con alertas pero sin prioridades el total es 0", async () => {
+    const { body } = await json(await GET_CONTEO());
+    expect(body.total).toBe(0);
   });
 
   it("sin permiso → error de requirePermiso", async () => {
