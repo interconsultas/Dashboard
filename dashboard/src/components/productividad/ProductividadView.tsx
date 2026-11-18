@@ -19,6 +19,7 @@ import type { Granularidad } from "@/lib/productividad/periodos";
 import type { RespuestaProductividad } from "@/lib/productividad/tipos";
 import { Spinner } from "@/components/ui/Spinner";
 import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { MenuExportar } from "@/components/informes/MenuExportar";
 import { clasesBoton } from "@/components/ui/Boton";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import { usePuedeVer } from "@/components/layout/RolContext";
@@ -113,7 +114,12 @@ export default function ProductividadView() {
       migas={MIGAS}
       titulo="Productividad"
       subtitulo="Oferta, asignación, inasistencia y citas perdidas por área, servicio y profesional"
-      acciones={isValidating && !isLoading ? <Spinner className="h-4 w-4 text-white/70" /> : undefined}
+      acciones={
+        <>
+          {isValidating && !isLoading && <Spinner className="h-4 w-4 text-white/70" />}
+          {data?.periodo && <MenuExportar filtros={filtros} />}
+        </>
+      }
     />
   );
 

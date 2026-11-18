@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { PropsGrafico } from "@/components/productividad/Grafico";
 
@@ -16,6 +16,12 @@ jest.mock("@/components/productividad/Grafico", () => ({
 
 const mockUseSWR = jest.fn();
 jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => mockUseSWR(...args) }));
+
+const mockDescargar = jest.fn();
+jest.mock("@/lib/informes/descarga", () => ({
+  ...jest.requireActual("@/lib/informes/descarga"),
+  descargarArchivo: (...a: unknown[]) => mockDescargar(...a),
+}));
 
 import { FichaProfesional } from "@/components/productividad/FichaProfesional";
 import { FILTROS_VACIOS } from "@/lib/productividad/filtros";
@@ -69,6 +75,25 @@ describe("FichaProfesional", () => {
     const params = new URLSearchParams(url.split("?")[1]);
     expect(params.get("documento")).toBe("1053");
     expect(params.get("area")).toBe("Medicina general");
+  });
+
+  it("descarga la ficha en Excel con los filtros activos; el PDF queda para después", async () => {
+    let terminar: (v: string) => void = () => {};
+    mockDescargar.mockReturnValue(new Promise((res) => (terminar = res)));
+    renderizar();
+    expect(screen.getByRole("button", { name: /PDF/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Descargar Excel" }));
+    expect(mockDescargar).toHaveBeenCalledWith("/api/informes/excel?tipo=ficha&area=Medicina+general&documento=1053");
+    expect(screen.getByRole("button", { name: /Generando/ })).toBeDisabled();
+    await act(async () => terminar("x.xlsx"));
+    expect(screen.getByRole("button", { name: "Descargar Excel" })).toBeEnabled();
+  });
+
+  it("muestra el error si la descarga falla", async () => {
+    mockDescargar.mockRejectedValue(new Error("Error al generar el informe"));
+    renderizar();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Descargar Excel" })));
+    expect(screen.getByRole("alert")).toHaveTextContent("Error al generar el informe");
   });
 
   it("es un diálogo modal accesible con el nombre del profesional y recibe el foco", () => {

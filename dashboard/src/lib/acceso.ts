@@ -269,6 +269,8 @@ export const PERMISOS_API = {
   // El simulador de Inteligencia parte de estos mismos agregados
   "/api/productividad": { GET: ver("productividad", "inteligencia") },
   "/api/productividad/profesional": { GET: ver("productividad") },
+  // El informe mensual agrega prioridades solo si además se ve Inteligencia
+  "/api/informes/excel": { GET: ver("productividad") },
   "/api/inteligencia/grafo": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas/conteo": { GET: ver("inteligencia") },
