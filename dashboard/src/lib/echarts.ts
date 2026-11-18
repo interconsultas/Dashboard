@@ -4,7 +4,15 @@
  * bundle. Solo se carga en el navegador (ver components/productividad/Grafico).
  */
 import * as echarts from "echarts/core";
-import { BarChart, FunnelChart, HeatmapChart, LineChart, ScatterChart, TreemapChart } from "echarts/charts";
+import {
+  BarChart,
+  FunnelChart,
+  GraphChart,
+  HeatmapChart,
+  LineChart,
+  ScatterChart,
+  TreemapChart,
+} from "echarts/charts";
 import {
   DataZoomComponent,
   GraphicComponent,
@@ -26,6 +34,8 @@ echarts.use([
   // Siguiente paso: dispersograma, Pareto y ficha individual
   BarChart,
   ScatterChart,
+  // Inteligencia: mapa de relaciones
+  GraphChart,
   GridComponent,
   TooltipComponent,
   LegendComponent,

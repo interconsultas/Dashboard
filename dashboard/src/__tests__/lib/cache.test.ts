@@ -1,4 +1,4 @@
-import { getCached, setCache, cacheKey, clearCache } from "@/lib/cache";
+import { getCached, setCache, cacheKey, clearCache, clearCachePrefix } from "@/lib/cache";
 
 describe("cache", () => {
   beforeEach(() => {
@@ -99,6 +99,18 @@ describe("cache", () => {
       const p1 = new URLSearchParams([["b", "2"], ["a", "1"]]);
       const p2 = new URLSearchParams([["a", "1"], ["b", "2"]]);
       expect(cacheKey("x", p1)).toBe(cacheKey("x", p2));
+    });
+  });
+
+  describe("clearCachePrefix", () => {
+    it("borra solo las claves con el prefijo", () => {
+      setCache("pref:a:1", 1);
+      setCache("pref:a:2", 2);
+      setCache("pref:b", 3);
+      clearCachePrefix("pref:a:");
+      expect(getCached("pref:a:1")).toBeNull();
+      expect(getCached("pref:a:2")).toBeNull();
+      expect(getCached("pref:b")).toBe(3);
     });
   });
 });

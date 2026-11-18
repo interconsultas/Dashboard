@@ -20,6 +20,7 @@ export type Seccion =
   | "dashboard"
   | "cumplimiento"
   | "productividad"
+  | "inteligencia"
   | "carga"
   | "profesionales"
   | "metas"
@@ -68,6 +69,14 @@ export const SECCIONES: readonly DefSeccion[] = [
     descripcion: "Tablero de citas y ficha de cada profesional.",
     ruta: "/dashboard/productividad",
     admiteEdicion: false,
+    configurable: true,
+  },
+  {
+    clave: "inteligencia",
+    etiqueta: "Inteligencia",
+    descripcion: "Mapa de relaciones, simulador y alertas (editar = configurar las reglas de alerta).",
+    ruta: "/dashboard/inteligencia",
+    admiteEdicion: true,
     configurable: true,
   },
   {
@@ -138,6 +147,7 @@ export const PERMISOS_POR_DEFECTO: Readonly<Record<Rol, Permisos>> = {
     dashboard: "ver",
     cumplimiento: "ver",
     productividad: "ver",
+    inteligencia: "ver",
     metas: "ver",
   },
   coordinador: { ...todas("ninguno"), dashboard: "ver" },
@@ -187,6 +197,7 @@ const RUTAS_PAGINA: ReadonlyArray<{ prefijo: string; seccion: Seccion }> = [
   { prefijo: "/dashboard", seccion: "dashboard" }, // incluye /dashboard/tipo/*
   { prefijo: "/dashboard/cumplimiento", seccion: "cumplimiento" },
   { prefijo: "/dashboard/productividad", seccion: "productividad" },
+  { prefijo: "/dashboard/inteligencia", seccion: "inteligencia" },
   // Cualquier otra página de administración es solo de admin (como 'usuarios')
   { prefijo: "/admin", seccion: "usuarios" },
   { prefijo: "/admin/carga", seccion: "carga" },
@@ -255,8 +266,13 @@ export const PERMISOS_API = {
   "/api/dashboard/filtros": { POST: ver("dashboard") },
   "/api/dashboard/export": { POST: ver("dashboard") },
   "/api/cumplimiento": { POST: ver("cumplimiento") },
-  "/api/productividad": { GET: ver("productividad") },
+  // El simulador de Inteligencia parte de estos mismos agregados
+  "/api/productividad": { GET: ver("productividad", "inteligencia") },
   "/api/productividad/profesional": { GET: ver("productividad") },
+  "/api/inteligencia/grafo": { GET: ver("inteligencia") },
+  "/api/inteligencia/alertas": { GET: ver("inteligencia") },
+  "/api/inteligencia/alertas/conteo": { GET: ver("inteligencia") },
+  "/api/inteligencia/reglas": { GET: ver("inteligencia"), PUT: editar("inteligencia") },
   "/api/admin/metas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/metas/programas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/medicos": { GET: ver("profesionales", "cumplimiento"), POST: editar("profesionales") },

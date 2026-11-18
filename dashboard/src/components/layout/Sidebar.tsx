@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { puedeVer } from "@/lib/acceso";
+import { InsigniaAlertas } from "./InsigniaAlertas";
 import { usePermisos } from "./RolContext";
 
 function IconDashboard({ className }: { className?: string }) {
@@ -88,6 +89,19 @@ function IconProductividad({ className }: { className?: string }) {
   );
 }
 
+function IconInteligencia({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="2.2" />
+      <circle cx="4" cy="4.5" r="1.8" />
+      <circle cx="16" cy="5" r="1.8" />
+      <circle cx="5" cy="16" r="1.8" />
+      <circle cx="15.5" cy="15.5" r="1.8" />
+      <path d="M5.4 5.8l3 2.8M14.6 6.3l-3 2.6M6.4 14.7l2.1-2.9M14.2 14.2l-2.6-2.7" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -139,7 +153,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const isCumplimiento = pathname.startsWith("/dashboard/cumplimiento");
   // Productividad, igual que Cumplimiento, es una entrada propia bajo /dashboard
   const isProductividad = pathname.startsWith("/dashboard/productividad");
-  const isDashboard = pathname.startsWith("/dashboard") && !isCumplimiento && !isProductividad;
+  const isInteligencia = pathname.startsWith("/dashboard/inteligencia");
+  const isDashboard =
+    pathname.startsWith("/dashboard") && !isCumplimiento && !isProductividad && !isInteligencia;
   const [subOpen, setSubOpen] = useState(isDashboard);
   // Solo se muestran las entradas que los permisos dejan abrir (los layouts hacen cumplir lo mismo)
   const permisos = usePermisos();
@@ -269,6 +285,23 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           >
             <IconProductividad className="w-[18px] h-[18px] flex-shrink-0" />
             Productividad
+          </Link>
+        )}
+
+        {/* Inteligencia */}
+        {ver("/dashboard/inteligencia") && (
+          <Link
+            href="/dashboard/inteligencia"
+            onClick={handleNav}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              isInteligencia
+                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <IconInteligencia className="w-[18px] h-[18px] flex-shrink-0" />
+            Inteligencia
+            <InsigniaAlertas />
           </Link>
         )}
 
