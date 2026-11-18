@@ -266,7 +266,8 @@ export const PERMISOS_API = {
   "/api/dashboard/filtros": { POST: ver("dashboard") },
   "/api/dashboard/export": { POST: ver("dashboard") },
   "/api/cumplimiento": { POST: ver("cumplimiento") },
-  "/api/productividad": { GET: ver("productividad") },
+  // El simulador de Inteligencia parte de estos mismos agregados
+  "/api/productividad": { GET: ver("productividad", "inteligencia") },
   "/api/productividad/profesional": { GET: ver("productividad") },
   "/api/inteligencia/grafo": { GET: ver("inteligencia") },
   "/api/admin/metas": { GET: ver("metas"), PUT: editar("metas") },

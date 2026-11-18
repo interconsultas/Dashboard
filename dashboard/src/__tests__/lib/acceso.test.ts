@@ -253,6 +253,16 @@ describe("PERMISOS_API", () => {
     expect(PERMISOS_API["/api/admin/citas/detalle"].GET!.secciones).toEqual(
       expect.arrayContaining(["citas", "cumplimiento"]),
     );
+    // El simulador de Inteligencia lee los agregados de productividad
+    expect(PERMISOS_API["/api/productividad"].GET!.secciones).toEqual(
+      expect.arrayContaining(["productividad", "inteligencia"]),
+    );
+  });
+
+  it("quien ve Inteligencia sin Productividad puede leer los agregados del simulador, pero no la ficha", () => {
+    const soloInteligencia = { ...permisosEfectivos("coordinador", []), inteligencia: "ver" } as Permisos;
+    expect(cumpleRequisito(soloInteligencia, PERMISOS_API["/api/productividad"].GET!)).toBe(true);
+    expect(cumpleRequisito(soloInteligencia, PERMISOS_API["/api/productividad/profesional"].GET!)).toBe(false);
   });
 
   it("con los permisos por defecto cada rol conserva el acceso que tenía en la API", () => {
