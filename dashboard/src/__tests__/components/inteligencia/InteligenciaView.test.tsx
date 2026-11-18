@@ -7,9 +7,10 @@ import "@testing-library/jest-dom";
 import type { PropsGrafico } from "@/components/productividad/Grafico";
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 let mockParams = new URLSearchParams();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => "/dashboard/inteligencia",
   useSearchParams: () => mockParams,
 }));
@@ -100,7 +101,9 @@ function mockSWR() {
   mockUseSWR.mockImplementation((clave: string | null) => {
     const base = { data: undefined, error: undefined, isLoading: false, isValidating: false, mutate: jest.fn() };
     if (!clave) return base;
-    const modo = new URLSearchParams(clave.split("?")[1]).get("modo") ?? "";
+    const modo = clave.startsWith("/api/productividad")
+      ? "productividad"
+      : new URLSearchParams(clave.split("?")[1]).get("modo") ?? "";
     return { ...base, ...(respuestas[modo] ?? {}) };
   });
 }
@@ -128,15 +131,23 @@ describe("InteligenciaView", () => {
   });
 
   describe("estructura", () => {
-    it("muestra el encabezado y las pestañas; Simulador y Alertas están deshabilitadas", () => {
+    it("muestra el encabezado y las pestañas; Alertas está deshabilitada", () => {
       renderVista();
       expect(screen.getByRole("heading", { name: "Inteligencia" })).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "Mapa de relaciones" })).toHaveAttribute("aria-selected", "true");
-      for (const nombre of [/Simulador/, /Alertas/]) {
-        const tab = screen.getByRole("tab", { name: nombre });
-        expect(tab).toBeDisabled();
-        expect(tab).toHaveTextContent("Próximamente");
-      }
+      const simulador = screen.getByRole("tab", { name: "Simulador" });
+      expect(simulador).toBeEnabled();
+      expect(simulador).toHaveAttribute("aria-selected", "false");
+      const alertas = screen.getByRole("tab", { name: /Alertas/ });
+      expect(alertas).toBeDisabled();
+      expect(alertas).toHaveTextContent("Próximamente");
+    });
+
+    it("la pestaña Simulador conserva el periodo y suelta el nodo", () => {
+      mockParams = new URLSearchParams("periodo=202609&nodo=profesional%3A1053");
+      renderVista();
+      fireEvent.click(screen.getByRole("tab", { name: "Simulador" }));
+      expect(ultimaUrl()).toEqual({ pestana: "simulador", periodo: "202609" });
     });
 
     it("sin nodo en la URL consulta el esquema y dibuja el modelo", () => {
@@ -314,5 +325,139 @@ describe("InteligenciaView", () => {
       fireEvent.click(screen.getByRole("button", { name: "Ver el modelo" }));
       expect(ultimaUrl()).toEqual({});
     });
+  });
+});
+
+/* ── Simulador ── */
+
+describe("InteligenciaView › Simulador", () => {
+  const { indicadores, metricasVacias } = jest.requireActual("@/lib/productividad/metricas");
+  const ACTUAL = indicadores({ ...metricasVacias(), ofertadas: 1000, disponibles: 100, asignadas: 900, inasistidas: 180 });
+  const PRODUCTIVIDAD = {
+    granularidad: "mensual",
+    periodos: CONTEXTO.periodos,
+    periodo: "202610",
+    opciones: {
+      areas: ["Medicina general", "Salud oral"],
+      servicios: [
+        { codigo: "50110", nombre: "CONSULTA MEDICINA", area: "Medicina general" },
+        { codigo: "20", nombre: "HIGIENE ORAL", area: "Salud oral" },
+      ],
+      profesionales: [],
+    },
+    kpis: { actual: ACTUAL, anterior: null, periodo_anterior: null, serie: [] },
+    profesionales: { con_agenda: 10, destacados: 0, lista: [] },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    for (const k of Object.keys(mockGraficos)) delete mockGraficos[k];
+    mockParams = new URLSearchParams("pestana=simulador");
+    respuestas = { productividad: { data: PRODUCTIVIDAD } };
+    mockSWR();
+  });
+
+  const ultimoReplace = () => {
+    const url = mockReplace.mock.calls[mockReplace.mock.calls.length - 1][0] as string;
+    return Object.fromEntries(new URLSearchParams(url.split("?")[1] ?? ""));
+  };
+
+  it("selecciona la pestaña y consulta productividad, no el grafo", () => {
+    renderVista();
+    expect(screen.getByRole("tab", { name: "Simulador" })).toHaveAttribute("aria-selected", "true");
+    expect(claves()).toEqual(expect.arrayContaining(["/api/productividad"]));
+    expect(claves().some((c) => c.startsWith("/api/inteligencia"))).toBe(false);
+  });
+
+  it("pasa periodo, área y servicio a la API", () => {
+    mockParams = new URLSearchParams("pestana=simulador&periodo=202609&area=Medicina+general&servicio=50110");
+    renderVista();
+    expect(claves()).toContain("/api/productividad?periodo=202609&area=Medicina+general&servicio=50110");
+  });
+
+  it("con las palancas reales el escenario es igual a la realidad", () => {
+    renderVista();
+    expect(screen.getByText("Mueva las palancas para comparar un escenario con lo que pasó en el periodo.")).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: "Atendidas" })).getByText("= sin cambio")).toBeInTheDocument();
+  });
+
+  it("lee las palancas de la URL y resume el escenario", () => {
+    mockParams = new URLSearchParams("pestana=simulador&prof=5&inas=10");
+    renderVista();
+    expect(screen.getByRole("slider", { name: "Δ profesionales" })).toHaveValue("5");
+    expect(
+      screen.getByText(/^Con 5 profesionales más y la inasistencia en 10 %, se atenderían 495 citas más en el periodo/)
+    ).toBeInTheDocument();
+  });
+
+  it("mover una palanca reemplaza la URL", () => {
+    renderVista();
+    fireEvent.change(screen.getByRole("slider", { name: "Δ profesionales" }), { target: { value: "3" } });
+    expect(ultimoReplace()).toEqual({ pestana: "simulador", prof: "3" });
+  });
+
+  it("Llevar a la meta fija la inasistencia en 9,9 % y Restablecer todo limpia las palancas", () => {
+    mockParams = new URLSearchParams("pestana=simulador&prof=2");
+    renderVista();
+    fireEvent.click(screen.getByRole("button", { name: /Llevar a la meta/ }));
+    expect(ultimoReplace()).toEqual({ pestana: "simulador", prof: "2", inas: "9.9" });
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer todo" }));
+    expect(ultimoReplace()).toEqual({ pestana: "simulador" });
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer Δ profesionales" }));
+    expect(ultimoReplace()).toEqual({ pestana: "simulador" });
+  });
+
+  it("cambiar el periodo conserva las palancas", () => {
+    mockParams = new URLSearchParams("pestana=simulador&prof=5");
+    renderVista();
+    fireEvent.change(screen.getByLabelText("Mes"), { target: { value: "202609" } });
+    expect(ultimaUrl()).toEqual({ pestana: "simulador", periodo: "202609", prof: "5" });
+  });
+
+  it("el área filtra los servicios y al cambiarla se suelta el servicio", () => {
+    mockParams = new URLSearchParams("pestana=simulador&area=Medicina+general&servicio=50110");
+    renderVista();
+    const servicio = screen.getByLabelText("Servicio");
+    expect(within(servicio).getAllByRole("option").map((o) => o.textContent)).toEqual(["Todos", "CONSULTA MEDICINA"]);
+    fireEvent.change(screen.getByLabelText("Área"), { target: { value: "Salud oral" } });
+    expect(ultimaUrl()).toEqual({ pestana: "simulador", area: "Salud oral" });
+    fireEvent.change(servicio, { target: { value: "" } });
+    expect(ultimaUrl()).toEqual({ pestana: "simulador", area: "Medicina general" });
+  });
+
+  it("volver al mapa conserva granularidad y periodo", () => {
+    mockParams = new URLSearchParams("pestana=simulador&periodo=202609&area=Salud+oral&prof=1");
+    renderVista();
+    fireEvent.click(screen.getByRole("tab", { name: "Mapa de relaciones" }));
+    expect(ultimaUrl()).toEqual({ periodo: "202609" });
+  });
+
+  it("estados de carga, error, sin permiso, sin cargas y sin citas en el filtro", () => {
+    const { FetchError } = jest.requireActual("@/lib/fetcher");
+    respuestas.productividad = { isLoading: true };
+    let r = renderVista();
+    expect(screen.getByTestId("simulador-cargando")).toBeInTheDocument();
+    r.unmount();
+
+    respuestas.productividad = { error: new Error("Error al consultar los datos") };
+    r = renderVista();
+    expect(screen.getByRole("alert")).toHaveTextContent("Error al consultar los datos");
+    r.unmount();
+
+    respuestas.productividad = { error: new FetchError("Prohibido", 403, null) };
+    r = renderVista();
+    expect(screen.getByRole("alert")).toHaveTextContent("El simulador usa los datos de Productividad");
+    r.unmount();
+
+    respuestas.productividad = { data: { ...PRODUCTIVIDAD, periodo: null, kpis: { ...PRODUCTIVIDAD.kpis, actual: null } } };
+    r = renderVista();
+    expect(screen.getByText("Aún no hay informes de citas cargados")).toBeInTheDocument();
+    r.unmount();
+
+    respuestas.productividad = {
+      data: { ...PRODUCTIVIDAD, kpis: { ...PRODUCTIVIDAD.kpis, actual: indicadores(metricasVacias()) }, profesionales: { con_agenda: 0, destacados: 0, lista: [] } },
+    };
+    renderVista();
+    expect(screen.getByText("No hay citas ofertadas con este filtro en el periodo")).toBeInTheDocument();
   });
 });

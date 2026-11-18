@@ -4,6 +4,7 @@
  */
 import { esClavePeriodo, GRANULARIDADES, type Granularidad } from "@/lib/productividad/periodos";
 import { esClaveValida, esTipoObjeto, parseIdNodo, type TipoObjeto } from "./ontologia";
+import type { Palancas } from "./simulador";
 
 export type Modo = "esquema" | "vecindario" | "buscar";
 
@@ -128,5 +129,79 @@ export function queryEstado(e: EstadoInteligencia): string {
   if (e.granularidad !== "mensual") params.set("granularidad", e.granularidad);
   if (e.periodo) params.set("periodo", e.periodo);
   if (e.nodo) params.set("nodo", e.nodo);
+  return params.toString();
+}
+
+/* ── Pestañas y simulador ───────────────────── */
+
+export type Pestana = "mapa" | "simulador";
+
+export function leerPestana(params: URLSearchParams): Pestana {
+  return params.get("pestana") === "simulador" ? "simulador" : "mapa";
+}
+
+/**
+ * Estado del simulador en la URL. Solo se guardan las palancas que el usuario
+ * movió: las ausentes siguen al valor real del periodo y filtro elegidos.
+ * Δ profesionales y Δ oferta son relativos a la base, así que se conservan al
+ * cambiar de periodo o área (recortados a los nuevos límites); los % objetivo
+ * se conservan como metas absolutas.
+ */
+export interface EstadoSimulador {
+  granularidad: Granularidad;
+  periodo: string | null;
+  area: string | null;
+  /** codigo_servicio */
+  servicio: string | null;
+  palancas: Partial<Palancas>;
+}
+
+const RE_SERVICIO = /^[A-Za-z0-9._-]{1,20}$/;
+const MAX_AREA = 80;
+const RE_ENTERO = /^-?\d{1,4}$/;
+const RE_PORCENTAJE = /^-?\d{1,3}(\.\d{1,2})?$/;
+
+/** Palancas en la URL: Δ profesionales entero; el resto en % (10 = 0,1). */
+const PALANCAS_URL: { clave: keyof Palancas; param: string; porcentaje: boolean; min: number }[] = [
+  { clave: "deltaProfesionales", param: "prof", porcentaje: false, min: -Infinity },
+  { clave: "deltaOferta", param: "oferta", porcentaje: true, min: -100 },
+  { clave: "pctDisponibilidad", param: "disp", porcentaje: true, min: 0 },
+  { clave: "pctInasistencia", param: "inas", porcentaje: true, min: 0 },
+];
+
+export function leerEstadoSimulador(params: URLSearchParams): EstadoSimulador {
+  const granularidad: Granularidad = params.get("granularidad") === "semanal" ? "semanal" : "mensual";
+  const periodo = texto(params, "periodo");
+  const area = texto(params, "area");
+  const servicio = texto(params, "servicio");
+  const palancas: Partial<Palancas> = {};
+  for (const { clave, param, porcentaje, min } of PALANCAS_URL) {
+    const v = texto(params, param);
+    if (v === null || !(porcentaje ? RE_PORCENTAJE : RE_ENTERO).test(v)) continue;
+    const n = Number(v);
+    if (n < min || (porcentaje && n > 100)) continue;
+    palancas[clave] = porcentaje ? n / 100 : n;
+  }
+  return {
+    granularidad,
+    periodo: periodo !== null && esClavePeriodo(granularidad, periodo) ? periodo : null,
+    area: area !== null && area.length <= MAX_AREA ? area : null,
+    servicio: servicio !== null && RE_SERVICIO.test(servicio) ? servicio : null,
+    palancas,
+  };
+}
+
+/** Query string del simulador (sin "?"), con la pestaña y lo que no es por defecto. */
+export function queryEstadoSimulador(e: EstadoSimulador): string {
+  const params = new URLSearchParams({ pestana: "simulador" });
+  if (e.granularidad !== "mensual") params.set("granularidad", e.granularidad);
+  if (e.periodo) params.set("periodo", e.periodo);
+  if (e.area) params.set("area", e.area);
+  if (e.servicio) params.set("servicio", e.servicio);
+  for (const { clave, param, porcentaje } of PALANCAS_URL) {
+    const v = e.palancas[clave];
+    if (v === undefined || !Number.isFinite(v)) continue;
+    params.set(param, porcentaje ? String(Math.round(v * 1000) / 10) : String(Math.round(v)));
+  }
   return params.toString();
 }

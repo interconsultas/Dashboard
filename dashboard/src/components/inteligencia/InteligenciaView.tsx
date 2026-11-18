@@ -6,7 +6,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { fetcher, FetchError } from "@/lib/fetcher";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { leerEstado, queryEstado, MAX_LIMITE, type EstadoInteligencia } from "@/lib/inteligencia/parametros";
+import {
+  leerEstado,
+  leerPestana,
+  queryEstado,
+  queryEstadoSimulador,
+  MAX_LIMITE,
+  type EstadoInteligencia,
+  type Pestana,
+} from "@/lib/inteligencia/parametros";
 import { parseIdNodo, type TipoObjeto } from "@/lib/inteligencia/ontologia";
 import { fusionarSubgrafos, type Subgrafo } from "@/lib/inteligencia/grafica";
 import type { RespuestaBusqueda, RespuestaEsquema, RespuestaVecindario } from "@/lib/inteligencia/tipos";
@@ -16,7 +24,8 @@ import { Spinner } from "@/components/ui/Spinner";
 import { MapaInstancias, MapaModelo } from "./MapaRelaciones";
 import { PanelDetalle } from "./PanelDetalle";
 import { PanelExplorar } from "./PanelExplorar";
-import { PestanasInteligencia } from "./PestanasInteligencia";
+import { EncabezadoInteligencia } from "./PestanasInteligencia";
+import { SimuladorVista } from "./SimuladorVista";
 import { SelectorPeriodo } from "./SelectorPeriodo";
 
 const API = "/api/inteligencia/grafo";
@@ -69,11 +78,21 @@ function Alerta({ children }: { children: React.ReactNode }) {
 /* ── Component ──────────────────────────────────── */
 
 /**
- * Contenedor de Inteligencia › Mapa de relaciones. El nodo centrado y el
+ * Contenedor de Inteligencia: la pestaña vive en la URL (`?pestana=simulador`;
+ * sin ella, el mapa). Al cambiar de pestaña se conservan granularidad y periodo.
+ */
+export default function InteligenciaView() {
+  const searchParams = useSearchParams();
+  const pestana = leerPestana(new URLSearchParams(searchParams.toString()));
+  return pestana === "simulador" ? <SimuladorVista /> : <VistaMapa />;
+}
+
+/**
+ * Inteligencia › Mapa de relaciones. El nodo centrado y el
  * periodo viven en la URL (compartible, botón Atrás); la búsqueda, el rastro
  * de nodos visitados y las expansiones viven en el estado del componente.
  */
-export default function InteligenciaView() {
+function VistaMapa() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -196,30 +215,31 @@ export default function InteligenciaView() {
   const contexto = esquemaR.data ?? vecindarioR.data ?? null;
   const validando = (esquemaR.isValidating && !esquemaR.isLoading) || vecindarioR.isLoading || vecindarioR.isValidating;
 
+  const onPestana = (p: Pestana) => {
+    if (p !== "simulador") return;
+    const qs = queryEstadoSimulador({
+      granularidad: estado.granularidad,
+      periodo: estado.periodo,
+      area: null,
+      servicio: null,
+      palancas: {},
+    });
+    router.push(`${pathname}?${qs}`, { scroll: false });
+  };
+
   const encabezado = (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Inteligencia</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Cómo se relacionan servicios, profesionales, programas de metas y autorizaciones
-          </p>
-        </div>
-        <div className="flex items-end gap-3">
-          {validando && <Spinner className="h-4 w-4 text-brand-navy/40" />}
-          {contexto && (
-            <SelectorPeriodo
-              granularidad={estado.granularidad}
-              periodo={contexto.periodo?.clave ?? null}
-              periodos={contexto.periodos}
-              onGranularidad={onGranularidad}
-              onPeriodo={onPeriodo}
-            />
-          )}
-        </div>
-      </div>
-      <PestanasInteligencia />
-    </div>
+    <EncabezadoInteligencia pestana="mapa" onPestana={onPestana}>
+      {validando && <Spinner className="h-4 w-4 text-brand-navy/40" />}
+      {contexto && (
+        <SelectorPeriodo
+          granularidad={estado.granularidad}
+          periodo={contexto.periodo?.clave ?? null}
+          periodos={contexto.periodos}
+          onGranularidad={onGranularidad}
+          onPeriodo={onPeriodo}
+        />
+      )}
+    </EncabezadoInteligencia>
   );
 
   if (esquemaR.error && !esquemaR.data) {
