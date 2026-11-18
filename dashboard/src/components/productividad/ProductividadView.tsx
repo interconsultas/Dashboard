@@ -18,6 +18,7 @@ import {
 import type { Granularidad } from "@/lib/productividad/periodos";
 import type { RespuestaProductividad } from "@/lib/productividad/tipos";
 import { Spinner } from "@/components/ui/Spinner";
+import { usePuedeVer } from "@/components/layout/RolContext";
 import { SkeletonChart, SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ArbolPerdidas } from "./ArbolPerdidas";
 import { DispersionProfesionales } from "./DispersionProfesionales";
@@ -29,6 +30,8 @@ import { MatrizDetalle } from "./MatrizDetalle";
 import { ParetoPerdidas } from "./ParetoPerdidas";
 import { Segmentadores } from "./Segmentadores";
 import { TarjetasKpi } from "./TarjetasKpi";
+
+const RUTA_CITAS = "/admin/citas";
 
 /* ── Subcomponents ───────────────────────────────── */
 
@@ -60,6 +63,7 @@ export default function ProductividadView() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const veCitas = usePuedeVer(RUTA_CITAS);
 
   const filtros = useMemo(() => leerFiltros(new URLSearchParams(searchParams.toString())), [searchParams]);
   const qs = aQueryString(filtros);
@@ -162,9 +166,11 @@ export default function ProductividadView() {
             El tablero se alimenta del informe detallado por profesional de Agenda Web
             {data.granularidad === "semanal" ? " (cargas semanales)" : ""}.
           </p>
-          <Link href="/admin/citas" className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
-            Ir a Citas
-          </Link>
+          {veCitas && (
+            <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
+              Ir a Citas
+            </Link>
+          )}
         </div>
       ) : (
         <>

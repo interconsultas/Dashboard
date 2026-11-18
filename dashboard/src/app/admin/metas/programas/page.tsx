@@ -7,6 +7,8 @@ import { fetcher } from "@/lib/fetcher";
 import { PROGRAMAS_META, etiquetaPrograma } from "@/lib/cumplimiento/categorias";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
+import { useRol } from "@/components/layout/RolContext";
+import { puedeEditarMetas } from "@/lib/acceso";
 
 interface FilaMapeo {
   programa_especialidad: string;
@@ -30,6 +32,8 @@ function aSeleccion(mapeo: FilaMapeo[]): Seleccion {
 }
 
 export default function ProgramasPorEspecialidadPage() {
+  // Dirección médica consulta; solo admin edita (PUT /api/admin/metas/programas es solo admin)
+  const editable = puedeEditarMetas(useRol());
   const [seleccion, setSeleccion] = useState<Seleccion>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -100,15 +104,20 @@ export default function ProgramasPorEspecialidadPage() {
           >
             Volver a Metas
           </Link>
+          {!editable && (
+            <p className="inline-block mt-1 ml-3 text-xs text-gray-400">Solo lectura</p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={handleGuardar}
-          disabled={saving || !hayCambios}
-          className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-        >
-          {saving ? "Guardando…" : "Guardar"}
-        </button>
+        {editable && (
+          <button
+            type="button"
+            onClick={handleGuardar}
+            disabled={saving || !hayCambios}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        )}
       </div>
 
       {errorCarga && !data ? (
@@ -172,6 +181,7 @@ export default function ProgramasPorEspecialidadPage() {
                           }`}
                           aria-label={`Programa de metas de ${f.programa_especialidad}`}
                           value={valor}
+                          disabled={!editable}
                           onChange={(e) => {
                             const programa = e.target.value;
                             setSeleccion((prev) => ({

@@ -37,6 +37,7 @@ jest.mock("@/components/productividad/FichaProfesional", () => ({
 }));
 
 import ProductividadView from "@/components/productividad/ProductividadView";
+import { RolProvider } from "@/components/layout/RolContext";
 import { RESPUESTA } from "@/test-utils/productividad-fixtures";
 
 function swr(estado: { data?: unknown; error?: unknown; isLoading?: boolean }) {
@@ -130,6 +131,19 @@ describe("ProductividadView", () => {
     render(<ProductividadView />);
     expect(screen.getByText(/Aún no hay informes de citas cargados/)).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["admin", true],
+    ["direccion_medica", false],
+  ] as const)("sin cargas, el enlace «Ir a Citas» respeta el rol (%s → %s)", (rol, visible) => {
+    swr({ data: { ...RESPUESTA, periodo: null, periodos: { mensual: [], semanal: [] }, kpis: { actual: null, anterior: null, periodo_anterior: null, serie: [] } } });
+    render(
+      <RolProvider rol={rol}>
+        <ProductividadView />
+      </RolProvider>
+    );
+    expect(screen.queryByRole("link", { name: "Ir a Citas" }) !== null).toBe(visible);
   });
 
   it("con datos muestra todos los visuales", () => {

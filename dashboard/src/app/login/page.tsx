@@ -19,7 +19,8 @@ export default function LoginPage() {
     const res = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (res?.error) setError("Correo o contraseña incorrectos");
-    else router.push("/admin/carga");
+    // La raíz la resuelve el middleware según el rol (admin → Carga, demás → Dashboard)
+    else router.push("/");
   }
 
   return (

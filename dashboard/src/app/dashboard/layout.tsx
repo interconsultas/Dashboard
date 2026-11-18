@@ -1,9 +1,16 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { RolProvider } from "@/components/layout/RolContext";
+import { rolDeSesion } from "@/lib/middleware-roles";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  const rol = await rolDeSesion();
+  return (
+    <RolProvider rol={rol}>
+      <AppShell>{children}</AppShell>
+    </RolProvider>
+  );
 }

@@ -1,7 +1,8 @@
 import { auth } from "./auth";
 import { NextResponse } from "next/server";
+import { esRol, type Rol } from "./acceso";
 
-export type Rol = "admin" | "direccion_medica" | "coordinador";
+export type { Rol };
 
 export interface SessionUser {
   id: string;
@@ -14,6 +15,13 @@ export interface SessionUser {
 export interface AuthResult {
   error: NextResponse | null;
   user: SessionUser | null;
+}
+
+/** Rol de la sesión actual para las páginas (server components); null sin sesión o rol inválido. */
+export async function rolDeSesion(): Promise<Rol | null> {
+  const session = await auth();
+  const rol = (session?.user as { rol?: unknown } | undefined)?.rol;
+  return esRol(rol) ? rol : null;
 }
 
 /**
