@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { queryOne } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/medicos/[id]"].PATCH);
   if (error) return error;
 
   const usuario_txt = decodeURIComponent(params.id);
@@ -40,7 +41,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/medicos/[id]"].DELETE);
   if (error) return error;
 
   const usuario_txt = decodeURIComponent(params.id);

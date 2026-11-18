@@ -3,18 +3,18 @@ jest.mock("@/lib/db", () => ({
   default: { connect: jest.fn() },
   query: jest.fn(),
 }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/cache", () => ({ clearCache: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { GET, PUT } from "@/app/api/admin/citas-atendidas/route";
 import pool, { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { clearCache } from "@/lib/cache";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockConnect = pool.connect as unknown as jest.Mock;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 
@@ -45,7 +45,7 @@ const MEDICOS = [
 describe("/api/admin/citas-atendidas", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQuery.mockResolvedValue(MEDICOS as never);
     mockConnect.mockResolvedValue(client);
     client.query.mockReset();
@@ -55,14 +55,14 @@ describe("/api/admin/citas-atendidas", () => {
   });
 
   describe("GET", () => {
-    it("permite los roles admin y direccion_medica", async () => {
+    it("pide ver Citas o Cumplimiento", async () => {
       await GET(reqGet("?periodo=202602"));
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin", "direccion_medica"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas", "cumplimiento"], nivel: "ver" });
     });
 
-    it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+    it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await GET(reqGet("?periodo=202602"));
 
@@ -123,14 +123,14 @@ describe("/api/admin/citas-atendidas", () => {
   describe("PUT", () => {
     const FILA = { documento: "10234567", cantidad_citas: 120 };
 
-    it("permite solo el rol admin", async () => {
+    it("pide editar Citas", async () => {
       await PUT(reqPut({ periodo: 202602, filas: [FILA] }));
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas"], nivel: "editar" });
     });
 
-    it("retorna el error de requireAuth sin consultar ni escribir", async () => {
+    it("retorna el error de requirePermiso sin consultar ni escribir", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await PUT(reqPut({ periodo: 202602, filas: [FILA] }));
 

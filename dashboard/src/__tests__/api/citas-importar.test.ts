@@ -1,4 +1,4 @@
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/etl-run-sync", () => ({ runEtlCitasSync: jest.fn() }));
 jest.mock("@/lib/cache", () => ({ clearCache: jest.fn() }));
 jest.mock("fs/promises", () => ({
@@ -10,12 +10,12 @@ jest.mock("fs", () => ({ existsSync: jest.fn().mockReturnValue(true) }));
 
 import { NextResponse } from "next/server";
 import { POST } from "@/app/api/admin/citas-atendidas/importar/route";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { runEtlCitasSync } from "@/lib/etl-run-sync";
 import { clearCache } from "@/lib/cache";
 import { writeFile, unlink } from "fs/promises";
 
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 const mockRunEtl = runEtlCitasSync as jest.MockedFunction<typeof runEtlCitasSync>;
 const mockClearCache = clearCache as jest.MockedFunction<typeof clearCache>;
 const mockWriteFile = writeFile as jest.MockedFunction<typeof writeFile>;
@@ -51,18 +51,18 @@ function formConArchivo(archivo = archivoValido()) {
 describe("POST /api/admin/citas-atendidas/importar", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockRunEtl.mockResolvedValue({ success: true, resultado: RESULTADO });
   });
 
-  it("permite solo el rol admin", async () => {
+  it("pide editar Citas", async () => {
     await POST(reqConFormData(formConArchivo()));
-    expect(mockRequireAuth).toHaveBeenCalledWith(["admin"]);
+    expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas"], nivel: "editar" });
   });
 
-  it("retorna el error de requireAuth si no está autorizado", async () => {
+  it("retorna el error de requirePermiso si no está autorizado", async () => {
     const authError = NextResponse.json({ error: "No autorizado" }, { status: 403 });
-    mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
     const res = await POST(reqConFormData(formConArchivo()));
 

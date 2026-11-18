@@ -7,6 +7,7 @@ import "@testing-library/jest-dom";
 import { CumplimientoContenido } from "@/components/cumplimiento/CumplimientoContenido";
 import { construirCumplimiento, type EntradaCumplimiento } from "@/lib/cumplimiento/calcular";
 import type { RespuestaCumplimiento } from "@/lib/cumplimiento/tipos";
+import { RolProvider } from "@/components/layout/RolContext";
 
 const PEREZ = { documento: "10234567", nombre: "PEREZ JUAN" };
 const GOMEZ = { documento: "30345678", nombre: "GOMEZ ANA" };
@@ -50,12 +51,27 @@ const DATOS = respuesta([
 describe("CumplimientoContenido", () => {
   describe("sin citas cargadas", () => {
     it("explica que primero se deben cargar las citas atendidas y enlaza a esa pantalla", () => {
-      render(<CumplimientoContenido datos={respuesta([])} documento={null} onSeleccionar={jest.fn()} />);
+      render(
+        <RolProvider rol="admin">
+          <CumplimientoContenido datos={respuesta([])} documento={null} onSeleccionar={jest.fn()} />
+        </RolProvider>
+      );
 
       expect(screen.getByText("Aún no hay citas atendidas cargadas")).toBeInTheDocument();
       expect(screen.getByText(/cargue primero las citas atendidas/i)).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Ir a Citas" })).toHaveAttribute("href", "/admin/citas");
       expect(screen.queryByText("Cumplimiento global")).not.toBeInTheDocument();
+    });
+
+    it("no enlaza a Citas si el rol no puede abrir esa pantalla (dirección médica)", () => {
+      render(
+        <RolProvider rol="direccion_medica">
+          <CumplimientoContenido datos={respuesta([])} documento={null} onSeleccionar={jest.fn()} />
+        </RolProvider>
+      );
+
+      expect(screen.getByText("Aún no hay citas atendidas cargadas")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Ir a Citas" })).not.toBeInTheDocument();
     });
   });
 

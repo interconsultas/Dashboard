@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth, regionalClause } from "@/lib/middleware-roles";
+import { requirePermiso, regionalClause } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { getCached, setCache } from "@/lib/cache";
 import {
   type FiltrosBody, type Parsed, type Dimension, type WB,
@@ -73,7 +74,7 @@ interface FiltrosResponse {
 /* ── Handler ─────────────────────────────────── */
 
 export async function POST(req: NextRequest) {
-  const { error, user } = await requireAuth(["admin", "direccion_medica", "coordinador"]);
+  const { error, user } = await requirePermiso(PERMISOS_API["/api/dashboard/filtros"].POST);
   if (error) return error;
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

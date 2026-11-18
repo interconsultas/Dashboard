@@ -2,17 +2,17 @@ import type { NextRequest } from "next/server";
 
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
 jest.mock("@/lib/middleware-roles", () => ({
-  requireAuth: jest.fn(),
+  requirePermiso: jest.fn(),
   regionalClause: jest.fn(() => ({ clause: "", params: [] })),
 }));
 jest.mock("@/lib/cache", () => ({ getCached: jest.fn(() => null), setCache: jest.fn() }));
 
 import { POST } from "@/app/api/dashboard/filtros/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 
@@ -37,7 +37,7 @@ function mockQueryConSerieDiaria() {
 describe("POST /api/dashboard/filtros - modo día (issue #4)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER } as never);
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER } as never);
   });
 
   it("modo día en la vista default con desde===hasta dispara la query diaria sobre autorizaciones", async () => {

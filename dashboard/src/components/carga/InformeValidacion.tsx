@@ -25,6 +25,8 @@ interface PreviewData {
 interface Props {
   jobId: string;
   onReset: () => void;
+  /** false en solo consulta: oculta Cancelar y Confirmar. */
+  puedeConfirmar?: boolean;
 }
 
 function fmtNum(n: number | null | undefined): string {
@@ -40,7 +42,7 @@ function fmtCOP(n: number | null | undefined): string {
 const EN_PROGRESO: LogCarga["estado"][] = ["procesando", "previsualizando", "cargando"];
 const EN_ESPERA: LogCarga["estado"][] = ["esperando_confirmacion"];
 
-export function InformeValidacion({ jobId, onReset }: Props) {
+export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Props) {
   const [informe, setInforme]         = useState<LogCarga | null>(null);
   const [preview, setPreview]         = useState<PreviewData | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -374,6 +376,7 @@ export function InformeValidacion({ jobId, onReset }: Props) {
           ) : null}
 
           {/* ── Botones de acción ─────────────────────────────────────────── */}
+          {puedeConfirmar && (
           <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
             <button
               onClick={handleCancelar}
@@ -393,6 +396,7 @@ export function InformeValidacion({ jobId, onReset }: Props) {
               }
             </button>
           </div>
+          )}
         </>
       )}
 

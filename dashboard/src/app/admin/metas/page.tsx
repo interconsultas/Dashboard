@@ -16,6 +16,7 @@ import { parseAnio } from "@/lib/cumplimiento/periodo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 
 interface Meta {
   programa: string;
@@ -51,6 +52,8 @@ const CELDAS = PROGRAMAS_EDITABLES.flatMap((programa) =>
 );
 
 export default function MetasPage() {
+  // Dirección médica consulta; solo admin edita (PUT /api/admin/metas es solo admin)
+  const editable = usePuedeEditar("metas");
   const [anio, setAnio] = useState(() => new Date().getFullYear());
   const [anioPendiente, setAnioPendiente] = useState<number | null>(null);
   const [agregandoAnio, setAgregandoAnio] = useState(false);
@@ -192,6 +195,9 @@ export default function MetasPage() {
           >
             Programas por especialidad
           </Link>
+          {!editable && (
+            <p className="inline-block mt-1 ml-3 text-xs text-gray-400">Solo lectura</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -206,7 +212,7 @@ export default function MetasPage() {
               </option>
             ))}
           </select>
-          {agregandoAnio ? (
+          {!editable ? null : agregandoAnio ? (
             <form onSubmit={agregarAnio} className="flex items-center gap-2">
               <input
                 autoFocus
@@ -244,14 +250,16 @@ export default function MetasPage() {
               + Agregar año
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleGuardar}
-            disabled={saving || !hayCambios || hayInvalidas}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-          >
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
+          {editable && (
+            <button
+              type="button"
+              onClick={handleGuardar}
+              disabled={saving || !hayCambios || hayInvalidas}
+              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+            >
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -270,14 +278,16 @@ export default function MetasPage() {
               <p className="text-sm text-gray-600">
                 No hay metas registradas para {anio}.
               </p>
-              <button
-                type="button"
-                onClick={copiarAnioAnterior}
-                disabled={copiando}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white disabled:opacity-60 transition-colors"
-              >
-                {copiando ? "Copiando…" : "Copiar metas del año anterior"}
-              </button>
+              {editable && (
+                <button
+                  type="button"
+                  onClick={copiarAnioAnterior}
+                  disabled={copiando}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white disabled:opacity-60 transition-colors"
+                >
+                  {copiando ? "Copiando…" : "Copiar metas del año anterior"}
+                </button>
+              )}
             </div>
           )}
 
@@ -347,6 +357,7 @@ export default function MetasPage() {
                               invalida ? "border-red-400 bg-red-50" : "border-gray-200"
                             }`}
                             inputMode="decimal"
+                            readOnly={!editable}
                             aria-label={`${etiquetaPrograma(programa)} — ${c.etiqueta}`}
                             aria-invalid={invalida}
                             value={valores[clave] ?? ""}

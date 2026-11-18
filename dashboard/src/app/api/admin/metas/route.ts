@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { clearCache } from "@/lib/cache";
 import { esCategoria, esProgramaEditable, escalaDe } from "@/lib/cumplimiento/categorias";
 import { parseAnio } from "@/lib/cumplimiento/periodo";
@@ -13,7 +14,7 @@ function badRequest(error: string) {
 }
 
 export async function GET(request: Request) {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/metas"].GET);
   if (error) return error;
 
   const anioParam = new URL(request.url).searchParams.get("anio");
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/metas"].PUT);
   if (error) return error;
 
   const body = await request.json().catch(() => null);

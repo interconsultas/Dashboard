@@ -13,6 +13,7 @@ import { GraficaGlobalMensual } from "./GraficaGlobalMensual";
 import { LeyendaTendencia, TendenciaIndicador } from "./TendenciaIndicador";
 import { TablaRanking } from "./TablaRanking";
 import { TablaHistorial } from "./TablaHistorial";
+import { usePuedeVer } from "@/components/layout/RolContext";
 
 interface Props {
   datos: RespuestaCumplimiento;
@@ -42,6 +43,8 @@ function BotonVolver({ onClick }: { onClick: () => void }) {
 
 /** Contenido del dashboard de cumplimiento: vista general o tablero de un profesional. */
 export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props) {
+  const veCitas = usePuedeVer(RUTA_CITAS);
+
   // ── Sin citas cargadas en ningún periodo ──
   if (datos.periodos_disponibles.length === 0) {
     return (
@@ -51,12 +54,14 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
           El cumplimiento compara las órdenes de cada profesional con sus citas atendidas. Cargue primero
           las citas atendidas del periodo para ver este tablero.
         </p>
-        <Link
-          href={RUTA_CITAS}
-          className="inline-flex px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
-        >
-          Ir a Citas
-        </Link>
+        {veCitas && (
+          <Link
+            href={RUTA_CITAS}
+            className="inline-flex px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
+          >
+            Ir a Citas
+          </Link>
+        )}
       </div>
     );
   }

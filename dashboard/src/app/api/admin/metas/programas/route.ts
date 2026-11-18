@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { clearCache } from "@/lib/cache";
 import { normalizarProgramaMeta, type ProgramaMeta } from "@/lib/cumplimiento/categorias";
 
@@ -25,7 +26,7 @@ function normalizarEspecialidad(valor: unknown): string | null {
  * tengan profesionales), con el número de profesionales de cada una.
  */
 export async function GET() {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/metas/programas"].GET);
   if (error) return error;
 
   const mapeo = await query<{
@@ -52,7 +53,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/metas/programas"].PUT);
   if (error) return error;
 
   const body = await request.json().catch(() => null);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { requireAuth, regionalClause } from "@/lib/middleware-roles";
+import { requirePermiso, regionalClause } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { type FiltrosBody, wb, toW, buildExport } from "@/lib/dashboard-filters";
 import { resolveView, getViewFilters } from "@/lib/view-registry";
 import { EXPORT_COLUMNS } from "@/lib/export-columns";
@@ -22,7 +23,7 @@ function escapeCsv(val: unknown): string {
 /* ── Handler ─────────────────────────────────── */
 
 export async function POST(req: NextRequest) {
-  const { error, user } = await requireAuth(["admin", "direccion_medica", "coordinador"]);
+  const { error, user } = await requirePermiso(PERMISOS_API["/api/dashboard/export"].POST);
   if (error) return error;
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

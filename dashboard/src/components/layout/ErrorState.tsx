@@ -34,7 +34,7 @@ export function ErrorState({ error, reset, titulo = "Algo salió mal" }: Props) 
               Reintentar
             </button>
             <a
-              href="/admin/carga"
+              href="/"
               className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
             >
               Ir al inicio
