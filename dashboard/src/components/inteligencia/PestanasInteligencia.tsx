@@ -1,11 +1,17 @@
 import type { Pestana } from "@/lib/inteligencia/parametros";
 
-/** Pestañas de la sección; Alertas llega en un paso siguiente. */
-const PESTANAS: readonly { clave: Pestana | "alertas"; etiqueta: string; disponible: boolean }[] = [
+/** Pestañas de la sección (`disponible` permite anunciar una pestaña futura). */
+const PESTANAS: readonly { clave: Pestana; etiqueta: string; disponible: boolean }[] = [
   { clave: "mapa", etiqueta: "Mapa de relaciones", disponible: true },
   { clave: "simulador", etiqueta: "Simulador", disponible: true },
-  { clave: "alertas", etiqueta: "Alertas", disponible: false },
+  { clave: "alertas", etiqueta: "Alertas", disponible: true },
 ];
+
+const SUBTITULO: Record<Pestana, string> = {
+  mapa: "Cómo se relacionan servicios, profesionales, programas de metas y autorizaciones",
+  simulador: "¿Qué pasa si…? Mueva las palancas de la agenda y compare con lo que pasó en el periodo",
+  alertas: "Reglas que vigilan la agenda en el último periodo cargado y proyección del siguiente",
+};
 
 export function PestanasInteligencia({ activa, onCambiar }: { activa: Pestana; onCambiar: (p: Pestana) => void }) {
   return (
@@ -19,7 +25,7 @@ export function PestanasInteligencia({ activa, onCambiar }: { activa: Pestana; o
             role="tab"
             aria-selected={seleccionada}
             disabled={!p.disponible}
-            onClick={() => p.disponible && !seleccionada && onCambiar(p.clave as Pestana)}
+            onClick={() => p.disponible && !seleccionada && onCambiar(p.clave)}
             className={`-mb-px px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               seleccionada
                 ? "border-brand-green text-brand-navy"
@@ -57,9 +63,7 @@ export function EncabezadoInteligencia({
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Inteligencia</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {pestana === "simulador"
-              ? "¿Qué pasa si…? Mueva las palancas de la agenda y compare con lo que pasó en el periodo"
-              : "Cómo se relacionan servicios, profesionales, programas de metas y autorizaciones"}
+            {SUBTITULO[pestana]}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">{children}</div>

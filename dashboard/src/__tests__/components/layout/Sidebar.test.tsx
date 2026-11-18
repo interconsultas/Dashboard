@@ -15,6 +15,11 @@ jest.mock("next/image", () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
+// La insignia consulta la API: aquí solo importa dónde se monta
+jest.mock("@/components/layout/InsigniaAlertas", () => ({
+  InsigniaAlertas: () => <span data-testid="insignia-alertas" />,
+}));
+
 import { Sidebar } from "@/components/layout/Sidebar";
 import { RolProvider } from "@/components/layout/RolContext";
 import { PERMISOS_POR_DEFECTO, type Permisos, type Rol } from "@/lib/acceso";
@@ -123,6 +128,18 @@ describe("Sidebar — entrada Inteligencia", () => {
     expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
     expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
     expect(enlace("Productividad")).not.toHaveClass("bg-brand-green");
+  });
+
+  it("muestra la insignia de alertas dentro del enlace solo a quien ve Inteligencia", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("direccion_medica");
+    expect(enlace("Inteligencia")).toContainElement(screen.getByTestId("insignia-alertas"));
+  });
+
+  it("sin acceso a Inteligencia no monta la insignia (no consulta el conteo)", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("coordinador");
+    expect(screen.queryByTestId("insignia-alertas")).not.toBeInTheDocument();
   });
 
   it("coordinador no la ve con los permisos por defecto", () => {

@@ -37,9 +37,9 @@ describe("SECCIONES", () => {
     ]);
   });
 
-  it("solo metas, citas, carga, profesionales y usuarios admiten edición", () => {
+  it("solo inteligencia (reglas de alerta), metas, citas, carga, profesionales y usuarios admiten edición", () => {
     const editables = SECCIONES.filter((s) => s.admiteEdicion).map((s) => s.clave);
-    expect(editables.sort()).toEqual(["carga", "citas", "metas", "profesionales", "usuarios"]);
+    expect(editables.sort()).toEqual(["carga", "citas", "inteligencia", "metas", "profesionales", "usuarios"]);
   });
 
   it("usuarios no es configurable", () => {
@@ -274,6 +274,10 @@ describe("PERMISOS_API", () => {
       ["/api/productividad", "GET", ["admin", "direccion_medica"]],
       ["/api/productividad/profesional", "GET", ["admin", "direccion_medica"]],
       ["/api/inteligencia/grafo", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/alertas", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/alertas/conteo", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/reglas", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/reglas", "PUT", ["admin"]],
       ["/api/admin/metas", "GET", ["admin", "direccion_medica"]],
       ["/api/admin/metas", "PUT", ["admin"]],
       ["/api/admin/metas/programas", "GET", ["admin", "direccion_medica"]],
@@ -319,6 +323,15 @@ describe("PERMISOS_API", () => {
 
 describe("validarCambiosPermisos", () => {
   const ok = (cambios: unknown) => validarCambiosPermisos({ cambios });
+
+  it("Inteligencia admite editar (reglas de alerta) y se conserva en los permisos efectivos", () => {
+    expect(ok([{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }])).toEqual({
+      cambios: [{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }],
+    });
+    const efectivos = permisosEfectivos("direccion_medica", [{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }]);
+    expect(efectivos.inteligencia).toBe("editar");
+    expect(PERMISOS_POR_DEFECTO.direccion_medica.inteligencia).toBe("ver");
+  });
 
   it("acepta cambios válidos de los roles configurables", () => {
     const r = ok([

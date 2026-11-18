@@ -134,10 +134,35 @@ export function queryEstado(e: EstadoInteligencia): string {
 
 /* ── Pestañas y simulador ───────────────────── */
 
-export type Pestana = "mapa" | "simulador";
+export type Pestana = "mapa" | "simulador" | "alertas";
 
 export function leerPestana(params: URLSearchParams): Pestana {
-  return params.get("pestana") === "simulador" ? "simulador" : "mapa";
+  const p = params.get("pestana");
+  return p === "simulador" || p === "alertas" ? p : "mapa";
+}
+
+/** Alertas: solo la granularidad; siempre se evalúa el último periodo cargado. */
+export interface EstadoAlertas {
+  granularidad: Granularidad;
+}
+
+export function leerEstadoAlertas(params: URLSearchParams): EstadoAlertas {
+  return { granularidad: params.get("granularidad") === "semanal" ? "semanal" : "mensual" };
+}
+
+export function queryEstadoAlertas(e: EstadoAlertas): string {
+  const params = new URLSearchParams({ pestana: "alertas" });
+  if (e.granularidad !== "mensual") params.set("granularidad", e.granularidad);
+  return params.toString();
+}
+
+/** Query string (sin "?") para abrir otra pestaña conservando granularidad y periodo. */
+export function queryPestana(p: Pestana, ctx: { granularidad: Granularidad; periodo: string | null }): string {
+  if (p === "alertas") return queryEstadoAlertas({ granularidad: ctx.granularidad });
+  if (p === "simulador") {
+    return queryEstadoSimulador({ granularidad: ctx.granularidad, periodo: ctx.periodo, area: null, servicio: null, palancas: {} });
+  }
+  return queryEstado({ granularidad: ctx.granularidad, periodo: ctx.periodo, nodo: null });
 }
 
 /**

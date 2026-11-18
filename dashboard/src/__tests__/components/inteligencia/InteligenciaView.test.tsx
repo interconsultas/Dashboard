@@ -103,7 +103,9 @@ function mockSWR() {
     if (!clave) return base;
     const modo = clave.startsWith("/api/productividad")
       ? "productividad"
-      : new URLSearchParams(clave.split("?")[1]).get("modo") ?? "";
+      : clave.startsWith("/api/inteligencia/alertas")
+        ? "alertas"
+        : new URLSearchParams(clave.split("?")[1]).get("modo") ?? "";
     return { ...base, ...(respuestas[modo] ?? {}) };
   });
 }
@@ -131,16 +133,23 @@ describe("InteligenciaView", () => {
   });
 
   describe("estructura", () => {
-    it("muestra el encabezado y las pestañas; Alertas está deshabilitada", () => {
+    it("muestra el encabezado y las tres pestañas habilitadas", () => {
       renderVista();
       expect(screen.getByRole("heading", { name: "Inteligencia" })).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "Mapa de relaciones" })).toHaveAttribute("aria-selected", "true");
       const simulador = screen.getByRole("tab", { name: "Simulador" });
       expect(simulador).toBeEnabled();
       expect(simulador).toHaveAttribute("aria-selected", "false");
-      const alertas = screen.getByRole("tab", { name: /Alertas/ });
-      expect(alertas).toBeDisabled();
-      expect(alertas).toHaveTextContent("Próximamente");
+      const alertas = screen.getByRole("tab", { name: "Alertas" });
+      expect(alertas).toBeEnabled();
+      expect(alertas).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("la pestaña Alertas conserva la granularidad", () => {
+      mockParams = new URLSearchParams("granularidad=semanal&periodo=2026-11-09");
+      renderVista();
+      fireEvent.click(screen.getByRole("tab", { name: "Alertas" }));
+      expect(ultimaUrl()).toEqual({ pestana: "alertas", granularidad: "semanal" });
     });
 
     it("la pestaña Simulador conserva el periodo y suelta el nodo", () => {
@@ -459,5 +468,114 @@ describe("InteligenciaView › Simulador", () => {
     };
     renderVista();
     expect(screen.getByText("No hay citas ofertadas con este filtro en el periodo")).toBeInTheDocument();
+  });
+});
+
+/* ── Alertas ── */
+
+describe("InteligenciaView — Alertas", () => {
+  const PERIODO_OCT = { clave: "202610", etiqueta: "Oct 2026", etiqueta_larga: "Octubre 2026", fecha_inicial: "2026-10-01", fecha_final: "2026-10-31" };
+  const REGLAS = [
+    { clave: "inasistencia_servicio", nombre: "Inasistencia alta sostenida por servicio", descripcion: "d", activa: true, umbral: 0.2, periodos: 2, minimo: 30, gravedad: "alta", actualizado_en: null, actualizado_por: null },
+  ];
+  const ALERTAS = {
+    granularidad: "mensual",
+    periodo: PERIODO_OCT,
+    siguiente: { clave: "202611", etiqueta: "Nov 2026", etiqueta_larga: "Noviembre 2026" },
+    meta: 0.1,
+    periodos_cargados: 10,
+    min_periodos_proyeccion: 3,
+    reglas: REGLAS,
+    conteo: { inasistencia_servicio: 1, disponibilidad_servicio: 0, inasistencia_profesional: 0, proyeccion_sobre_meta: 0 },
+    total: 1,
+    alertas: [
+      {
+        regla: "inasistencia_servicio",
+        gravedad: "alta",
+        ambito: { tipo: "servicio", id: "890", nombre: "PSICOLOGIA", area: "Psicosocial" },
+        mensaje: "Psicosocial — PSICOLOGIA: inasistencia 36,2 % y 35,0 % en los dos últimos meses (umbral 20 %)",
+        valores: { actual: 0.35, umbral: 0.2, serie: [] },
+        magnitud: 0.15,
+        enlace: "/dashboard/productividad?periodo=202610&area=Psicosocial&servicio=890",
+      },
+    ],
+    proyeccion: { areas: [], servicios: [] },
+  };
+  const mutate = jest.fn();
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockParams = new URLSearchParams("pestana=alertas");
+    respuestas = { alertas: { data: ALERTAS } };
+    mockSWR();
+    mockUseSWR.mockImplementation((clave: string | null) => ({
+      data: clave?.startsWith("/api/inteligencia/alertas") ? ALERTAS : undefined,
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+      mutate,
+    }));
+  });
+
+  afterAll(() => {
+    global.fetch = fetchOriginal;
+  });
+
+  it("selecciona la pestaña, consulta las alertas de la granularidad y muestra lista, proyección y reglas", () => {
+    renderVista();
+    expect(screen.getByRole("tab", { name: "Alertas" })).toHaveAttribute("aria-selected", "true");
+    expect(claves()).toEqual(["/api/inteligencia/alertas?granularidad=mensual"]);
+    expect(screen.getByText(ALERTAS.alertas[0].mensaje)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Proyección para Noviembre 2026/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reglas de alerta" })).toBeInTheDocument();
+    expect(screen.getByText(/Último periodo: Octubre 2026/)).toBeInTheDocument();
+  });
+
+  it("el selector de granularidad cambia la URL conservando la pestaña", () => {
+    renderVista();
+    fireEvent.click(within(screen.getByRole("group", { name: "Granularidad" })).getByRole("button", { name: "Semanal" }));
+    expect(ultimaUrl()).toEqual({ pestana: "alertas", granularidad: "semanal" });
+  });
+
+  it("dirección médica (solo ver) ve las reglas en solo consulta", () => {
+    render(
+      <RolProvider rol="direccion_medica" permisos={PERMISOS_POR_DEFECTO.direccion_medica}>
+        <InteligenciaView />
+      </RolProvider>,
+    );
+    expect(screen.getByText(/Solo consulta/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+  });
+
+  it("guardar reglas hace PUT y vuelve a consultar las alertas", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ actualizadas: 1 }) }) as never;
+    renderVista();
+    fireEvent.change(screen.getByLabelText("Umbral (%): Inasistencia alta sostenida por servicio"), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    });
+    expect(global.fetch).toHaveBeenCalledWith("/api/inteligencia/reglas", expect.objectContaining({ method: "PUT" }));
+    const cuerpo = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(cuerpo).toEqual({ reglas: [{ clave: "inasistencia_servicio", activa: true, umbral: 0.25, periodos: 2, minimo: 30 }] });
+    expect(mutate).toHaveBeenCalled();
+  });
+
+  it("un error de la API al guardar se muestra", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "Sin permisos suficientes" }) }) as never;
+    renderVista();
+    fireEvent.change(screen.getByLabelText("Umbral (%): Inasistencia alta sostenida por servicio"), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("Sin permisos suficientes");
+  });
+
+  it("error al consultar → mensaje", () => {
+    mockUseSWR.mockImplementation(() => ({ data: undefined, error: new Error("Error al consultar los datos"), isLoading: false, isValidating: false, mutate }));
+    renderVista();
+    expect(screen.getByRole("alert")).toHaveTextContent("Error al consultar los datos");
   });
 });

@@ -3,6 +3,8 @@ import type { Atribucion } from "@/lib/cumplimiento/config";
 import type { Granularidad } from "@/lib/productividad/periodos";
 import type { PeriodoCarga } from "@/lib/productividad/tipos";
 import type { Esquema, ResultadoBusqueda, Vecindario } from "./grafo";
+import type { ResultadoAlertas } from "./alertas";
+import type { ReglaAlerta } from "./reglas";
 
 export interface ContextoGrafo {
   granularidad: Granularidad;
@@ -31,3 +33,12 @@ export interface RespuestaBusqueda extends ContextoGrafo {
 }
 
 export type RespuestaGrafo = RespuestaEsquema | RespuestaVecindario | RespuestaBusqueda;
+
+/** Respuesta de GET /api/inteligencia/alertas. */
+export interface RespuestaAlertas extends ResultadoAlertas {
+  granularidad: Granularidad;
+  meta: number;
+  periodos_cargados: number;
+  min_periodos_proyeccion: number;
+  reglas: ReglaAlerta[];
+}

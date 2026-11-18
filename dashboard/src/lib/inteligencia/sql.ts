@@ -77,3 +77,35 @@ export const SQL_REGIONALES = Object.entries(VISTA_CATEGORIA)
          GROUP BY desc_regional_afiliado`
   )
   .join("\n         UNION ALL\n         ");
+
+/* ── Alertas ─────────────────────────────────── */
+
+/** Serie por periodo × servicio de todas las cargas de la granularidad. $1 granularidad. */
+export const SQL_SERIE_SERVICIOS = `SELECT v.fecha_inicial, v.area, v.codigo_servicio,
+                MAX(v.nombre_servicio) AS nombre_servicio,
+                SUM(v.asignadas)::int AS asignadas,
+                SUM(v.inasistidas)::int AS inasistidas,
+                SUM(v.ofertadas)::int AS ofertadas,
+                SUM(v.disponibles)::int AS disponibles
+         FROM v_citas_area v WHERE v.granularidad = $1
+         GROUP BY v.fecha_inicial, v.area, v.codigo_servicio`;
+
+/** Totales por profesional de una carga con su área principal. $1 granularidad, $2 fecha_inicial, $3 fecha_final. */
+export const SQL_PROFESIONALES_ALERTA = `SELECT v.documento::text AS documento,
+                MAX(v.nombre_profesional) AS nombre,
+                MAX(p.area_principal) AS area_principal,
+                SUM(v.asignadas)::int AS asignadas,
+                SUM(v.inasistidas)::int AS inasistidas
+         FROM v_citas_area v
+         LEFT JOIN v_citas_area_principal p
+           ON p.granularidad = v.granularidad
+          AND p.fecha_inicial = v.fecha_inicial
+          AND p.fecha_final = v.fecha_final
+          AND p.tipo_documento = v.tipo_documento
+          AND p.documento = v.documento
+         WHERE v.granularidad = $1 AND v.fecha_inicial = $2 AND v.fecha_final = $3
+         GROUP BY v.documento`;
+
+export const SQL_REGLAS = `SELECT clave, nombre, descripcion, activa, umbral, periodos, minimo, gravedad,
+                actualizado_en, actualizado_por
+         FROM reglas_alerta`;

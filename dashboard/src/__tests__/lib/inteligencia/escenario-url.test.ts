@@ -1,4 +1,12 @@
-import { leerPestana, leerEstadoSimulador, queryEstadoSimulador, type EstadoSimulador } from "@/lib/inteligencia/parametros";
+import {
+  leerEstadoAlertas,
+  leerPestana,
+  leerEstadoSimulador,
+  queryEstadoAlertas,
+  queryPestana,
+  queryEstadoSimulador,
+  type EstadoSimulador,
+} from "@/lib/inteligencia/parametros";
 
 const qs = (s: string) => new URLSearchParams(s);
 
@@ -7,6 +15,30 @@ describe("leerPestana", () => {
     expect(leerPestana(qs(""))).toBe("mapa");
     expect(leerPestana(qs("pestana=otra"))).toBe("mapa");
     expect(leerPestana(qs("pestana=simulador"))).toBe("simulador");
+    expect(leerPestana(qs("pestana=alertas"))).toBe("alertas");
+  });
+});
+
+describe("estado de Alertas en la URL", () => {
+  it("lee la granularidad (mensual por defecto, lo no válido vuelve al defecto)", () => {
+    expect(leerEstadoAlertas(qs("pestana=alertas"))).toEqual({ granularidad: "mensual" });
+    expect(leerEstadoAlertas(qs("pestana=alertas&granularidad=semanal"))).toEqual({ granularidad: "semanal" });
+    expect(leerEstadoAlertas(qs("pestana=alertas&granularidad=x"))).toEqual({ granularidad: "mensual" });
+  });
+
+  it("escribe la pestaña y solo la granularidad no por defecto", () => {
+    expect(queryEstadoAlertas({ granularidad: "mensual" })).toBe("pestana=alertas");
+    expect(queryEstadoAlertas({ granularidad: "semanal" })).toBe("pestana=alertas&granularidad=semanal");
+  });
+});
+
+describe("queryPestana", () => {
+  const ctx = { granularidad: "semanal" as const, periodo: "2026-11-09" };
+  it("conserva granularidad y periodo al cambiar de pestaña (Alertas usa siempre el último periodo)", () => {
+    expect(queryPestana("mapa", ctx)).toBe("granularidad=semanal&periodo=2026-11-09");
+    expect(queryPestana("simulador", ctx)).toBe("pestana=simulador&granularidad=semanal&periodo=2026-11-09");
+    expect(queryPestana("alertas", ctx)).toBe("pestana=alertas&granularidad=semanal");
+    expect(queryPestana("mapa", { granularidad: "mensual", periodo: null })).toBe("");
   });
 });
 

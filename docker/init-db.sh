@@ -43,7 +43,8 @@ for f in /sql/001_create_tables.sql \
          /sql/016_citas_detallado.sql \
          /sql/017_areas_servicio.sql \
          /sql/018_permisos_rol.sql \
-         /sql/019_inteligencia.sql; do
+         /sql/019_inteligencia.sql \
+         /sql/020_reglas_alerta.sql; do
     echo "  -> $(basename "$f")"
     psql -v ON_ERROR_STOP=1 --username "$DB_USER" --dbname "$DB_NAME" -f "$f"
 done

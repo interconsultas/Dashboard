@@ -7,8 +7,8 @@ import useSWR from "swr";
 import { fetcher, FetchError } from "@/lib/fetcher";
 import {
   leerEstadoSimulador,
-  queryEstado,
   queryEstadoSimulador,
+  queryPestana,
   type EstadoSimulador,
   type Pestana,
 } from "@/lib/inteligencia/parametros";
@@ -137,8 +137,8 @@ export function SimuladorVista() {
   };
 
   const onPestana = (p: Pestana) => {
-    if (p !== "mapa") return;
-    const qs = queryEstado({ granularidad: estado.granularidad, periodo: estado.periodo, nodo: null });
+    if (p === "simulador") return;
+    const qs = queryPestana(p, { granularidad: estado.granularidad, periodo: estado.periodo });
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
   const onGranularidad = (granularidad: Granularidad) => navegar({ ...estado, granularidad, periodo: null });

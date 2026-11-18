@@ -74,9 +74,9 @@ export const SECCIONES: readonly DefSeccion[] = [
   {
     clave: "inteligencia",
     etiqueta: "Inteligencia",
-    descripcion: "Mapa de relaciones entre servicios, profesionales, programas y autorizaciones.",
+    descripcion: "Mapa de relaciones, simulador y alertas (editar = configurar las reglas de alerta).",
     ruta: "/dashboard/inteligencia",
-    admiteEdicion: false,
+    admiteEdicion: true,
     configurable: true,
   },
   {
@@ -270,6 +270,9 @@ export const PERMISOS_API = {
   "/api/productividad": { GET: ver("productividad", "inteligencia") },
   "/api/productividad/profesional": { GET: ver("productividad") },
   "/api/inteligencia/grafo": { GET: ver("inteligencia") },
+  "/api/inteligencia/alertas": { GET: ver("inteligencia") },
+  "/api/inteligencia/alertas/conteo": { GET: ver("inteligencia") },
+  "/api/inteligencia/reglas": { GET: ver("inteligencia"), PUT: editar("inteligencia") },
   "/api/admin/metas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/metas/programas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/medicos": { GET: ver("profesionales", "cumplimiento"), POST: editar("profesionales") },

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { puedeVer } from "@/lib/acceso";
+import { InsigniaAlertas } from "./InsigniaAlertas";
 import { usePermisos } from "./RolContext";
 
 function IconDashboard({ className }: { className?: string }) {
@@ -300,6 +301,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           >
             <IconInteligencia className="w-[18px] h-[18px] flex-shrink-0" />
             Inteligencia
+            <InsigniaAlertas />
           </Link>
         )}
 

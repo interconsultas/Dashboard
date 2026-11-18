@@ -10,7 +10,7 @@ import {
   leerEstado,
   leerPestana,
   queryEstado,
-  queryEstadoSimulador,
+  queryPestana,
   MAX_LIMITE,
   type EstadoInteligencia,
   type Pestana,
@@ -26,6 +26,7 @@ import { PanelDetalle } from "./PanelDetalle";
 import { PanelExplorar } from "./PanelExplorar";
 import { EncabezadoInteligencia } from "./PestanasInteligencia";
 import { SimuladorVista } from "./SimuladorVista";
+import { AlertasVista } from "./AlertasVista";
 import { SelectorPeriodo } from "./SelectorPeriodo";
 
 const API = "/api/inteligencia/grafo";
@@ -84,7 +85,9 @@ function Alerta({ children }: { children: React.ReactNode }) {
 export default function InteligenciaView() {
   const searchParams = useSearchParams();
   const pestana = leerPestana(new URLSearchParams(searchParams.toString()));
-  return pestana === "simulador" ? <SimuladorVista /> : <VistaMapa />;
+  if (pestana === "simulador") return <SimuladorVista />;
+  if (pestana === "alertas") return <AlertasVista />;
+  return <VistaMapa />;
 }
 
 /**
@@ -216,16 +219,10 @@ function VistaMapa() {
   const validando = (esquemaR.isValidating && !esquemaR.isLoading) || vecindarioR.isLoading || vecindarioR.isValidating;
 
   const onPestana = (p: Pestana) => {
-    if (p !== "simulador") return;
-    const qs = queryEstadoSimulador({
-      granularidad: estado.granularidad,
-      periodo: estado.periodo,
-      area: null,
-      servicio: null,
-      palancas: {},
-    });
-    router.push(`${pathname}?${qs}`, { scroll: false });
+    if (p === "mapa") return;
+    router.push(`${pathname}?${queryPestana(p, { granularidad: estado.granularidad, periodo: estado.periodo })}`, { scroll: false });
   };
+
 
   const encabezado = (
     <EncabezadoInteligencia pestana="mapa" onPestana={onPestana}>

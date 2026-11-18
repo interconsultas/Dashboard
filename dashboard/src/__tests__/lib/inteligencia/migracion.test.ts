@@ -20,6 +20,6 @@ describe("019_inteligencia.sql", () => {
   });
 
   it("init-db.sh la ejecuta justo después de 018", () => {
-    expect(INIT).toMatch(/018_permisos_rol\.sql \\\s*\n\s*\/sql\/019_inteligencia\.sql; do/);
+    expect(INIT).toMatch(/018_permisos_rol\.sql \\\s*\n\s*\/sql\/019_inteligencia\.sql \\\s*\n/);
   });
 });
