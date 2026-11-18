@@ -11,7 +11,10 @@ jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => moc
 import { MatrizPermisos } from "@/components/usuarios/MatrizPermisos";
 import { PERMISOS_POR_DEFECTO, SECCIONES } from "@/lib/acceso";
 
-const celda = (seccion: string, rol: string) => screen.getByLabelText(`${seccion} — ${rol}`) as HTMLSelectElement;
+const boton = (accion: "Ver" | "Editar", seccion: string, rol: string) =>
+  screen.getByRole("button", { name: `${accion} ${seccion} — ${rol}` });
+const ver = (seccion: string, rol: string) => boton("Ver", seccion, rol);
+const editar = (seccion: string, rol: string) => boton("Editar", seccion, rol);
 
 describe("MatrizPermisos", () => {
   const mutate = jest.fn();
@@ -45,26 +48,40 @@ describe("MatrizPermisos", () => {
   it("muestra los niveles actuales de dirección médica y coordinador", () => {
     render(<MatrizPermisos />);
 
-    expect(celda("Metas", "Dirección médica")).toHaveValue("ver");
-    expect(celda("Productividad", "Coordinador")).toHaveValue("ninguno");
+    expect(ver("Metas", "Dirección médica")).toHaveAttribute("aria-pressed", "true");
+    expect(editar("Metas", "Dirección médica")).toHaveAttribute("aria-pressed", "false");
+    expect(ver("Productividad", "Coordinador")).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("la columna de administrador es fija (Total) y usuarios no se configura", () => {
+  it("la columna de administrador es fija (todo activo) y usuarios no se configura", () => {
     render(<MatrizPermisos />);
 
-    expect(screen.queryByLabelText(/— Administrador$/)).not.toBeInTheDocument();
-    expect(screen.getAllByText("Total")).toHaveLength(SECCIONES.length);
-    expect(screen.queryByLabelText("Usuarios — Coordinador")).not.toBeInTheDocument();
+    expect(ver("Metas", "Administrador")).toHaveAttribute("aria-pressed", "true");
+    expect(ver("Metas", "Administrador")).toBeDisabled();
+    expect(editar("Metas", "Administrador")).toBeDisabled();
+    expect(ver("Usuarios", "Coordinador")).toBeDisabled();
+    expect(ver("Usuarios", "Coordinador")).toHaveAttribute("aria-pressed", "false");
     const filaUsuarios = screen.getByText("Usuarios", { selector: "td *, td" }).closest("tr") as HTMLElement;
-    expect(within(filaUsuarios).getAllByText("Sin acceso")).toHaveLength(2);
+    expect(within(filaUsuarios).getAllByRole("button").filter((b) => !b.hasAttribute("disabled"))).toHaveLength(0);
   });
 
-  it("solo ofrece Editar en las secciones que lo admiten", () => {
+  it("Editar está deshabilitado en las secciones de solo consulta", () => {
     render(<MatrizPermisos />);
 
-    const opciones = (s: HTMLSelectElement) => Array.from(s.options).map((o) => o.textContent);
-    expect(opciones(celda("Productividad", "Coordinador"))).toEqual(["Sin acceso", "Ver"]);
-    expect(opciones(celda("Metas", "Coordinador"))).toEqual(["Sin acceso", "Ver", "Editar"]);
+    expect(editar("Productividad", "Coordinador")).toBeDisabled();
+    expect(editar("Metas", "Coordinador")).toBeEnabled();
+  });
+
+  it("activar Editar activa Ver y quitar Ver quita Editar", () => {
+    render(<MatrizPermisos />);
+
+    fireEvent.click(editar("Metas", "Coordinador"));
+    expect(ver("Metas", "Coordinador")).toHaveAttribute("aria-pressed", "true");
+    expect(editar("Metas", "Coordinador")).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(ver("Metas", "Coordinador"));
+    expect(ver("Metas", "Coordinador")).toHaveAttribute("aria-pressed", "false");
+    expect(editar("Metas", "Coordinador")).toHaveAttribute("aria-pressed", "false");
   });
 
   it("Guardar está deshabilitado sin cambios", () => {
@@ -75,8 +92,8 @@ describe("MatrizPermisos", () => {
   it("envía solo lo que cambió y confirma lo guardado", async () => {
     render(<MatrizPermisos />);
 
-    fireEvent.change(celda("Productividad", "Coordinador"), { target: { value: "ver" } });
-    fireEvent.change(celda("Metas", "Dirección médica"), { target: { value: "editar" } });
+    fireEvent.click(ver("Productividad", "Coordinador"));
+    fireEvent.click(editar("Metas", "Dirección médica"));
     fireEvent.click(screen.getByRole("button", { name: "Guardar permisos" }));
 
     await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
@@ -102,7 +119,7 @@ describe("MatrizPermisos", () => {
     mockFetch.mockReturnValue(new Promise((r) => (resolver = r)));
     render(<MatrizPermisos />);
 
-    fireEvent.change(celda("Productividad", "Coordinador"), { target: { value: "ver" } });
+    fireEvent.click(ver("Productividad", "Coordinador"));
     fireEvent.click(screen.getByRole("button", { name: "Guardar permisos" }));
 
     expect(await screen.findByRole("button", { name: "Guardando…" })).toBeDisabled();
@@ -114,21 +131,21 @@ describe("MatrizPermisos", () => {
     mockFetch.mockResolvedValue({ ok: false, json: async () => ({ error: "Fila 1: nivel no válido" }) });
     render(<MatrizPermisos />);
 
-    fireEvent.change(celda("Productividad", "Coordinador"), { target: { value: "ver" } });
+    fireEvent.click(ver("Productividad", "Coordinador"));
     fireEvent.click(screen.getByRole("button", { name: "Guardar permisos" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Fila 1: nivel no válido");
-    expect(celda("Productividad", "Coordinador")).toHaveValue("ver");
+    expect(ver("Productividad", "Coordinador")).toHaveAttribute("aria-pressed", "true");
     expect(mutate).not.toHaveBeenCalled();
   });
 
   it("Descartar vuelve a los valores guardados", () => {
     render(<MatrizPermisos />);
 
-    fireEvent.change(celda("Productividad", "Coordinador"), { target: { value: "ver" } });
+    fireEvent.click(ver("Productividad", "Coordinador"));
     fireEvent.click(screen.getByRole("button", { name: "Descartar" }));
 
-    expect(celda("Productividad", "Coordinador")).toHaveValue("ninguno");
+    expect(ver("Productividad", "Coordinador")).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Guardar permisos" })).toBeDisabled();
   });
 

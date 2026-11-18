@@ -41,6 +41,78 @@ function describirCambio(c: CambioPermiso): string {
   return `${etiquetaRol(c.rol)} · ${seccion}: ${ETIQUETA_NIVEL[c.nivel]}`;
 }
 
+/* ── Íconos y botón de acción ── */
+
+function IconoVer() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function IconoEditar() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M4 20h4L19 9l-4-4L4 16v4z" strokeLinejoin="round" />
+      <path d="M13.5 6.5l4 4" />
+    </svg>
+  );
+}
+
+type Accion = "ver" | "editar";
+
+const ACCIONES: { clave: Accion; etiqueta: string; Icono: () => JSX.Element }[] = [
+  { clave: "ver", etiqueta: "Ver", Icono: IconoVer },
+  { clave: "editar", etiqueta: "Editar", Icono: IconoEditar },
+];
+
+/** Una acción está activa si el nivel la incluye: editar incluye ver. */
+function incluye(nivel: Nivel, accion: Accion): boolean {
+  return accion === "ver" ? nivel !== "ninguno" : nivel === "editar";
+}
+
+/** Nivel resultante al pulsar una acción: activar editar activa ver; quitar ver quita editar. */
+function alternar(nivel: Nivel, accion: Accion): Nivel {
+  if (accion === "ver") return nivel === "ninguno" ? "ver" : "ninguno";
+  return nivel === "editar" ? "ver" : "editar";
+}
+
+function BotonAccion({
+  etiqueta,
+  activo,
+  deshabilitado,
+  modificado,
+  onClick,
+  children,
+}: {
+  etiqueta: string;
+  activo: boolean;
+  deshabilitado: boolean;
+  modificado: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={etiqueta}
+      title={etiqueta}
+      aria-pressed={activo}
+      disabled={deshabilitado}
+      onClick={onClick}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors ${
+        activo ? "bg-brand-navy text-white" : "bg-gray-100 text-gray-300"
+      } ${deshabilitado ? (activo ? "opacity-60 cursor-not-allowed" : "opacity-50 cursor-not-allowed") : activo ? "hover:bg-brand-navy-dark" : "hover:bg-gray-200 hover:text-gray-500"} ${
+        modificado ? "ring-2 ring-amber-400 ring-offset-1" : ""
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Matriz de permisos por rol (Administración › Usuarios). Solo admin la ve. */
 export function MatrizPermisos() {
   const { data, error, isLoading, mutate } = useSWR<{ permisos: Matriz }>(URL_PERMISOS, fetcher);
@@ -107,16 +179,28 @@ export function MatrizPermisos() {
         sesión.
       </p>
 
+      <div className="flex items-center gap-4 text-xs text-gray-500">
+        {ACCIONES.map(({ clave, etiqueta, Icono }) => (
+          <span key={clave} className="inline-flex items-center gap-1.5">
+            <Icono />
+            {etiqueta}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded ring-2 ring-amber-400" /> Cambio sin guardar
+        </span>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
         <table className="min-w-full text-sm">
           <thead className="bg-brand-navy">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide">Sección</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
                 {etiquetaRol("admin")}
               </th>
               {ROLES_CONFIGURABLES.map((rol) => (
-                <th key={rol} className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
+                <th key={rol} className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
                   {etiquetaRol(rol)}
                 </th>
               ))}
@@ -130,38 +214,39 @@ export function MatrizPermisos() {
                   <p className="text-xs text-gray-400">{s.descripcion}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-blue-soft-2 text-brand-navy">
-                    Total
-                  </span>
+                  <div className="flex justify-center gap-1.5">
+                    {ACCIONES.map(({ clave, etiqueta, Icono }) => (
+                      <BotonAccion
+                        key={clave}
+                        etiqueta={`${etiqueta} ${s.etiqueta} — ${etiquetaRol("admin")}`}
+                        activo={clave === "ver" || s.admiteEdicion || !s.configurable}
+                        deshabilitado
+                        modificado={false}
+                      >
+                        <Icono />
+                      </BotonAccion>
+                    ))}
+                  </div>
                 </td>
                 {ROLES_CONFIGURABLES.map((rol) => {
                   const nivel = borrador[rol][s.clave];
-                  if (!s.configurable) {
-                    return (
-                      <td key={rol} className="px-4 py-3 text-xs text-gray-400">
-                        {ETIQUETA_NIVEL[nivel]}
-                      </td>
-                    );
-                  }
-                  const modificada = nivel !== data.permisos[rol][s.clave];
-                  const niveles: Nivel[] = s.admiteEdicion ? ["ninguno", "ver", "editar"] : ["ninguno", "ver"];
+                  const guardadoNivel = data.permisos[rol][s.clave];
                   return (
                     <td key={rol} className="px-4 py-3">
-                      <select
-                        aria-label={`${s.etiqueta} — ${etiquetaRol(rol)}`}
-                        value={nivel}
-                        disabled={guardando}
-                        onChange={(e) => cambiar(rol, s.clave, e.target.value as Nivel)}
-                        className={`border rounded-lg px-2 py-1.5 text-sm focus:outline-none ${
-                          modificada ? "border-amber-400 bg-amber-50 text-amber-900" : "border-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {niveles.map((n) => (
-                          <option key={n} value={n}>
-                            {ETIQUETA_NIVEL[n]}
-                          </option>
+                      <div className="flex justify-center gap-1.5">
+                        {ACCIONES.map(({ clave, etiqueta, Icono }) => (
+                          <BotonAccion
+                            key={clave}
+                            etiqueta={`${etiqueta} ${s.etiqueta} — ${etiquetaRol(rol)}`}
+                            activo={incluye(nivel, clave)}
+                            deshabilitado={guardando || !s.configurable || (clave === "editar" && !s.admiteEdicion)}
+                            modificado={incluye(nivel, clave) !== incluye(guardadoNivel, clave)}
+                            onClick={() => cambiar(rol, s.clave, alternar(nivel, clave))}
+                          >
+                            <Icono />
+                          </BotonAccion>
                         ))}
-                      </select>
+                      </div>
                     </td>
                   );
                 })}
