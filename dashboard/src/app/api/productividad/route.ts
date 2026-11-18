@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { getCached, setCache } from "@/lib/cache";
 import { validarParametros, type OpcionServicio } from "@/lib/productividad/filtros";
 import { SQL_CARGAS, SQL_PROFESIONALES_CARGA, SUMAS, conNumeros } from "@/lib/productividad/sql";
@@ -22,7 +23,7 @@ const CACHE_TTL_MS = 60_000;
 
 export async function GET(request: Request) {
   // Paso 4 de la fase 2 refina el acceso por rol (coordinador por regional).
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/productividad"].GET);
   if (error) return error;
 
   try {

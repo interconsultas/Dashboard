@@ -9,6 +9,8 @@ const mockUseSWR = jest.fn();
 jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => mockUseSWR(...args) }));
 
 import AreasServicioPage from "@/app/admin/citas/areas/page";
+import { RolProvider } from "@/components/layout/RolContext";
+import { PERMISOS_POR_DEFECTO } from "@/lib/acceso";
 import type { AreasServicio } from "@/lib/citas/areas";
 
 const DATOS: AreasServicio = {
@@ -40,7 +42,7 @@ describe("/admin/citas/areas", () => {
   });
 
   it("consulta el catálogo de áreas y enlaza de vuelta a Citas", () => {
-    render(<AreasServicioPage />);
+    render(<RolProvider rol="admin"><AreasServicioPage /></RolProvider>);
 
     expect(mockUseSWR.mock.calls[0][0]).toBe("/api/admin/citas/areas");
     expect(screen.getByRole("heading", { level: 1, name: "Áreas de servicio" })).toBeInTheDocument();
@@ -48,7 +50,7 @@ describe("/admin/citas/areas", () => {
   });
 
   it("muestra cada servicio con su código, área, asignadas del último mes y si fue editada", () => {
-    render(<AreasServicioPage />);
+    render(<RolProvider rol="admin"><AreasServicioPage /></RolProvider>);
 
     const ecg = fila("ELECTROCARDIOGRAMA");
     expect(within(ecg).getByText("62574")).toBeInTheDocument();
@@ -62,7 +64,7 @@ describe("/admin/citas/areas", () => {
   });
 
   it("guarda solo los servicios cambiados", async () => {
-    render(<AreasServicioPage />);
+    render(<RolProvider rol="admin"><AreasServicioPage /></RolProvider>);
 
     const guardar = screen.getByRole("button", { name: "Guardar" });
     expect(guardar).toBeDisabled();
@@ -82,7 +84,7 @@ describe("/admin/citas/areas", () => {
   });
 
   it("restablece un servicio editado a la regla", async () => {
-    render(<AreasServicioPage />);
+    render(<RolProvider rol="admin"><AreasServicioPage /></RolProvider>);
 
     fireEvent.click(
       within(fila("ELECTROCARDIOGRAMA")).getByRole("button", { name: "Restablecer a la regla" })
@@ -96,7 +98,7 @@ describe("/admin/citas/areas", () => {
 
   it("muestra el error del servidor", async () => {
     mockFetch.mockResolvedValue({ ok: false, json: async () => ({ error: "Fila 1 (19): área no válida" }) });
-    render(<AreasServicioPage />);
+    render(<RolProvider rol="admin"><AreasServicioPage /></RolProvider>);
 
     fireEvent.change(screen.getByLabelText("Área de CONSULTA ODONTOLOGICA TRATAMIENTO"), {
       target: { value: "Enfermería" },
@@ -105,5 +107,15 @@ describe("/admin/citas/areas", () => {
 
     expect(await screen.findByText("Fila 1 (19): área no válida")).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("con Citas en ver queda en solo consulta: sin Guardar, sin Restablecer y áreas bloqueadas", () => {
+    const permisos = { ...PERMISOS_POR_DEFECTO.direccion_medica, citas: "ver" as const };
+    render(<RolProvider rol="direccion_medica" permisos={permisos}><AreasServicioPage /></RolProvider>);
+
+    expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restablecer/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Área de ELECTROCARDIOGRAMA")).toBeDisabled();
+    expect(screen.getByText(/solo consulta/i)).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool, { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { clearCache } from "@/lib/cache";
 import { parsePeriodo } from "@/lib/cumplimiento/periodo";
 
@@ -19,7 +20,7 @@ function parseDocumento(valor: unknown): string | null {
 }
 
 export async function GET(request: Request) {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas-atendidas"].GET);
   if (error) return error;
 
   const periodo = parsePeriodo(new URL(request.url).searchParams.get("periodo"));
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas-atendidas"].PUT);
   if (error) return error;
 
   const body = await request.json().catch(() => null);

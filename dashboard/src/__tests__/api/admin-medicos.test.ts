@@ -1,14 +1,14 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn(), queryOne: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 
 import { GET, POST } from "@/app/api/admin/medicos/route";
 import { PATCH } from "@/app/api/admin/medicos/[id]/route";
 import { query, queryOne } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockQueryOne = queryOne as jest.MockedFunction<typeof queryOne>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 
@@ -29,7 +29,7 @@ function escrituras() {
 describe("/api/admin/medicos sin programa_meta", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQuery.mockResolvedValue([]);
     mockQueryOne.mockResolvedValue(null);
   });

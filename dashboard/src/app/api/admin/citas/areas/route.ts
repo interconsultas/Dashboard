@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import type { AreasServicio, CambioArea, ServicioArea } from "@/lib/citas/areas";
 
 // servicios_citas.codigo_servicio es VARCHAR(20)
@@ -22,7 +23,7 @@ async function nombresDeAreas(): Promise<string[]> {
  * mensual del último mes cargado, para orientar qué servicios pesan más.
  */
 export async function GET() {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas/areas"].GET);
   if (error) return error;
 
   const [areas, ultimo] = await Promise.all([
@@ -57,7 +58,7 @@ export async function GET() {
  * editado (las cargas no lo reclasifican); area null lo restablece a la regla.
  */
 export async function PUT(request: Request) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas/areas"].PUT);
   if (error) return error;
 
   const body = await request.json().catch(() => null);

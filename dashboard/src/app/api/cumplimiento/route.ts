@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { getCached, setCache } from "@/lib/cache";
 import { esProgramaMeta } from "@/lib/cumplimiento/categorias";
 import { mesesEntre, parsePeriodo, restarMeses } from "@/lib/cumplimiento/periodo";
@@ -34,7 +35,7 @@ function badRequest(error: string) {
 
 export async function POST(req: NextRequest) {
   // El rol coordinador queda fuera a propósito: las citas atendidas (denominador) no tienen dimensión regional.
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/cumplimiento"].POST);
   if (error) return error;
 
   const body = await req.json().catch(() => null);

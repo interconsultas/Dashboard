@@ -16,8 +16,7 @@ import { parseAnio } from "@/lib/cumplimiento/periodo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
-import { useRol } from "@/components/layout/RolContext";
-import { puedeEditarMetas } from "@/lib/acceso";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 
 interface Meta {
   programa: string;
@@ -54,7 +53,7 @@ const CELDAS = PROGRAMAS_EDITABLES.flatMap((programa) =>
 
 export default function MetasPage() {
   // Dirección médica consulta; solo admin edita (PUT /api/admin/metas es solo admin)
-  const editable = puedeEditarMetas(useRol());
+  const editable = usePuedeEditar("metas");
   const [anio, setAnio] = useState(() => new Date().getFullYear());
   const [anioPendiente, setAnioPendiente] = useState<number | null>(null);
   const [agregandoAnio, setAgregandoAnio] = useState(false);

@@ -21,11 +21,14 @@ import type { DetalleCitas } from "@/lib/citas/detalle";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 
 const MESES = Array.from({ length: 12 }, (_, i) => i + 1);
 const ANIOS_HACIA_ATRAS = 3;
 
 export default function CitasPage() {
+  // Con nivel 'ver' la página queda en solo consulta (la API rechaza las escrituras)
+  const editable = usePuedeEditar("citas");
   const [periodo, setPeriodo] = useState(() => periodoAnterior(new Date()));
   const [periodoPendiente, setPeriodoPendiente] = useState<number | null>(null);
   const [ediciones, setEdiciones] = useState<Ediciones>({});
@@ -165,7 +168,13 @@ export default function CitasPage() {
             Suba el informe de citas detallado por profesional de Agenda Web (.xls). También se acepta el Excel con la columna de cédula y una columna por mes.
           </p>
         </div>
-        <ImportarCitasExcel onImportado={handleImportado} />
+        {editable ? (
+          <ImportarCitasExcel onImportado={handleImportado} />
+        ) : (
+          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            Solo consulta: no puede cargar ni modificar citas.
+          </p>
+        )}
       </section>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -291,14 +300,16 @@ export default function CitasPage() {
                 Mostrar todos los profesionales activos
               </label>
             </div>
-            <button
-              type="button"
-              onClick={handleGuardar}
-              disabled={saving || !hayCambios || hayInvalidas}
-              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-            >
-              {saving ? "Guardando…" : "Guardar"}
-            </button>
+            {editable && (
+              <button
+                type="button"
+                onClick={handleGuardar}
+                disabled={saving || !hayCambios || hayInvalidas}
+                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+              >
+                {saving ? "Guardando…" : "Guardar"}
+              </button>
+            )}
           </div>
 
           {error && (
@@ -325,6 +336,7 @@ export default function CitasPage() {
                 : "No hay profesionales con programa de metas ni citas en este periodo"
             }
             onCambiarCitas={(documento, valor) => editar(documento, "citas", valor)}
+            soloLectura={!editable}
           />
         </>
       )}

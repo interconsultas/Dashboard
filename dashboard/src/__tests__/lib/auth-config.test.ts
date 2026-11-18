@@ -31,52 +31,27 @@ describe("authConfig.callbacks.authorized", () => {
     });
   });
 
-  describe("páginas permitidas", () => {
+  describe("con sesión, las páginas pasan: el acceso por sección lo validan los layouts del servidor", () => {
     it.each([
       ["admin", "/admin/usuarios"],
-      ["admin", "/dashboard/productividad"],
-      ["direccion_medica", "/dashboard/cumplimiento"],
       ["direccion_medica", "/admin/metas/programas"],
       ["coordinador", "/dashboard"],
-      ["coordinador", "/dashboard/tipo/rx"],
+      // Antes se negaba aquí; ahora depende de permisos_rol (en el servidor)
+      ["coordinador", "/dashboard/productividad"],
+      ["direccion_medica", "/admin/carga"],
+      ["coordinador", "/"],
+      ["coordinador", "/sin-acceso"],
     ])("%s en %s → true", async (rol, ruta) => {
       expect(await evaluar(ruta, rol)).toBe(true);
     });
   });
 
-  describe("páginas sin acceso redirigen al inicio con aviso", () => {
-    it.each([
-      ["coordinador", "/dashboard/cumplimiento"],
-      ["coordinador", "/dashboard/productividad"],
-      ["coordinador", "/admin/metas"],
-      ["coordinador", "/admin/carga"],
-      ["direccion_medica", "/admin/citas"],
-      ["direccion_medica", "/admin/citas/areas"],
-      ["direccion_medica", "/admin/citas-atendidas"],
-      ["direccion_medica", "/admin/medicos"],
-      ["direccion_medica", "/admin/usuarios"],
-      ["direccion_medica", "/admin/carga"],
-    ])("%s en %s → /dashboard?sin_acceso=1", async (rol, ruta) => {
-      expect(destino(await evaluar(ruta, rol))).toBe("/dashboard?sin_acceso=1");
-    });
+  it("con sesión, /login lleva a la raíz, que resuelve el inicio del rol", async () => {
+    expect(destino(await evaluar("/login", "coordinador"))).toBe("/");
+    expect(destino(await evaluar("/login", "admin"))).toBe("/");
   });
 
-  describe("raíz y login llevan al inicio de cada rol", () => {
-    it.each([
-      ["admin", "/admin/carga"],
-      ["direccion_medica", "/dashboard"],
-      ["coordinador", "/dashboard"],
-    ])("%s en / → %s", async (rol, inicio) => {
-      expect(destino(await evaluar("/", rol))).toBe(inicio);
-    });
-
-    it("con sesión, /login lleva al inicio del rol", async () => {
-      expect(destino(await evaluar("/login", "coordinador"))).toBe("/dashboard");
-      expect(destino(await evaluar("/login", "admin"))).toBe("/admin/carga");
-    });
-  });
-
-  it("las rutas /api no se filtran aquí: cada una valida su rol con requireAuth", async () => {
+  it("las rutas /api no se filtran aquí: cada una valida su permiso con requirePermiso", async () => {
     expect(await evaluar("/api/admin/medicos", "coordinador")).toBe(true);
   });
 

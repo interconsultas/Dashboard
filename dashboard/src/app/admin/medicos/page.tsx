@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { ImportarMedicosExcel } from "@/components/medicos/ImportarMedicosExcel";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 
 interface Medico {
   usuario_txt: string;
@@ -61,6 +62,8 @@ function BadgeEstado({ estado }: { estado: string | null }) {
 }
 
 export default function MedicosPage() {
+  // Con nivel 'ver' la página queda en solo consulta (la API rechaza las escrituras)
+  const editable = usePuedeEditar("profesionales");
   const { data: medicos, isLoading } = useSWR<Medico[]>(
     "/api/admin/medicos",
     fetcher
@@ -182,6 +185,7 @@ export default function MedicosPage() {
             Catálogo de profesionales — {medicos?.length ?? 0} registros
           </p>
         </div>
+        {editable ? (
         <div className="flex items-start gap-2">
           <button
             type="button"
@@ -192,6 +196,11 @@ export default function MedicosPage() {
           </button>
           <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
         </div>
+        ) : (
+          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            Solo consulta: no puede agregar, importar, editar ni eliminar profesionales.
+          </p>
+        )}
       </div>
 
       {/* Formulario (crear y editar) */}
@@ -422,6 +431,7 @@ export default function MedicosPage() {
                   {m.area ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
+                  {editable && (
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => startEdit(m)}
@@ -436,6 +446,7 @@ export default function MedicosPage() {
                       Eliminar
                     </button>
                   </div>
+                  )}
                 </td>
               </tr>
             ))}

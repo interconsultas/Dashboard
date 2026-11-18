@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { query, queryOne } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { jobId: string } }
 ) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/carga/preview/[jobId]"].GET);
   if (error) return error;
 
   const { jobId } = params;

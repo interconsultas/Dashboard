@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { queryOne, query } from "@/lib/db";
 import { spawnEtl } from "@/lib/etl-spawn";
 
@@ -9,7 +10,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { jobId: string } }
 ) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/carga/[jobId]"].DELETE);
   if (error) return error;
 
   const { jobId } = params;

@@ -1,13 +1,13 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { GET, PUT } from "@/app/api/admin/citas/areas/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 const AREAS = [{ nombre: "Medicina general" }, { nombre: "Salud oral" }, { nombre: "Enfermería" }];
@@ -36,19 +36,19 @@ function responderPut(existentes: string[]) {
 describe("/api/admin/citas/areas", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQuery.mockResolvedValue([]);
   });
 
   describe("GET", () => {
-    it("permite solo el rol admin", async () => {
+    it("pide ver Citas", async () => {
       await GET();
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas"], nivel: "ver" });
     });
 
-    it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+    it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await GET();
 
@@ -114,13 +114,13 @@ describe("/api/admin/citas/areas", () => {
   });
 
   describe("PUT", () => {
-    it("permite solo el rol admin y no escribe sin permiso", async () => {
+    it("pide editar Citas y no escribe sin permiso", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await PUT(reqPut({ cambios: [{ codigo_servicio: "1", area: "Salud oral" }] }));
 
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas"], nivel: "editar" });
       expect(res).toBe(authError);
       expect(mockQuery).not.toHaveBeenCalled();
     });

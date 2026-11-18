@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { puedeVer } from "@/lib/acceso";
-import { useRol } from "./RolContext";
+import { usePermisos } from "./RolContext";
 
 function IconDashboard({ className }: { className?: string }) {
   return (
@@ -141,9 +141,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const isProductividad = pathname.startsWith("/dashboard/productividad");
   const isDashboard = pathname.startsWith("/dashboard") && !isCumplimiento && !isProductividad;
   const [subOpen, setSubOpen] = useState(isDashboard);
-  // Solo se muestran las entradas que el rol puede abrir (el middleware hace cumplir lo mismo)
-  const rol = useRol();
-  const ver = (href: string) => puedeVer(rol, href);
+  // Solo se muestran las entradas que los permisos dejan abrir (los layouts hacen cumplir lo mismo)
+  const permisos = usePermisos();
+  const ver = (href: string) => puedeVer(permisos, href);
   const tiposVisibles = TIPOS_PRESTACION.filter((t) => ver(`/dashboard/tipo/${t.slug}`));
 
   function handleNav() {

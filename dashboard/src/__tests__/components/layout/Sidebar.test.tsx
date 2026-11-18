@@ -17,12 +17,12 @@ jest.mock("next/image", () => ({
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { RolProvider } from "@/components/layout/RolContext";
-import type { Rol } from "@/lib/acceso";
+import { PERMISOS_POR_DEFECTO, type Permisos, type Rol } from "@/lib/acceso";
 
-/** Por defecto admin: ve todo el menú, como antes de filtrar por rol. */
-function renderSidebar(rol: Rol | null = "admin") {
+/** Por defecto admin: ve todo el menú. Sin permisos explícitos usa los del rol por defecto. */
+function renderSidebar(rol: Rol | null = "admin", permisos?: Permisos | null) {
   return render(
-    <RolProvider rol={rol}>
+    <RolProvider rol={rol} permisos={permisos}>
       <Sidebar />
     </RolProvider>,
   );
@@ -147,6 +147,33 @@ describe("Sidebar — enlaces según el rol", () => {
 
   it("sin rol no muestra enlaces", () => {
     renderSidebar(null);
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+  });
+});
+
+describe("Sidebar — permisos configurados", () => {
+  beforeEach(() => mockUsePathname.mockReturnValue("/dashboard"));
+
+  function nombresMenu() {
+    return screen.getAllByRole("link").map((l) => l.textContent?.trim());
+  }
+
+  it("coordinador con Productividad asignada la ve en el menú", () => {
+    renderSidebar("coordinador", { ...PERMISOS_POR_DEFECTO.coordinador, productividad: "ver" });
+    expect(nombresMenu()).toContain("Productividad");
+    expect(nombresMenu()).not.toContain("Cumplimiento");
+  });
+
+  it("dirección médica sin Dashboard no ve Dashboard ni sus tipos", () => {
+    renderSidebar("direccion_medica", { ...PERMISOS_POR_DEFECTO.direccion_medica, dashboard: "ninguno" });
+    const nombres = nombresMenu();
+    expect(nombres).not.toContain("Dashboard");
+    expect(nombres).not.toContain("RX");
+    expect(nombres).toEqual(expect.arrayContaining(["Cumplimiento", "Productividad", "Metas"]));
+  });
+
+  it("sin permisos no muestra enlaces", () => {
+    renderSidebar("coordinador", null);
     expect(screen.queryAllByRole("link")).toHaveLength(0);
   });
 });

@@ -1,21 +1,21 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 
 import { GET } from "@/app/api/carga/historial/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 describe("GET /api/carga/historial", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("rechaza si requireAuth devuelve error", async () => {
+  it("rechaza si requirePermiso devuelve error", async () => {
     const errorResponse = { status: 403 } as never;
-    mockRequireAuth.mockResolvedValue({ error: errorResponse, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: errorResponse, user: null });
 
     const res = await GET();
 
@@ -24,7 +24,7 @@ describe("GET /api/carga/historial", () => {
   });
 
   it("devuelve las filas del historial excluyendo canceladas", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: null });
     mockQuery.mockResolvedValue([{ job_id: "job-1", estado: "exitoso" } as never]);
 
     const res = await GET();

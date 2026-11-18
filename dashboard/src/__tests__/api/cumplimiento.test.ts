@@ -1,17 +1,17 @@
 import type { NextRequest } from "next/server";
 
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/cache", () => ({ getCached: jest.fn(() => null), setCache: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { POST } from "@/app/api/cumplimiento/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { getCached, setCache } from "@/lib/cache";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 const mockGetCached = getCached as jest.MockedFunction<typeof getCached>;
 const mockSetCache = setCache as jest.MockedFunction<typeof setCache>;
 
@@ -60,7 +60,7 @@ describe("POST /api/cumplimiento", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.CUMPLIMIENTO_ATRIBUCION;
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockGetCached.mockReturnValue(null);
     mockBD();
   });
@@ -71,14 +71,14 @@ describe("POST /api/cumplimiento", () => {
   });
 
   describe("permisos", () => {
-    it("permite solo los roles admin y direccion_medica", async () => {
+    it("pide ver Cumplimiento", async () => {
       await POST(req(RANGO));
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin", "direccion_medica"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["cumplimiento"], nivel: "ver" });
     });
 
-    it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+    it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await POST(req(RANGO));
 

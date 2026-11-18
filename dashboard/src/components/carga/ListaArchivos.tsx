@@ -10,6 +10,8 @@ interface Props {
   cargas: LogCarga[];
   onVerInforme: (jobId: string) => void;
   onEliminado: () => void;
+  /** false en solo consulta: oculta Eliminar. */
+  puedeEliminar?: boolean;
 }
 
 const ESTADOS_ELIMINABLES = new Set(["exitoso", "exitoso_con_advertencias"]);
@@ -22,7 +24,7 @@ function fmtFecha(iso: string): string {
   });
 }
 
-export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
+export function ListaArchivos({ cargas, onVerInforme, onEliminado, puedeEliminar = true }: Props) {
   const [jobAEliminar, setJobAEliminar] = useState<LogCarga | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado }: Props) {
                   >
                     Ver informe
                   </button>
-                  {ESTADOS_ELIMINABLES.has(c.estado) && (
+                  {puedeEliminar && ESTADOS_ELIMINABLES.has(c.estado) && (
                     <button
                       onClick={() => {
                         setErrorEliminar(null);

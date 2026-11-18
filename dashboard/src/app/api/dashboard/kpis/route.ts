@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 
 export async function GET() {
-  const { error } = await requireAuth(["admin", "direccion_medica", "coordinador"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/dashboard/kpis"].GET);
   if (error) return error;
 
   const [row] = await query<{

@@ -1,6 +1,7 @@
 import { auth } from "./auth";
 import { NextResponse } from "next/server";
-import { esRol, type Rol } from "./acceso";
+import { cumpleRequisito, esRol, type Requisito, type Rol } from "./acceso";
+import { obtenerPermisos } from "./permisos";
 
 export type { Rol };
 
@@ -24,30 +25,24 @@ export async function rolDeSesion(): Promise<Rol | null> {
   return esRol(rol) ? rol : null;
 }
 
+const noAutenticado = () => NextResponse.json({ error: "No autenticado" }, { status: 401 });
+const sinPermisos = () => NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
+
 /**
- * Valida sesión y roles en API Routes (Node.js runtime).
- * Uso: const { error, user } = await requireAuth(["admin", "direccion_medica"]);
+ * Valida sesión y permisos en API Routes (Node.js runtime) según permisos_rol.
+ * Uso: const { error, user } = await requirePermiso(PERMISOS_API["/api/admin/metas"].GET);
  *      if (error) return error;
  */
-export async function requireAuth(allowedRoles?: Rol[]): Promise<AuthResult> {
+export async function requirePermiso(requisito: Requisito): Promise<AuthResult> {
   const session = await auth();
-
-  if (!session?.user) {
-    return {
-      error: NextResponse.json({ error: "No autenticado" }, { status: 401 }),
-      user: null,
-    };
-  }
+  if (!session?.user) return { error: noAutenticado(), user: null };
 
   const u = session.user as SessionUser;
+  if (!esRol(u.rol)) return { error: sinPermisos(), user: null };
 
-  if (allowedRoles && !allowedRoles.includes(u.rol)) {
-    return {
-      error: NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 }),
-      user: null,
-    };
+  if (!cumpleRequisito(await obtenerPermisos(u.rol), requisito)) {
+    return { error: sinPermisos(), user: null };
   }
-
   return { error: null, user: u };
 }
 

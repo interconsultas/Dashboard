@@ -7,8 +7,7 @@ import { fetcher } from "@/lib/fetcher";
 import { PROGRAMAS_META, etiquetaPrograma } from "@/lib/cumplimiento/categorias";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
-import { useRol } from "@/components/layout/RolContext";
-import { puedeEditarMetas } from "@/lib/acceso";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 
 interface FilaMapeo {
   programa_especialidad: string;
@@ -33,7 +32,7 @@ function aSeleccion(mapeo: FilaMapeo[]): Seleccion {
 
 export default function ProgramasPorEspecialidadPage() {
   // Dirección médica consulta; solo admin edita (PUT /api/admin/metas/programas es solo admin)
-  const editable = puedeEditarMetas(useRol());
+  const editable = usePuedeEditar("metas");
   const [seleccion, setSeleccion] = useState<Seleccion>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

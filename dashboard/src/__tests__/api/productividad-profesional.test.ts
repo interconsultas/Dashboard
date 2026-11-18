@@ -1,15 +1,15 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/cache", () => ({ getCached: jest.fn(() => null), setCache: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { GET } from "@/app/api/productividad/profesional/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { getCached, setCache } from "@/lib/cache";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 const mockGetCached = getCached as jest.MockedFunction<typeof getCached>;
 const mockSetCache = setCache as jest.MockedFunction<typeof setCache>;
 
@@ -59,20 +59,20 @@ function llamada(fragmento: string) {
 describe("GET /api/productividad/profesional", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockGetCached.mockReturnValue(null);
     mockBD();
   });
 
   describe("permisos", () => {
-    it("permite los roles admin y direccion_medica", async () => {
+    it("pide ver Productividad", async () => {
       await GET(req("documento=1053"));
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin", "direccion_medica"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["productividad"], nivel: "ver" });
     });
 
-    it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+    it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
       const res = await GET(req("documento=1053"));
       expect(res).toBe(authError);
       expect(mockQuery).not.toHaveBeenCalled();

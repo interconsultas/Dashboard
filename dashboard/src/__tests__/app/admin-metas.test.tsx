@@ -11,10 +11,11 @@ jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => moc
 import MetasPage from "@/app/admin/metas/page";
 import ProgramasPage from "@/app/admin/metas/programas/page";
 import { RolProvider } from "@/components/layout/RolContext";
-import type { Rol } from "@/lib/acceso";
+import { PERMISOS_POR_DEFECTO, type Nivel, type Rol } from "@/lib/acceso";
 
-function renderComo(rol: Rol, pagina: React.ReactElement) {
-  return render(<RolProvider rol={rol}>{pagina}</RolProvider>);
+function renderComo(rol: Rol, pagina: React.ReactElement, metas?: Nivel) {
+  const permisos = metas ? { ...PERMISOS_POR_DEFECTO[rol], metas } : undefined;
+  return render(<RolProvider rol={rol} permisos={permisos}>{pagina}</RolProvider>);
 }
 
 describe("/admin/metas — edición solo para admin (como el PUT de la API)", () => {
@@ -34,6 +35,13 @@ describe("/admin/metas — edición solo para admin (como el PUT de la API)", ()
     expect(screen.getByRole("button", { name: "+ Agregar año" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copiar metas del año anterior" })).toBeInTheDocument();
     expect(screen.getAllByRole("textbox")[0]).not.toHaveAttribute("readonly");
+  });
+
+  it("con Metas en editar (permiso configurado) cualquier rol edita", () => {
+    renderComo("coordinador", <MetasPage />, "editar");
+
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
+    expect(screen.queryByText(/solo lectura/i)).not.toBeInTheDocument();
   });
 
   it("dirección médica consulta en solo lectura", () => {
@@ -65,6 +73,12 @@ describe("/admin/metas/programas — edición solo para admin", () => {
 
     expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /MEDICINA GENERAL/ })).toBeEnabled();
+  });
+
+  it("con Metas en editar (permiso configurado) puede guardar", () => {
+    renderComo("direccion_medica", <ProgramasPage />, "editar");
+
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
   });
 
   it("dirección médica consulta en solo lectura", () => {

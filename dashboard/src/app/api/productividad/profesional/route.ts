@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { getCached, setCache } from "@/lib/cache";
 import { esDocumento, validarParametros } from "@/lib/productividad/filtros";
 import { resolverCarga, type CargaBD, type FilaProfesionalBD } from "@/lib/productividad/construir";
@@ -21,7 +22,7 @@ const CACHE_TTL_MS = 60_000;
  * Acepta los mismos filtros que /api/productividad más `documento`.
  */
 export async function GET(request: Request) {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/productividad/profesional"].GET);
   if (error) return error;
 
   const params = new URL(request.url).searchParams;

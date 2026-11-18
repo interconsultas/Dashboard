@@ -21,6 +21,7 @@ jest.mock("@/components/cumplimiento/ImportarCitasExcel", () => ({
 }));
 
 import CitasPage from "@/app/admin/citas/page";
+import { RolProvider } from "@/components/layout/RolContext";
 import type { DetalleCitas } from "@/lib/citas/detalle";
 import CitasAtendidasRedirect from "@/app/admin/citas-atendidas/page";
 
@@ -57,7 +58,7 @@ describe("/admin/citas", () => {
   });
 
   it("se titula Citas y describe la carga del informe y las citas para cumplimiento", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     expect(screen.getByRole("heading", { level: 1, name: "Citas" })).toBeInTheDocument();
     expect(
@@ -66,7 +67,7 @@ describe("/admin/citas", () => {
   });
 
   it("enlaza a la edición de las áreas de servicio", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     expect(screen.getByRole("link", { name: "Áreas de servicio" })).toHaveAttribute(
       "href",
@@ -75,7 +76,7 @@ describe("/admin/citas", () => {
   });
 
   it("separa la carga del informe de la grilla de citas atendidas para cumplimiento", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     expect(screen.getByRole("heading", { level: 2, name: "Cargar informe de citas" })).toBeInTheDocument();
     expect(screen.getByLabelText("Importar informe")).toBeInTheDocument();
@@ -88,7 +89,7 @@ describe("/admin/citas", () => {
   });
 
   it("muestra las citas del periodo antes de las citas atendidas para cumplimiento", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     const delPeriodo = screen.getByRole("heading", { level: 2, name: "Citas del periodo" });
     const atendidas = screen.getByRole("heading", { level: 2, name: "Citas atendidas para cumplimiento" });
@@ -100,7 +101,7 @@ describe("/admin/citas", () => {
   });
 
   it("consulta el detalle de citas y las citas atendidas del mismo periodo", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     const claves = mockUseSWR.mock.calls.map(([key]) => key as string);
     const detalleKey = claves.find((k) => k.startsWith("/api/admin/citas/detalle"))!;
@@ -114,7 +115,7 @@ describe("/admin/citas", () => {
   });
 
   it("recarga las citas del periodo y las atendidas tras una importación exitosa", () => {
-    render(<CitasPage />);
+    render(<RolProvider rol="admin"><CitasPage /></RolProvider>);
 
     fireEvent.click(screen.getByRole("button", { name: "Importar informe" }));
 

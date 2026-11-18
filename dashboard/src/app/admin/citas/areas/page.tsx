@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePuedeEditar } from "@/components/layout/RolContext";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { fmtPeriodo } from "@/lib/periodo";
@@ -22,6 +23,8 @@ export default function AreasServicioPage() {
   const [exito, setExito] = useState("");
 
   // Sin revalidar al enfocar: la tabla no debe recargarse mientras se edita
+  // Con nivel 'ver' la página queda en solo consulta (la API rechaza las escrituras)
+  const editable = usePuedeEditar("citas");
   const {
     data,
     error: errorCarga,
@@ -86,14 +89,20 @@ export default function AreasServicioPage() {
             Volver a Citas
           </Link>
         </div>
-        <button
-          type="button"
-          onClick={() => guardar(cambiados, "Áreas guardadas")}
-          disabled={saving || !hayCambios}
-          className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-        >
-          {saving ? "Guardando…" : "Guardar"}
-        </button>
+        {editable ? (
+          <button
+            type="button"
+            onClick={() => guardar(cambiados, "Áreas guardadas")}
+            disabled={saving || !hayCambios}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        ) : (
+          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            Solo consulta: no puede cambiar las áreas.
+          </p>
+        )}
       </div>
 
       {errorCarga && !data ? (
@@ -160,6 +169,7 @@ export default function AreasServicioPage() {
                         className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none"
                         aria-label={`Área de ${f.nombre_servicio}`}
                         value={seleccion[f.codigo_servicio] ?? f.area}
+                        disabled={!editable}
                         onChange={(e) => {
                           const area = e.target.value;
                           setSeleccion((prev) => ({ ...prev, [f.codigo_servicio]: area }));
@@ -179,7 +189,7 @@ export default function AreasServicioPage() {
                       )}
                     </td>
                     <td className="px-4 py-2">
-                      {f.area_editada && (
+                      {editable && f.area_editada && (
                         <button
                           type="button"
                           disabled={saving}

@@ -1,9 +1,11 @@
 import type { NextAuthConfig } from "next-auth";
-import { esRol, PARAM_SIN_ACCESO, puedeVer, rutaInicio } from "./lib/acceso";
+import { esRol } from "./lib/acceso";
 
 /**
  * Configuración Edge-compatible (sin Node.js crypto).
- * Usada en middleware.ts para proteger rutas sin acceder a la BD.
+ * Usada en middleware.ts para exigir sesión sin acceder a la BD. El acceso por
+ * sección depende de permisos_rol (BD): lo validan los layouts del servidor
+ * (exigirSeccion) y las rutas /api (requirePermiso).
  * Los providers con bcrypt van en lib/auth.ts (Node.js runtime).
  */
 export const authConfig: NextAuthConfig = {
@@ -17,10 +19,10 @@ export const authConfig: NextAuthConfig = {
       const isOnLogin = pathname.startsWith("/login");
       const rol = (auth?.user as { rol?: unknown } | undefined)?.rol;
 
-      // Si está en /login y ya autenticado → redirigir al inicio de su rol
+      // Si está en /login y ya autenticado → la raíz resuelve el inicio del rol
       if (isOnLogin) {
         if (isLoggedIn && esRol(rol)) {
-          return Response.redirect(new URL(rutaInicio(rol), nextUrl));
+          return Response.redirect(new URL("/", nextUrl));
         }
         return true;
       }
@@ -28,23 +30,11 @@ export const authConfig: NextAuthConfig = {
       // Cualquier otra ruta requiere autenticación
       if (!isLoggedIn) return false;
 
-      // Las rutas /api validan su propio rol con requireAuth (403 en JSON)
+      // Las rutas /api validan su propio permiso con requirePermiso (403 en JSON)
       if (pathname === "/api" || pathname.startsWith("/api/")) return true;
 
       // Sin un rol válido no hay página a la cual enviarlo: vuelve al login
-      if (!esRol(rol)) return false;
-
-      if (pathname === "/") {
-        return Response.redirect(new URL(rutaInicio(rol), nextUrl));
-      }
-
-      if (!puedeVer(rol, pathname)) {
-        const destino = new URL(rutaInicio(rol), nextUrl);
-        destino.searchParams.set(PARAM_SIN_ACCESO, "1");
-        return Response.redirect(destino);
-      }
-
-      return true;
+      return esRol(rol);
     },
     async jwt({ token, user }) {
       if (user) {
