@@ -153,11 +153,10 @@ function Palanca({
           onChange={(e) => cambiar(e.target.value)}
           className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-right text-brand-navy tabular-nums"
         />
+        <span className="w-4 text-xs text-gray-400">{def.porcentaje ? "%" : ""}</span>
       </div>
-      <div className="flex justify-between text-[11px] mt-1.5">
-        <span className="text-gray-500">{textoReal}</span>
-        <span className="font-semibold text-brand-navy tabular-nums">{def.fmtValor(valor)}</span>
-      </div>
+      {/* El valor elegido ya está en el campo: debajo solo va la referencia real */}
+      <p className="text-[11px] text-gray-500 mt-1.5">{textoReal}</p>
     </div>
   );
 }
@@ -169,7 +168,10 @@ export function SimuladorPalancas({ palancas, real, limites, profesionalesBase, 
   const defs = definiciones(profesionalesBase);
   const textoReal = (d: DefPalanca) =>
     d.clave === "deltaProfesionales"
-      ? `Real: ${fmtNumero(profesionalesBase)} ${profesionalesBase === 1 ? "profesional" : "profesionales"}`
+      ? `Real: ${fmtNumero(profesionalesBase)} ${profesionalesBase === 1 ? "profesional" : "profesionales"}` +
+        (palancas.deltaProfesionales !== 0
+          ? ` · escenario: ${fmtNumero(profesionalesBase + palancas.deltaProfesionales)}`
+          : "")
       : d.clave === "deltaOferta"
         ? "Real: oferta actual"
         : `Real: ${fmtPct1(real[d.clave])}`;

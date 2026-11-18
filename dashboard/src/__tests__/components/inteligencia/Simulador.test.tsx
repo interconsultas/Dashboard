@@ -48,6 +48,13 @@ describe("SimuladorPalancas", () => {
     expect(screen.getByText("Real: 10,0 %")).toBeInTheDocument();
   });
 
+  it("no repite debajo el valor que ya muestra el campo; con profesionales movidos dice el total", () => {
+    renderPalancas({ ...REAL, deltaProfesionales: 3, deltaOferta: 0.11 });
+    expect(screen.queryByText(/\+3 \(13 en total\)/)).not.toBeInTheDocument();
+    expect(screen.queryByText("+11 %")).not.toBeInTheDocument();
+    expect(screen.getByText("Real: 10 profesionales · escenario: 13")).toBeInTheDocument();
+  });
+
   it("el deslizador y el campo cambian la palanca (porcentajes en fracción)", () => {
     const { onCambiar } = renderPalancas();
     fireEvent.change(screen.getByRole("slider", { name: "Δ profesionales" }), { target: { value: "3" } });
