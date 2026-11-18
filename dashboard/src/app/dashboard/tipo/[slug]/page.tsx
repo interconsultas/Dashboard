@@ -2,6 +2,8 @@
 
 import { useParams, notFound } from "next/navigation";
 import DashboardView from "@/components/dashboard/DashboardView";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { EstadoVacio } from "@/components/ui/EstadoVacio";
 
 interface TipoConfig {
   title: string;
@@ -70,15 +72,12 @@ export default function TipoPrestacionPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">{titulo}</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Detalle de autorizaciones — {titulo}
-        </p>
-      </div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-        <p className="text-gray-400 text-sm">Vista en construccion</p>
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Análisis" }, { etiqueta: "Dashboard", href: "/dashboard" }, { etiqueta: titulo }]}
+        titulo={titulo}
+        subtitulo={`Detalle de autorizaciones — ${titulo}`}
+      />
+      <EstadoVacio titulo="Vista en construccion" />
     </div>
   );
 }

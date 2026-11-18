@@ -1,6 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { Boton } from "@/components/ui/Boton";
 
 /**
  * Destino de quien no tiene ninguna sección asignada en permisos_rol. Queda
@@ -9,20 +10,14 @@ import { signOut } from "next-auth/react";
  */
 export default function SinAccesoPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-app px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center space-y-4">
-        <h1 className="text-lg font-semibold text-brand-navy">Sin secciones asignadas</h1>
-        <p className="text-sm text-gray-500">
+    <div className="min-h-screen flex items-center justify-center bg-fondo px-4">
+      <div className="bg-superficie rounded-tarjeta shadow-tarjeta border border-borde p-8 w-full max-w-md text-center space-y-4">
+        <h1 className="font-titulo text-xl font-bold text-tinta">Sin secciones asignadas</h1>
+        <p className="text-sm text-tinta-2">
           Su rol no tiene acceso a ninguna sección del dashboard. Solicite al administrador que le
           asigne permisos en Usuarios › Permisos por rol.
         </p>
-        <button
-          type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
-        >
-          Cerrar sesión
-        </button>
+        <Boton onClick={() => signOut({ callbackUrl: "/login" })}>Cerrar sesión</Boton>
       </div>
     </div>
   );

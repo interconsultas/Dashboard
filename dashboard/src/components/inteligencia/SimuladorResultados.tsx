@@ -36,7 +36,7 @@ const fmtDecimal = (v: number | null) => (v === null ? "—" : v.toLocaleString(
 
 function InsigniaDelta({ d, subirEsBueno }: { d: Diferencia; subirEsBueno: boolean }) {
   if (d.delta === 0) {
-    return <span className="text-[11px] font-semibold text-gray-500">= sin cambio</span>;
+    return <span className="text-[11px] font-semibold text-tinta-3">= sin cambio</span>;
   }
   const bueno = d.delta > 0 === subirEsBueno;
   const pct = d.delta_pct === null ? "" : ` (${d.delta_pct > 0 ? "+" : "−"}${Math.abs(d.delta_pct * 100).toLocaleString("es-CO", { maximumFractionDigits: 1 })} %)`;
@@ -44,39 +44,39 @@ function InsigniaDelta({ d, subirEsBueno }: { d: Diferencia; subirEsBueno: boole
     <span className="inline-flex flex-wrap items-baseline gap-1 text-[11px]">
       <span
         data-sentido={bueno ? "bueno" : "malo"}
-        className={`rounded-full px-1.5 py-px font-semibold ${bueno ? "bg-[#EAF6E4] text-[#2F7A1F]" : "bg-[#FDECEC] text-[#B42318]"}`}
+        className={`rounded-full px-1.5 py-px font-semibold ${bueno ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"}`}
       >
         {d.delta > 0 ? "▲" : "▼"} {fmtNumero(Math.abs(d.delta))}
         {pct}
       </span>
-      <span className="text-gray-500">({bueno ? "mejora" : "empeora"})</span>
+      <span className="text-tinta-3">({bueno ? "mejora" : "empeora"})</span>
     </span>
   );
 }
 
 function Tarjeta({ titulo, d, subirEsBueno, detalle }: { titulo: string; d: Diferencia; subirEsBueno: boolean; detalle?: React.ReactNode }) {
   return (
-    <div role="group" aria-label={titulo} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{titulo}</p>
+    <div role="group" aria-label={titulo} className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-tinta-3">{titulo}</p>
       <p className="mt-1 flex items-baseline gap-1.5 tabular-nums">
-        <span className="text-sm text-gray-500">{fmtNumero(d.base)}</span>
-        <span aria-label="pasaría a" className="text-gray-400">→</span>
-        <span className="text-lg font-bold text-brand-navy">{fmtNumero(d.escenario)}</span>
+        <span className="text-sm text-tinta-3">{fmtNumero(d.base)}</span>
+        <span aria-label="pasaría a" className="text-tinta-3">→</span>
+        <span className="text-lg font-bold text-primario">{fmtNumero(d.escenario)}</span>
       </p>
       <div className="mt-1">
         <InsigniaDelta d={d} subirEsBueno={subirEsBueno} />
       </div>
-      {detalle && <p className="mt-1 text-[11px] text-gray-500">{detalle}</p>}
+      {detalle && <p className="mt-1 text-[11px] text-tinta-3">{detalle}</p>}
     </div>
   );
 }
 
 function EstadoMeta({ cumple }: { cumple: boolean | null }) {
-  if (cumple === null) return <span className="text-gray-500">Sin asignadas</span>;
+  if (cumple === null) return <span className="text-tinta-3">Sin asignadas</span>;
   return (
     <span
       className={`inline-flex items-center rounded-full px-1.5 py-px text-[11px] font-semibold ${
-        cumple ? "bg-[#EAF6E4] text-[#2F7A1F]" : "bg-[#FFF6E5] text-[#9A6200]"
+        cumple ? "bg-bien-suave text-bien" : "bg-atencion-suave text-atencion"
       }`}
     >
       {cumple ? "✓ En la meta" : "✕ Fuera de la meta"}
@@ -87,21 +87,21 @@ function EstadoMeta({ cumple }: { cumple: boolean | null }) {
 function TarjetaMeta({ base, escenario }: { base: ResultadoSimulador; escenario: ResultadoSimulador }) {
   const fila = (nombre: string, r: ResultadoSimulador) => (
     <div className="flex flex-wrap items-center justify-between gap-1">
-      <span className="text-gray-500">{nombre}</span>
+      <span className="text-tinta-3">{nombre}</span>
       <span className="flex items-center gap-1.5 tabular-nums">
-        <span className="font-semibold text-brand-navy">{fmtPct(r.pct_inasistencia)}</span>
+        <span className="font-semibold text-primario">{fmtPct(r.pct_inasistencia)}</span>
         <EstadoMeta cumple={r.cumple_meta} />
       </span>
       {r.inasistencias_a_evitar > 0 && (
-        <span className="w-full text-[11px] text-gray-500">
+        <span className="w-full text-[11px] text-tinta-3">
           {fmtNumero(r.inasistencias_a_evitar)} inasistencias por evitar para llegar a la meta
         </span>
       )}
     </div>
   );
   return (
-    <div role="group" aria-label="Meta de inasistencia" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-xs space-y-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+    <div role="group" aria-label="Meta de inasistencia" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-3 text-xs space-y-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-tinta-3">
         Meta de inasistencia ({META_INASISTENCIA * 100} %)
       </p>
       {fila("Actual", base)}
@@ -127,7 +127,7 @@ export function SimuladorResultados({ base, escenario, resumen }: Props) {
 
   return (
     <section aria-label="Resultado del escenario" className="space-y-3">
-      <p role="status" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-sm text-brand-navy">
+      <p role="status" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 text-sm text-primario">
         {resumen}
       </p>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -138,9 +138,9 @@ export function SimuladorResultados({ base, escenario, resumen }: Props) {
           <TarjetaMeta base={base} escenario={escenario} />
         </div>
       </div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-4">
-        <h2 className="text-sm font-bold text-brand-navy">Actual vs escenario</h2>
-        <p className="text-[11px] text-gray-400">Citas en el periodo</p>
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-3 sm:p-4">
+        <h2 className="font-titulo text-sm font-bold text-tinta">Actual vs escenario</h2>
+        <p className="text-[11px] text-tinta-3">Citas en el periodo</p>
         <Grafico opcion={opcion} etiqueta="Actual vs escenario en el periodo" className="h-[260px] mt-2" />
       </div>
     </section>

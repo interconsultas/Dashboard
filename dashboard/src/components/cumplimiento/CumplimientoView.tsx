@@ -11,14 +11,17 @@ import CheckDropdown from "@/components/ui/CheckDropdown";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonChart, SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { Boton } from "@/components/ui/Boton";
+import { CLASES_CAMPO, CLASES_ETIQUETA_CAMPO, cx } from "@/components/ui/clases";
 import { CumplimientoContenido } from "./CumplimientoContenido";
 import { SelectorProfesional } from "./SelectorProfesional";
 import { TarjetasCumplimiento } from "./TarjetasCumplimiento";
 
 /* ── Styles ──────────────────────────────────────── */
 
-const selectCls = "w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:border-brand-navy/30 focus:ring-2 focus:ring-brand-navy/10 transition-all";
-const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
+const selectCls = cx(CLASES_CAMPO, "w-full");
+const labelCls = CLASES_ETIQUETA_CAMPO;
 
 const TODOS_LOS_PROGRAMAS: string[] = [...PROGRAMAS_META];
 const OPCIONES_PROGRAMA = PROGRAMAS_META.map((p) => ({ value: p, label: etiquetaPrograma(p) }));
@@ -132,45 +135,39 @@ export default function CumplimientoView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Cumplimiento de metas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Órdenes por cita atendida frente a la meta del programa de cada profesional
-          </p>
-        </div>
-        {data && !sinCitas && (
-          <div className="flex flex-col items-end gap-1.5">
-            <button
-              type="button"
-              onClick={exportarPdf}
-              disabled={!hayContenido || isValidating || generandoPdf}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {generandoPdf ? (
-                <Spinner className="h-4 w-4 text-white" />
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8.414a1 1 0 00-.293-.707l-4.414-4.414A1 1 0 0014.586 3H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
-                </svg>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Análisis" }, { etiqueta: "Cumplimiento" }]}
+        titulo="Cumplimiento de metas"
+        subtitulo="Órdenes por cita atendida frente a la meta del programa de cada profesional"
+        acciones={
+          data && !sinCitas ? (
+            <div className="flex flex-col items-end gap-1.5">
+              <Boton variante="secundario" onClick={exportarPdf} disabled={!hayContenido || isValidating || generandoPdf}>
+                {generandoPdf ? (
+                  <Spinner className="h-4 w-4 text-primario" />
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8.414a1 1 0 00-.293-.707l-4.414-4.414A1 1 0 0014.586 3H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
+                  </svg>
+                )}
+                {generandoPdf ? "Generando PDF..." : "Exportar PDF"}
+              </Boton>
+              {errorPdf && (
+                <p role="alert" className="rounded-control bg-critico-suave px-2 py-1 text-xs font-bold text-critico">
+                  {errorPdf}
+                </p>
               )}
-              {generandoPdf ? "Generando PDF..." : "Exportar PDF"}
-            </button>
-            {errorPdf && (
-              <p role="alert" className="text-xs font-medium text-red-600">
-                {errorPdf}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Filtros */}
       {data && !sinCitas && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 space-y-4 sticky top-4 z-10">
+        <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-5 py-5 space-y-4 sticky top-4 z-10">
           <div className="flex items-center gap-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Filtros</p>
-            {revalidating && <Spinner className="h-3.5 w-3.5 text-brand-navy/40" />}
+            <h2 className="font-titulo text-[15px] font-bold text-tinta">Filtros</h2>
+            {revalidating && <Spinner className="h-3.5 w-3.5 text-primario/40" />}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-4 gap-y-3">
@@ -226,13 +223,8 @@ export default function CumplimientoView() {
           </div>
 
           {/* Aplicar filtros */}
-          <div className="border-t border-gray-100 pt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleApply}
-              disabled={!isDirty || buttonLoading || errorRango !== null}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
+          <div className="border-t border-borde pt-3 flex flex-wrap items-center gap-3">
+            <Boton onClick={handleApply} disabled={!isDirty || buttonLoading || errorRango !== null}>
               {buttonLoading ? (
                 <Spinner className="h-4 w-4 text-white" />
               ) : (
@@ -241,14 +233,14 @@ export default function CumplimientoView() {
                 </svg>
               )}
               {buttonLoading ? "Consultando..." : "Aplicar filtros"}
-            </button>
+            </Boton>
             {isDirty && !buttonLoading && errorRango === null && (
-              <span className="text-xs text-amber-600 font-medium">Filtros sin aplicar</span>
+              <span className="text-xs text-atencion font-medium">Filtros sin aplicar</span>
             )}
             {isDirty && errorRango !== null && (
-              <span className="text-xs text-red-600 font-medium">{errorRango}</span>
+              <span className="text-xs text-critico font-medium">{errorRango}</span>
             )}
-            <span className="text-xs text-gray-500 sm:ml-auto">
+            <span className="text-xs text-tinta-3 sm:ml-auto">
               El periodo y el programa se consultan al aplicar; el profesional se muestra de inmediato.
             </span>
           </div>
@@ -257,12 +249,12 @@ export default function CumplimientoView() {
 
       {/* Error con datos previos en pantalla */}
       {error && data && (
-        <div className={`rounded-2xl border px-5 py-4 flex items-center gap-3 ${
+        <div className={`rounded-tarjeta border px-5 py-4 flex items-center gap-3 ${
           error instanceof FetchError && error.status === 503
-            ? "border-amber-200 bg-amber-50"
-            : "border-red-200 bg-red-50"
+            ? "border-atencion/30 bg-atencion-suave"
+            : "border-critico/30 bg-critico-suave"
         }`}>
-          <p className={`text-sm ${error instanceof FetchError && error.status === 503 ? "text-amber-700" : "text-red-700"}`}>
+          <p className={`text-sm ${error instanceof FetchError && error.status === 503 ? "text-atencion" : "text-critico"}`}>
             {error instanceof FetchError && error.status === 503
               ? "Los datos se están actualizando tras la última carga. Reintentando automáticamente..."
               : `No se pudieron cargar los datos. ${error.message || "Intente de nuevo más tarde."}`}

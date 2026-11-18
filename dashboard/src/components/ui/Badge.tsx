@@ -4,23 +4,23 @@ const ESTADO_CONFIG: Record<
   EstadoCarga,
   { label: string; className: string }
 > = {
-  procesando:             { label: "Procesando...",    className: "bg-blue-100 text-blue-800" },
-  previsualizando:        { label: "Previsualizando",  className: "bg-blue-100 text-blue-800" },
-  esperando_confirmacion: { label: "En espera",        className: "bg-yellow-100 text-yellow-800" },
-  cargando:               { label: "Cargando...",      className: "bg-blue-100 text-blue-800" },
-  exitoso:                { label: "Exitoso",          className: "bg-green-100 text-green-800" },
-  exitoso_con_advertencias:{ label: "Con advertencias",className: "bg-yellow-100 text-yellow-800" },
-  cancelado:              { label: "Cancelado",        className: "bg-gray-100 text-gray-700" },
-  error_fatal:            { label: "Error",            className: "bg-red-100 text-red-800" },
-  ya_procesado:           { label: "Duplicado",        className: "bg-orange-100 text-orange-800" },
-  eliminando:             { label: "Eliminando...",    className: "bg-blue-100 text-blue-800" },
-  eliminado:              { label: "Eliminado",        className: "bg-gray-100 text-gray-700" },
+  procesando:             { label: "Procesando...",    className: "bg-primario-suave text-primario" },
+  previsualizando:        { label: "Previsualizando",  className: "bg-primario-suave text-primario" },
+  esperando_confirmacion: { label: "En espera",        className: "bg-atencion-suave text-atencion" },
+  cargando:               { label: "Cargando...",      className: "bg-primario-suave text-primario" },
+  exitoso:                { label: "Exitoso",          className: "bg-bien-suave text-bien" },
+  exitoso_con_advertencias:{ label: "Con advertencias",className: "bg-atencion-suave text-atencion" },
+  cancelado:              { label: "Cancelado",        className: "bg-fondo text-tinta-2" },
+  error_fatal:            { label: "Error",            className: "bg-critico-suave text-critico" },
+  ya_procesado:           { label: "Duplicado",        className: "bg-atencion-suave text-atencion" },
+  eliminando:             { label: "Eliminando...",    className: "bg-primario-suave text-primario" },
+  eliminado:              { label: "Eliminado",        className: "bg-fondo text-tinta-2" },
 };
 
 export function BadgeEstado({ estado }: { estado: EstadoCarga }) {
-  const cfg = ESTADO_CONFIG[estado] ?? { label: estado, className: "bg-gray-100 text-gray-700" };
+  const cfg = ESTADO_CONFIG[estado] ?? { label: estado, className: "bg-fondo text-tinta-2" };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.className}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${cfg.className}`}>
       {cfg.label}
     </span>
   );

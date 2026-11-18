@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import ReactEChartsCore from "echarts-for-react/lib/core";
-import { echarts, type EChartsType } from "@/lib/echarts";
+import { echarts, NOMBRE_TEMA, type EChartsType } from "@/lib/echarts";
 
 export interface PropsGrafico {
   /** Opción de ECharts (lib/productividad/graficas). */
@@ -16,7 +16,7 @@ export interface PropsGrafico {
   className?: string;
 }
 
-/** Envoltura de echarts-for-react con el ECharts modular. Solo navegador. */
+/** Envoltura de echarts-for-react con el ECharts modular y el tema de la app. Solo navegador. */
 export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, className }: PropsGrafico) {
   const contenedor = useRef<HTMLDivElement>(null);
   const instancia = useRef<EChartsType | null>(null);
@@ -40,6 +40,7 @@ export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, cla
     <div ref={contenedor} role="img" aria-label={etiqueta} className={className}>
       <ReactEChartsCore
         echarts={echarts}
+        theme={NOMBRE_TEMA}
         option={opcion}
         notMerge
         lazyUpdate

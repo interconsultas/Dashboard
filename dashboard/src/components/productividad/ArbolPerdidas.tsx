@@ -46,12 +46,12 @@ export function ArbolPerdidas({ arbol, areas, area, servicio = null, onArea, onS
           <button
             type="button"
             onClick={() => onArea(null)}
-            className="text-brand-navy font-medium hover:underline"
+            className="text-primario font-medium hover:underline"
           >
             ← Todas las áreas
           </button>
-          <span className="text-gray-300">/</span>
-          <span className="font-semibold text-gray-700">{area}</span>
+          <span className="text-referencia">/</span>
+          <span className="font-semibold text-tinta-2">{area}</span>
         </div>
       )}
       {arbol.length === 0 ? (

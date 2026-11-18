@@ -11,6 +11,10 @@ import TendenciaMensual from "@/components/dashboard/TendenciaMensual";
 import TendenciaDiaria from "@/components/dashboard/TendenciaDiaria";
 import TopProfesionales from "@/components/dashboard/TopProfesionales";
 import ModoVistaSwitch, { type ModoVista } from "@/components/dashboard/ModoVistaSwitch";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { Boton } from "@/components/ui/Boton";
+import { TarjetaKpi } from "@/components/ui/TarjetaKpi";
+import { CLASES_CAMPO, CLASES_ETIQUETA_CAMPO, cx } from "@/components/ui/clases";
 
 /* ── Helpers ─────────────────────────────────────── */
 
@@ -180,7 +184,7 @@ function buildBody(f: Filters, viewName?: string, applyDefaults?: boolean, modo?
 
 /* ── Styles ──────────────────────────────────────── */
 
-const selectCls = "w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:border-brand-navy/30 focus:ring-2 focus:ring-brand-navy/10 transition-all";
+const selectCls = cx(CLASES_CAMPO, "w-full");
 
 /* ── Component ──────────────────────────────────── */
 
@@ -384,7 +388,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
       : (rawOpts as string[]).map((v) => ({ value: v, label: v }));
     return (
       <div key={item.field}>
-        <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{item.label}</label>
+        <label className={CLASES_ETIQUETA_CAMPO}>{item.label}</label>
         <CheckDropdown
           options={options}
           selected={f[item.field]}
@@ -398,33 +402,29 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">{title}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
-        </div>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting || isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {exporting ? (
-            <Spinner className="h-4 w-4 text-white" />
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          )}
-          {exporting ? "Exportando..." : "Exportar CSV"}
-        </button>
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Análisis" }, ...(viewName ? [{ etiqueta: "Dashboard", href: "/dashboard" }] : []), { etiqueta: title }]}
+        titulo={title}
+        subtitulo={subtitle}
+        acciones={
+          <Boton variante="secundario" onClick={handleExport} disabled={exporting || isLoading}>
+            {exporting ? (
+              <Spinner className="h-4 w-4 text-primario" />
+            ) : (
+              <svg aria-hidden className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )}
+            {exporting ? "Exportando..." : "Exportar CSV"}
+          </Boton>
+        }
+      />
 
       {/* Filtros */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 space-y-4 sticky top-4 z-10">
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-5 py-5 space-y-4 sticky top-4 z-10">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Filtros</p>
+          <p className="font-titulo text-[15px] font-bold text-tinta">Filtros</p>
           {!viewName && (
             <ModoVistaSwitch
               modo={modoVista}
@@ -433,9 +433,9 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
               disabledReason="Seleccioná el mismo mes en Desde y Hasta para ver el detalle por día"
             />
           )}
-          {revalidating && <Spinner className="h-3.5 w-3.5 text-brand-navy/40" />}
+          {revalidating && <Spinner className="h-3.5 w-3.5 text-primario/40" />}
           {activeCount > 0 && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primario-suave text-primario">
               {activeCount} activo{activeCount > 1 ? "s" : ""}
             </span>
           )}
@@ -443,7 +443,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
             <button
               type="button"
               onClick={handleReset}
-              className="ml-auto text-[11px] font-medium text-gray-400 hover:text-brand-navy transition-colors flex items-center gap-1"
+              className="ml-auto text-[11px] font-medium text-tinta-3 hover:text-primario transition-colors flex items-center gap-1"
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -458,7 +458,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-4 gap-y-3">
             {/* Desde */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Desde</label>
+              <label className={CLASES_ETIQUETA_CAMPO}>Desde</label>
               <select className={selectCls} value={f.desde ?? ""} onChange={(e) => setPeriodo("desde", e.target.value)}>
                 <option value="">Seleccionar</option>
                 {opcionesDesde.map((p) => (
@@ -469,7 +469,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
 
             {/* Hasta */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Hasta</label>
+              <label className={CLASES_ETIQUETA_CAMPO}>Hasta</label>
               <select className={selectCls} value={f.hasta ?? ""} onChange={(e) => setPeriodo("hasta", e.target.value)}>
                 <option value="">Seleccionar</option>
                 {opcionesHasta.map((p) => (
@@ -482,7 +482,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
             {!viewName && modoVista === "dia" && f.desde !== null && (
               <>
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Desde (día)</label>
+                  <label className={CLASES_ETIQUETA_CAMPO}>Desde (día)</label>
                   <select className={selectCls} value={f.diaDesde ?? ""} onChange={(e) => setDia("diaDesde", e.target.value)}>
                     {Array.from({ length: diasEnMes(f.desde) }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>{d}</option>
@@ -490,7 +490,7 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Hasta (día)</label>
+                  <label className={CLASES_ETIQUETA_CAMPO}>Hasta (día)</label>
                   <select className={selectCls} value={f.diaHasta ?? ""} onChange={(e) => setDia("diaHasta", e.target.value)}>
                     {Array.from({ length: diasEnMes(f.desde) }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>{d}</option>
@@ -507,11 +507,11 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         {visibleNivel2.length > 0 && (
           <>
             {/* Separador */}
-            <div className="border-t border-gray-100" />
+            <div className="border-t border-borde" />
 
             {/* Nivel 2: Filtros de detalle (alta cardinalidad) */}
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Detalle</p>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-tinta-3 mb-2">Detalle</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-3">
                 {visibleNivel2.map(renderDropdown)}
               </div>
@@ -520,43 +520,38 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
         )}
 
         {/* Aplicar filtros */}
-        <div className="border-t border-gray-100 pt-3 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleApply}
-            disabled={!isDirty || buttonLoading}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
+        <div className="border-t border-borde pt-3 flex items-center gap-3">
+          <Boton onClick={handleApply} disabled={!isDirty || buttonLoading}>
             {buttonLoading ? (
               <Spinner className="h-4 w-4 text-white" />
             ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg aria-hidden className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
             )}
             {buttonLoading ? "Consultando..." : "Aplicar filtros"}
-          </button>
+          </Boton>
           {isDirty && !buttonLoading && (
-            <span className="text-xs text-amber-600 font-medium">Filtros sin aplicar</span>
+            <span className="text-xs text-atencion font-medium">Filtros sin aplicar</span>
           )}
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className={`rounded-2xl border px-5 py-4 flex items-center gap-3 ${
+        <div className={`rounded-tarjeta border px-5 py-4 flex items-center gap-3 ${
           error instanceof FetchError && error.status === 503
-            ? "border-amber-200 bg-amber-50"
-            : "border-red-200 bg-red-50"
+            ? "border-atencion/30 bg-atencion-suave"
+            : "border-critico/30 bg-critico-suave"
         }`}>
           {error instanceof FetchError && error.status === 503 ? (
-            <Spinner className="h-5 w-5 text-amber-500 shrink-0" />
+            <Spinner className="h-5 w-5 text-atencion shrink-0" />
           ) : (
-            <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-5 h-5 text-critico shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
-          <p className={`text-sm ${error instanceof FetchError && error.status === 503 ? "text-amber-700" : "text-red-700"}`}>
+          <p className={`text-sm ${error instanceof FetchError && error.status === 503 ? "text-atencion" : "text-critico"}`}>
             {error instanceof FetchError && error.status === 503
               ? "Los datos se están actualizando tras la última carga. Reintentando automáticamente..."
               : `No se pudieron cargar los datos. ${error.message || "Intenta de nuevo más tarde."}`}
@@ -596,24 +591,13 @@ export default function DashboardView({ title, subtitle, viewName }: DashboardVi
             sub: "Autorizaciones / profesional",
           },
         ] as const).map((card, i) => (
-          <div
+          <TarjetaKpi
             key={card.title}
-            className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-6 ${data ? `animate-fade-slide-up stagger-${i + 1}` : ""}`}
-          >
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-              {card.title}
-            </p>
-            {isLoading && !data ? (
-              <div className="h-9 w-32 bg-gray-100 rounded-lg animate-pulse" />
-            ) : (
-              <>
-                <p className="text-3xl font-extrabold text-brand-navy transition-all duration-300">
-                  {card.value}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
-              </>
-            )}
-          </div>
+            etiqueta={card.title}
+            className={data ? `animate-fade-slide-up stagger-${i + 1}` : undefined}
+            valor={isLoading && !data ? <span className="block h-[26px] w-32 bg-fondo rounded-control animate-pulse" /> : card.value}
+            detalle={isLoading && !data ? undefined : card.sub}
+          />
         ))}
       </div>
 

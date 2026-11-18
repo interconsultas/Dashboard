@@ -12,9 +12,11 @@ import {
   Tooltip,
   LabelList,
 } from "recharts";
+import { COLORES, SOMBRAS } from "@/lib/tema/tokens";
 
-const NAVY = "#1e3a5f";
-const GRAY = "#9ca3af";
+// Colores de los tokens de diseño (lib/tema/tokens)
+const NAVY = COLORES.primario;
+const GRAY = COLORES["tinta-3"];
 
 export interface SerieDiariaPoint {
   /** null representa el bucket "Sin fecha" (COLUMNA_FECHA_DIARIA IS NULL o fuera del mes) */
@@ -116,16 +118,16 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="h-80 bg-gray-50 rounded-xl animate-pulse" />
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
+        <div className="h-80 bg-superficie-2 rounded-control animate-pulse" />
       </div>
     );
   }
 
   if (serieDiaria.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
-        <p className="text-sm text-gray-400">Sin datos para mostrar tendencia diaria</p>
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 text-center">
+        <p className="text-sm text-tinta-3">Sin datos para mostrar tendencia diaria</p>
       </div>
     );
   }
@@ -134,22 +136,22 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
   const absVar = variacionPct !== null ? Math.abs(variacionPct) : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4 animate-fade-slide-up">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Tendencia diaria</p>
-          <p className="text-[11px] text-gray-300 mt-0.5">Total del mes: {fmtNum(totalGeneral)}</p>
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">Tendencia diaria</h2>
+          <p className="text-xs text-tinta-3 mt-0.5">Total del mes: {fmtNum(totalGeneral)}</p>
         </div>
         <div className="flex items-center gap-2">
           {sinFechaTotal > 0 && (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-atencion-suave text-atencion">
               Sin fecha: {fmtNum(sinFechaTotal)}
             </span>
           )}
           {absVar !== null && (
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold ${
-                isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm font-semibold ${
+                isPositive ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"
               }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -174,11 +176,11 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
                 <stop offset="100%" stopColor={NAVY} stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORES.borde} vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 11, fill: GRAY }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: GRAY }} axisLine={false} tickLine={false} width={50} tickFormatter={fmtNum} />
             <Tooltip
-              contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+              contentStyle={{ borderRadius: 12, border: `1px solid ${COLORES.borde}`, fontSize: 13, boxShadow: SOMBRAS.tarjeta }}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any, name: any) => [
                 fmtNum(Number(value)),
@@ -193,7 +195,7 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
               strokeWidth={2.5}
               fill="url(#gradDiaria)"
               dot={{ r: 3, fill: NAVY, strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: NAVY, stroke: COLORES.superficie, strokeWidth: 2 }}
               isAnimationActive
               animationDuration={800}
             >
@@ -203,7 +205,7 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
             <Line
               type="monotone"
               dataKey="tendencia"
-              stroke={GRAY}
+              stroke={COLORES.referencia}
               strokeWidth={1.5}
               strokeDasharray="4 4"
               dot={false}

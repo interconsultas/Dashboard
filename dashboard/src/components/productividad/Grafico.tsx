@@ -11,5 +11,5 @@ export type { PropsGrafico };
  */
 export const Grafico = dynamic<PropsGrafico>(() => import("./GraficoCliente"), {
   ssr: false,
-  loading: () => <div className="h-full w-full skeleton rounded-xl" />,
+  loading: () => <div className="h-full w-full skeleton rounded-control" />,
 });

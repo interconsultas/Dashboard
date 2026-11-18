@@ -50,7 +50,7 @@ describe("Sidebar — entrada Citas", () => {
     mockUsePathname.mockReturnValue("/admin/citas");
     renderSidebar();
 
-    expect(enlace("Citas")).toHaveClass("bg-brand-green");
+    expect(enlace("Citas")).toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -66,8 +66,8 @@ describe("Sidebar — entrada Cumplimiento", () => {
     mockUsePathname.mockReturnValue("/dashboard/cumplimiento");
     renderSidebar();
 
-    expect(enlace("Cumplimiento")).toHaveClass("bg-brand-green");
-    expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Cumplimiento")).toHaveAttribute("aria-current", "page");
+    expect(enlace("Dashboard")).not.toHaveAttribute("aria-current");
     expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
   });
 
@@ -75,8 +75,8 @@ describe("Sidebar — entrada Cumplimiento", () => {
     mockUsePathname.mockReturnValue("/dashboard");
     renderSidebar();
 
-    expect(enlace("Dashboard")).toHaveClass("bg-brand-green");
-    expect(enlace("Cumplimiento")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Dashboard")).toHaveAttribute("aria-current", "page");
+    expect(enlace("Cumplimiento")).not.toHaveAttribute("aria-current");
   });
 
   it("en una subvista del dashboard mantiene el comportamiento anterior y no resalta Cumplimiento", () => {
@@ -84,8 +84,8 @@ describe("Sidebar — entrada Cumplimiento", () => {
     renderSidebar();
 
     expect(enlace("Dashboard")).toHaveClass("bg-white/10");
-    expect(enlace("RX")).toHaveClass("bg-brand-green/90");
-    expect(enlace("Cumplimiento")).not.toHaveClass("bg-brand-green");
+    expect(enlace("RX")).toHaveAttribute("aria-current", "page");
+    expect(enlace("Cumplimiento")).not.toHaveAttribute("aria-current");
   });
 });
 
@@ -103,10 +103,10 @@ describe("Sidebar — entrada Productividad", () => {
     mockUsePathname.mockReturnValue("/dashboard/productividad");
     renderSidebar();
 
-    expect(enlace("Productividad")).toHaveClass("bg-brand-green");
-    expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Productividad")).toHaveAttribute("aria-current", "page");
+    expect(enlace("Dashboard")).not.toHaveAttribute("aria-current");
     expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
-    expect(enlace("Cumplimiento")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Cumplimiento")).not.toHaveAttribute("aria-current");
   });
 });
 
@@ -124,10 +124,10 @@ describe("Sidebar — entrada Inteligencia", () => {
     mockUsePathname.mockReturnValue("/dashboard/inteligencia");
     renderSidebar();
 
-    expect(enlace("Inteligencia")).toHaveClass("bg-brand-green");
-    expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Inteligencia")).toHaveAttribute("aria-current", "page");
+    expect(enlace("Dashboard")).not.toHaveAttribute("aria-current");
     expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
-    expect(enlace("Productividad")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Productividad")).not.toHaveAttribute("aria-current");
   });
 
   it("muestra la insignia de alertas dentro del enlace solo a quien ve Inteligencia", () => {
@@ -152,6 +152,45 @@ describe("Sidebar — entrada Inteligencia", () => {
     mockUsePathname.mockReturnValue("/dashboard");
     renderSidebar("direccion_medica");
     expect(enlace("Inteligencia")).toBeInTheDocument();
+  });
+});
+
+describe("Sidebar — identidad visual", () => {
+  it("la entrada activa es la píldora lima con tinta oscura; las demás no", () => {
+    mockUsePathname.mockReturnValue("/dashboard/productividad");
+    renderSidebar();
+    expect(enlace("Productividad")).toHaveClass("bg-menu-activo", "text-menu-activo-tinta");
+    expect(enlace("Cumplimiento")).not.toHaveClass("bg-menu-activo");
+    expect(enlace("Cumplimiento")).toHaveClass("text-menu-tinta");
+  });
+
+  it("muestra el logo real dentro de la tarjeta blanca", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar();
+    expect(screen.getByAltText("IPS Manizales — Interconsultas")).toBeInTheDocument();
+  });
+
+  it("agrupa el menú en Análisis y Administración, en ese orden", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("admin");
+    expect(screen.getByText("Análisis")).toBeInTheDocument();
+    expect(screen.getByText("Administración")).toBeInTheDocument();
+    const nombres = screen.getAllByRole("link").map((l) => l.textContent?.trim());
+    const admin = ["Carga de archivos", "Citas", "Metas", "Profesionales", "Usuarios"];
+    expect(nombres.slice(-admin.length)).toEqual(admin);
+  });
+
+  it("sin entradas de administración no muestra ese grupo", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("coordinador");
+    expect(screen.getByText("Análisis")).toBeInTheDocument();
+    expect(screen.queryByText("Administración")).not.toBeInTheDocument();
+  });
+
+  it("el botón de los tipos de prestación anuncia si está desplegado", () => {
+    mockUsePathname.mockReturnValue("/dashboard/tipo/rx");
+    renderSidebar();
+    expect(screen.getByRole("button", { name: /tipos de prestación/i })).toHaveAttribute("aria-expanded", "true");
   });
 });
 
@@ -192,7 +231,7 @@ describe("Sidebar — enlaces según el rol", () => {
     for (const oculto of ["Cumplimiento", "Productividad", "Carga de archivos", "Profesionales", "Metas", "Citas", "Usuarios"]) {
       expect(nombres).not.toContain(oculto);
     }
-    expect(screen.getByRole("button", { name: /cerrar sesion/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cerrar sesión/i })).toBeInTheDocument();
   });
 
   it("sin rol no muestra enlaces", () => {

@@ -3,7 +3,7 @@
  * tramo proyectado punteado, banda del rango (± EAM) y la meta como línea.
  * Función pura, se prueba sin canvas.
  */
-import { FUENTE, REJILLA, ROJO_MALO, TINTA, TINTA_2, TINTA_3, fmtPct } from "@/lib/productividad/presentacion";
+import { ROJO_MALO, fmtPct } from "@/lib/productividad/presentacion";
 import type { ResultadoAlertas, SerieProyectada } from "./alertas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- los parámetros de los formatters de ECharts no tienen un tipo útil */
@@ -73,14 +73,10 @@ export function opcionesProyeccion(s: SerieProyectada, siguiente: Siguiente, met
   }
 
   return {
-    textStyle: { fontFamily: FUENTE, color: TINTA_2 },
     animationDuration: 300,
     grid: { left: 40, right: 12, top: 12, bottom: 24 },
     tooltip: {
       trigger: "axis",
-      backgroundColor: TINTA,
-      borderWidth: 0,
-      textStyle: { color: "#fff", fontSize: 12 },
       formatter: (items: any[]) => {
         const i = items[0]?.dataIndex ?? 0;
         if (p && i === n) {
@@ -94,15 +90,12 @@ export function opcionesProyeccion(s: SerieProyectada, siguiente: Siguiente, met
       type: "category",
       data: categorias,
       boundaryGap: false,
-      axisTick: { show: false },
-      axisLine: { lineStyle: { color: REJILLA } },
-      axisLabel: { color: TINTA_3, fontSize: 10 },
+      axisLabel: { fontSize: 10 },
     },
     yAxis: {
       type: "value",
       min: 0,
-      axisLabel: { color: TINTA_3, fontSize: 10, formatter: (v: number) => fmtPct(v, 0) },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { fontSize: 10, formatter: (v: number) => fmtPct(v, 0) },
     },
     series,
   };

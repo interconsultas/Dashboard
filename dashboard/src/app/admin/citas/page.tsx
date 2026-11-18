@@ -22,6 +22,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
 import { usePuedeEditar } from "@/components/layout/RolContext";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
 
 const MESES = Array.from({ length: 12 }, (_, i) => i + 1);
 const ANIOS_HACIA_ATRAS = 3;
@@ -139,39 +141,37 @@ export default function CitasPage() {
   }
 
   const inputCls =
-    "border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none";
+    "border border-borde bg-superficie rounded-control px-3 py-2 text-sm text-tinta-2 focus:outline-none focus:ring-2 focus:ring-primario/30 focus:border-primario";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-navy">Citas</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Carga del informe de Agenda Web y citas atendidas para cumplimiento
-        </p>
-        <Link
-          href="/admin/citas/areas"
-          className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
-        >
-          Áreas de servicio
-        </Link>
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Citas" }]}
+        titulo="Citas"
+        subtitulo="Carga del informe de Agenda Web y citas atendidas para cumplimiento"
+        acciones={
+          <Link href="/admin/citas/areas" className={clasesBoton({ variante: "secundario" })}>
+            Áreas de servicio
+          </Link>
+        }
+      />
 
       <section
         aria-labelledby="importar-citas-titulo"
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3"
+        className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-5 space-y-3"
       >
         <div>
-          <h2 id="importar-citas-titulo" className="text-base font-semibold text-brand-navy">
+          <h2 id="importar-citas-titulo" className="font-titulo text-[15px] font-bold text-tinta">
             Cargar informe de citas
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-tinta-3 mt-0.5">
             Suba el informe de citas detallado por profesional de Agenda Web (.xls). También se acepta el Excel con la columna de cédula y una columna por mes.
           </p>
         </div>
         {editable ? (
           <ImportarCitasExcel onImportado={handleImportado} />
         ) : (
-          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+          <p className="text-xs text-tinta-3 bg-superficie-2 border border-borde rounded-control px-3 py-2">
             Solo consulta: no puede cargar ni modificar citas.
           </p>
         )}
@@ -179,8 +179,8 @@ export default function CitasPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-brand-navy">Citas del periodo</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">Citas del periodo</h2>
+          <p className="text-sm text-tinta-3 mt-0.5">
             Todas las citas del informe de Agenda Web por profesional
           </p>
         </div>
@@ -228,10 +228,10 @@ export default function CitasPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-brand-navy">
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">
             Citas atendidas para cumplimiento
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-tinta-3 mt-0.5">
             Citas confirmadas con las que se mide el cumplimiento de cada profesional en{" "}
             {fmtPeriodo(periodo)}. Las celdas vacías no tienen dato cargado.
           </p>
@@ -250,33 +250,33 @@ export default function CitasPage() {
         <>
           {/* Contadores */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+            <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-5">
+              <p className="text-xs text-tinta-3 uppercase tracking-wide">
                 Profesionales con citas ingresadas
               </p>
-              <p className="text-2xl font-bold text-brand-navy mt-1">
+              <p className="text-2xl font-bold text-primario mt-1">
                 {contadores.conCitas}
-                <span className="text-base font-medium text-gray-400"> / {contadores.total}</span>
+                <span className="text-base font-medium text-tinta-3"> / {contadores.total}</span>
               </p>
             </div>
             <div
-              className={`rounded-2xl border shadow-sm p-5 ${
+              className={`rounded-tarjeta border shadow-tarjeta p-5 ${
                 contadores.sinPrograma > 0
-                  ? "bg-amber-50 border-amber-200"
-                  : "bg-white border-gray-100"
+                  ? "bg-atencion-suave border-atencion/30"
+                  : "bg-superficie border-borde"
               }`}
             >
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+              <p className="text-xs text-tinta-3 uppercase tracking-wide">
                 Con citas y sin programa
               </p>
               <p
                 className={`text-2xl font-bold mt-1 ${
-                  contadores.sinPrograma > 0 ? "text-amber-700" : "text-brand-navy"
+                  contadores.sinPrograma > 0 ? "text-atencion" : "text-primario"
                 }`}
               >
                 {contadores.sinPrograma}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-tinta-3 mt-1">
                 Sin programa no hay meta con la cual medir el cumplimiento.
               </p>
             </div>
@@ -291,7 +291,7 @@ export default function CitasPage() {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
-              <label className="flex items-center gap-2 text-sm text-gray-600">
+              <label className="flex items-center gap-2 text-sm text-tinta-2">
                 <input
                   type="checkbox"
                   checked={mostrarTodos}
@@ -305,7 +305,7 @@ export default function CitasPage() {
                 type="button"
                 onClick={handleGuardar}
                 disabled={saving || !hayCambios || hayInvalidas}
-                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+                className="px-5 py-2 rounded-control text-sm font-semibold text-white bg-primario hover:bg-primario-oscuro disabled:opacity-60 transition-colors"
               >
                 {saving ? "Guardando…" : "Guardar"}
               </button>
@@ -313,17 +313,17 @@ export default function CitasPage() {
           </div>
 
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">
               {error}
             </p>
           )}
           {exito && (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2">
               {exito}
             </p>
           )}
           {hayInvalidas && (
-            <p className="text-xs text-red-600">
+            <p className="text-xs text-critico">
               Hay citas que no son un número entero. Corríjalas para poder guardar.
             </p>
           )}

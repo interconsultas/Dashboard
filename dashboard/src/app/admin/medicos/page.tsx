@@ -5,6 +5,8 @@ import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { ImportarMedicosExcel } from "@/components/medicos/ImportarMedicosExcel";
 import { usePuedeEditar } from "@/components/layout/RolContext";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
 
 interface Medico {
   usuario_txt: string;
@@ -53,7 +55,7 @@ function BadgeEstado({ estado }: { estado: string | null }) {
   return (
     <span
       className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-        activo ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
+        activo ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"
       }`}
     >
       {estado ?? "—"}
@@ -160,7 +162,7 @@ export default function MedicosPage() {
   }
 
   const inputCls =
-    "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none";
+    "w-full border border-borde rounded-control px-3 py-2 text-sm text-tinta-2 focus:outline-none";
 
   const filtrados = medicos?.filter((m) => {
     if (!busqueda) return true;
@@ -176,32 +178,31 @@ export default function MedicosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-navy">
-            Profesionales (Médicos)
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Catálogo de profesionales — {medicos?.length ?? 0} registros
-          </p>
-        </div>
-        {editable ? (
-        <div className="flex items-start gap-2">
-          <button
-            type="button"
-            onClick={abrirNuevo}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
-          >
-            Nuevo profesional
-          </button>
-          <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
-        </div>
-        ) : (
-          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-            Solo consulta: no puede agregar, importar, editar ni eliminar profesionales.
-          </p>
-        )}
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Profesionales" }]}
+        titulo="Profesionales (Médicos)"
+        subtitulo={`Catálogo de profesionales — ${medicos?.length ?? 0} registros`}
+        acciones={
+          <>
+            {editable ? (
+            <div className="flex items-start gap-2">
+              <button
+                type="button"
+                onClick={abrirNuevo}
+                className={clasesBoton({ variante: "secundario" })}
+              >
+                Nuevo profesional
+              </button>
+              <ImportarMedicosExcel onImportado={() => mutate("/api/admin/medicos")} />
+            </div>
+            ) : (
+              <p className="text-xs text-tinta-3 bg-superficie-2 border border-borde rounded-control px-3 py-2">
+                Solo consulta: no puede agregar, importar, editar ni eliminar profesionales.
+              </p>
+            )}
+          </>
+        }
+      />
 
       {/* Formulario (crear y editar) */}
       {modalAbierto && (
@@ -209,13 +210,13 @@ export default function MedicosPage() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-modal-profesional"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-menu-fondo/50 backdrop-blur-[2px] px-4"
         onKeyDown={(e) => {
           if (e.key === "Escape" && !saving) cerrarModal();
         }}
       >
-      <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <h3 id="titulo-modal-profesional" className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-superficie border border-borde rounded-tarjeta shadow-tarjeta max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <h3 id="titulo-modal-profesional" className="font-titulo text-lg font-bold text-tinta mb-4">
           {editKey ? "Editar profesional" : "Nuevo profesional"}
         </h3>
         <form
@@ -223,7 +224,7 @@ export default function MedicosPage() {
           className="grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-tinta-3 mb-1">
               Usuario TXT
             </label>
             <input
@@ -238,7 +239,7 @@ export default function MedicosPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-tinta-3 mb-1">
               Identificación
             </label>
             <input
@@ -253,7 +254,7 @@ export default function MedicosPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-tinta-3 mb-1">
               Nombre completo
             </label>
             <input
@@ -266,7 +267,7 @@ export default function MedicosPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Estado</label>
+            <label className="block text-xs text-tinta-3 mb-1">Estado</label>
             <select
               className={inputCls}
               value={form.estado}
@@ -282,7 +283,7 @@ export default function MedicosPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-tinta-3 mb-1">
               Programa / Especialidad
             </label>
             <select
@@ -304,7 +305,7 @@ export default function MedicosPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Área</label>
+            <label className="block text-xs text-tinta-3 mb-1">Área</label>
             <select
               className={inputCls}
               value={form.area}
@@ -322,7 +323,7 @@ export default function MedicosPage() {
           </div>
           {error && (
             <div className="sm:col-span-2">
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">
                 {error}
               </p>
             </div>
@@ -333,14 +334,14 @@ export default function MedicosPage() {
               type="button"
               onClick={cerrarModal}
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium rounded-control text-tinta-2 bg-fondo hover:bg-borde disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
+              className="px-5 py-2 rounded-control text-sm font-semibold text-white bg-primario hover:bg-primario-oscuro disabled:opacity-60 transition-colors"
             >
               {saving
                 ? "Guardando…"
@@ -357,7 +358,7 @@ export default function MedicosPage() {
       {/* Buscador */}
       <div>
         <input
-          className="w-full sm:w-80 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none"
+          className="w-full sm:w-80 border border-borde rounded-control px-3 py-2 text-sm text-tinta-2 focus:outline-none"
           placeholder="Buscar por nombre, usuario, identificación…"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
@@ -365,9 +366,9 @@ export default function MedicosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead className="bg-brand-navy">
+      <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+        <table className="tabla tabla-texto">
+          <thead>
             <tr>
               {[
                 "Usuario TXT",
@@ -381,67 +382,61 @@ export default function MedicosPage() {
               ].map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className="text-center !py-10 text-tinta-3">
                   Cargando…
                 </td>
               </tr>
             )}
             {!isLoading && !filtrados?.length && (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className="text-center !py-10 text-tinta-3">
                   {busqueda
                     ? "Sin resultados para esa búsqueda"
                     : "No hay profesionales"}
                 </td>
               </tr>
             )}
-            {filtrados?.map((m, idx) => (
-              <tr
-                key={m.usuario_txt}
-                className={`${
-                  idx % 2 === 0 ? "bg-white" : "bg-surface-alt"
-                } hover:bg-brand-blue-soft-2 transition-colors`}
-              >
-                <td className="px-4 py-3 font-mono text-xs text-gray-600">
+            {filtrados?.map((m) => (
+              <tr key={m.usuario_txt}>
+                <td className="font-mono text-xs text-tinta-2">
                   {m.usuario_txt}
                 </td>
-                <td className="px-4 py-3 text-gray-500">
+                <td className="text-tinta-3">
                   {m.identificacion}
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-800">
+                <td className="font-medium text-tinta">
                   {m.nombre}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <BadgeEstado estado={m.estado} />
                 </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
+                <td className="text-tinta-3 text-xs">
                   {m.programa_especialidad ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
+                <td className="text-tinta-3 text-xs">
                   {m.area ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="text-right">
                   {editable && (
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => startEdit(m)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-control font-semibold text-primario bg-primario-suave hover:bg-primario hover:text-white transition-colors"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => handleDelete(m)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-control font-semibold border border-borde text-tinta-3 hover:bg-critico-suave hover:text-critico transition-colors"
                     >
                       Eliminar
                     </button>

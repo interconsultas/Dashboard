@@ -46,7 +46,7 @@ describe("/admin/citas/areas", () => {
 
     expect(mockUseSWR.mock.calls[0][0]).toBe("/api/admin/citas/areas");
     expect(screen.getByRole("heading", { level: 1, name: "Áreas de servicio" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Volver a Citas" })).toHaveAttribute("href", "/admin/citas");
+    expect(within(screen.getByRole("navigation", { name: "Ruta" })).getByRole("link", { name: "Citas" })).toHaveAttribute("href", "/admin/citas");
   });
 
   it("muestra cada servicio con su código, área, asignadas del último mes y si fue editada", () => {

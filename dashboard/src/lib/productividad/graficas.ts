@@ -9,7 +9,6 @@ import {
   ESCALA_SECUENCIAL,
   FUENTE,
   NAVY,
-  REJILLA,
   ROJO_MALO,
   TINTA,
   TINTA_2,
@@ -18,6 +17,7 @@ import {
   fmtNumero,
   fmtPct,
 } from "./presentacion";
+import { COLORES, PASO_TINTA_CLARA } from "@/lib/tema/tokens";
 import { umbralesDispersion, TOP_PARETO, type FilaPareto } from "./profesionales";
 import type { Embudo, NodoArea, NodoServicio, PuntoSerie, ResumenProfesional, RespuestaProductividad } from "./tipos";
 
@@ -25,14 +25,8 @@ import type { Embudo, NodoArea, NodoServicio, PuntoSerie, ResumenProfesional, Re
 
 const META_PCT = META_INASISTENCIA * 100;
 
-const textoBase = { fontFamily: FUENTE, color: TINTA_2 };
-
-const cajaTooltip = {
-  backgroundColor: TINTA,
-  borderWidth: 0,
-  textStyle: { color: "#fff", fontSize: 12.5 },
-  extraCssText: "border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);",
-};
+// Tipografía, tintas, ejes, rejilla y caja del tooltip vienen del tema único
+// (lib/tema/graficas). Aquí solo van colores con significado.
 
 function degradado(color: string, alfaArriba: string) {
   return {
@@ -62,7 +56,6 @@ export function opcionesSparkline(valores: (number | null)[], etiquetas: string[
     yAxis: { type: "value", show: false, scale: true },
     tooltip: {
       trigger: "axis",
-      ...cajaTooltip,
       formatter: (p: any) => `${p[0].name}: <b>${p[0].value === null || p[0].value === undefined ? "—" : fmt(p[0].value)}</b>`,
       axisPointer: { type: "line", lineStyle: { color: TINTA_3 } },
     },
@@ -76,7 +69,7 @@ export function opcionesSparkline(valores: (number | null)[], etiquetas: string[
         markPoint: {
           symbol: "circle",
           symbolSize: 7,
-          itemStyle: { color: AZUL_SERIE, borderColor: "#fff", borderWidth: 2 },
+          itemStyle: { color: AZUL_SERIE, borderColor: COLORES.superficie, borderWidth: 2 },
           label: { show: false },
           data: ultimo >= 0 && valores[ultimo] !== null ? [{ coord: [ultimo, valores[ultimo]] }] : [],
         },
@@ -91,12 +84,10 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
   const idx = serie.findIndex((p) => p.clave === seleccionado);
   const etiquetas = serie.map((p) => p.etiqueta);
   return {
-    textStyle: textoBase,
     animationDuration: 400,
     grid: { left: 46, right: 24, top: 24, bottom: 58 },
     tooltip: {
       trigger: "axis",
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = serie[p[0].dataIndex];
         return `<b>${d.etiqueta}</b><br>% inasistencia: <b>${fmtPct(d.pct_inasistencia)}</b><br>${fmtNumero(d.inasistidas)} inasistidas de ${fmtNumero(d.asignadas)} asignadas`;
@@ -105,18 +96,14 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
     xAxis: {
       type: "category",
       data: etiquetas,
-      axisLine: { lineStyle: { color: REJILLA } },
-      axisTick: { show: false },
-      axisLabel: { color: TINTA_3 },
     },
     yAxis: {
       type: "value",
       min: 0,
-      axisLabel: { color: TINTA_3, formatter: (v: number) => `${v} %` },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => `${v} %` },
     },
     dataZoom: [
-      { type: "slider", height: 18, bottom: 6, borderColor: REJILLA, fillerColor: "rgba(42,120,214,.12)", handleSize: 14, textStyle: { color: TINTA_3 } },
+      { type: "slider", height: 18, bottom: 6, handleSize: 14 },
       { type: "inside" },
     ],
     series: [
@@ -126,7 +113,7 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
         symbol: "circle",
         symbolSize: (_v: unknown, p: any) => (p.dataIndex === idx ? 10 : 7),
         lineStyle: { width: 2, color: AZUL_SERIE },
-        itemStyle: { color: AZUL_SERIE, borderColor: "#fff", borderWidth: 2 },
+        itemStyle: { color: AZUL_SERIE, borderColor: COLORES.superficie, borderWidth: 2 },
         areaStyle: { color: degradado(AZUL_SERIE, "2e") },
         label: {
           show: true,
@@ -138,13 +125,13 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
         markLine: {
           symbol: "none",
           silent: true,
-          lineStyle: { type: "dashed", color: "#9AA7B8", width: 2 },
+          lineStyle: { type: "dashed", color: COLORES.referencia, width: 2 },
           label: { formatter: `Meta ${META_PCT} %`, color: TINTA_3, position: "insideEndTop" },
           data: [{ yAxis: META_PCT }],
         },
         markArea:
           idx >= 0
-            ? { silent: true, itemStyle: { color: "rgba(42,120,214,.07)" }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
+            ? { silent: true, itemStyle: { color: `${COLORES.primario}12` }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
             : undefined,
       },
     ],
@@ -159,13 +146,11 @@ export function opcionesEmbudo(e: Embudo) {
     ["Asignadas", e.asignadas],
     ["Atendidas", e.atendidas],
   ];
-  const colores = ["#86b6ef", "#3987e5", "#1c5cab"];
+  const colores = [ESCALA_SECUENCIAL[2], ESCALA_SECUENCIAL[4], ESCALA_SECUENCIAL[5]];
   const pctDe = (v: number, base: number) => (base > 0 ? v / base : null);
   return {
-    textStyle: textoBase,
     tooltip: {
       trigger: "item",
-      ...cajaTooltip,
       formatter: (p: any) => `<b>${p.name}</b>: ${fmtNumero(p.value)}<br>${fmtPct(pctDe(p.value, e.ofertadas))} de lo ofertado`,
     },
     series: [
@@ -179,8 +164,9 @@ export function opcionesEmbudo(e: Embudo) {
         gap: 3,
         minSize: "38%",
         label: { position: "inside", color: "#fff", fontWeight: 600, formatter: (p: any) => `${p.name}\n${fmtNumero(p.value)}` },
-        itemStyle: { borderColor: "#fff", borderWidth: 2 },
-        data: pasos.map(([name, value], i) => ({ name, value, itemStyle: { color: colores[i] } })),
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2 },
+        // El primer paso es claro: su etiqueta va en tinta oscura (contraste AA)
+        data: pasos.map(([name, value], i) => ({ name, value, itemStyle: { color: colores[i] }, label: i === 0 ? { color: TINTA } : undefined })),
       },
     ],
     graphic: [
@@ -225,10 +211,8 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
   const lo = valores.length ? Math.min(...valores) : 0;
   const hi = valores.length ? Math.max(...valores) : 0;
   return {
-    textStyle: textoBase,
     grid: { left: 150, right: 20, top: 8, bottom: 78 },
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) =>
         `<b>${areas[p.value[1]]}</b> · ${mapa.periodos[p.value[0]].etiqueta}<br>% inasistencia: <b>${fmtPuntos(p.value[2])}</b><br>${fmtNumero(p.value[3])} de ${fmtNumero(p.value[4])} asignadas`,
     },
@@ -236,15 +220,12 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
       type: "category",
       data: mapa.periodos.map((p) => p.etiqueta),
       splitArea: { show: false },
-      axisTick: { show: false },
       axisLine: { show: false },
-      axisLabel: { color: TINTA_3 },
     },
     yAxis: {
       type: "category",
       data: areas,
       inverse: true,
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: {
         color: TINTA,
@@ -264,19 +245,18 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
       itemHeight: 160,
       itemWidth: 10,
       inRange: { color: ESCALA_SECUENCIAL },
-      textStyle: { color: TINTA_3 },
       formatter: (v: number) => `${Math.round(v)} %`,
     },
     series: [
       {
         type: "heatmap",
-        data: filas.map((d) => ({ value: d, label: { color: d[2] > lo + (hi - lo) * 0.55 ? "#fff" : TINTA } })),
+        data: filas.map((d) => ({ value: d, label: { color: d[2] > lo + ((hi - lo) * PASO_TINTA_CLARA) / (ESCALA_SECUENCIAL.length - 1) ? "#fff" : TINTA } })),
         label: {
           show: true,
           fontSize: 10.5,
           formatter: (p: any) => p.value[2].toLocaleString("es-CO", { maximumFractionDigits: 0 }),
         },
-        itemStyle: { borderColor: "#fff", borderWidth: 2, borderRadius: 3 },
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2, borderRadius: 3 },
         emphasis: { itemStyle: { borderColor: TINTA, borderWidth: 2 } },
       },
     ],
@@ -326,9 +306,7 @@ export function opcionesArbol(
     return "";
   };
   return {
-    textStyle: textoBase,
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = p.data ?? {};
         if (d.codigo) {
@@ -352,7 +330,7 @@ export function opcionesArbol(
         breadcrumb: { show: false },
         label: { show: true, formatter: etiquetaBloque, fontSize: 12, lineHeight: 15, color: "#fff", fontWeight: 600, overflow: "truncate" },
         upperLabel: { show: true, height: 22, color: "#fff", fontWeight: 600 },
-        itemStyle: { borderColor: "#fff", borderWidth: 2, gapWidth: 2, borderRadius: 4 },
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2, gapWidth: 2, borderRadius: 4 },
         levels: [
           { itemStyle: { borderWidth: 0, gapWidth: 3 } },
           { colorSaturation: [0.35, 0.6], itemStyle: { gapWidth: 2, borderColorSaturation: 0.7 } },
@@ -372,12 +350,9 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
   const maxDisponibles = Math.max(1, ...puntos.map((p) => p.disponibles));
   const promedioPts = promedio === null ? null : Number((promedio * 100).toFixed(1));
   const desde = medianaVolumen === null ? null : Math.max(medianaVolumen, 1);
-  const etiquetaEje = { color: TINTA_3 };
   return {
-    textStyle: textoBase,
     grid: { left: 54, right: 24, top: 24, bottom: 44 },
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = puntos[p.dataIndex];
         if (!d) return "";
@@ -389,19 +364,15 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
       name: "Citas asignadas en el periodo (escala logarítmica)",
       nameLocation: "middle",
       nameGap: 28,
-      nameTextStyle: etiquetaEje,
-      axisLabel: { ...etiquetaEje, formatter: (v: number) => fmtNumero(v) },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => fmtNumero(v) },
       min: 10,
       max: maxEje,
     },
     yAxis: {
       type: "value",
       name: "% inasistencia",
-      nameTextStyle: etiquetaEje,
       min: 0,
-      axisLabel: { ...etiquetaEje, formatter: (v: number) => `${v} %` },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => `${v} %` },
     },
     series: [
       {
@@ -411,13 +382,13 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
           documento: p.documento,
           symbolSize: 8 + 26 * Math.sqrt(p.disponibles / maxDisponibles),
         })),
-        itemStyle: { color: "rgba(42,120,214,.55)", borderColor: "#fff", borderWidth: 1 },
-        emphasis: { itemStyle: { color: "#1c5cab", borderColor: TINTA, borderWidth: 2 } },
+        itemStyle: { color: `${COLORES.primario}8c`, borderColor: COLORES.superficie, borderWidth: 1 },
+        emphasis: { itemStyle: { color: ESCALA_SECUENCIAL[5], borderColor: TINTA, borderWidth: 2 } },
         cursor: "pointer",
         markLine: {
           symbol: "none",
           silent: true,
-          lineStyle: { type: "dashed", color: "#9AA7B8" },
+          lineStyle: { type: "dashed", color: COLORES.referencia },
           label: { color: TINTA_3, fontSize: 11 },
           data: [
             ...(promedioPts === null
@@ -434,11 +405,11 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
               ? []
               : [
                   [
-                    { name: "Alto volumen, baja inasistencia", xAxis: desde, yAxis: 0, itemStyle: { color: "rgba(12,163,12,.05)" }, label: { position: "insideBottomRight" } },
+                    { name: "Alto volumen, baja inasistencia", xAxis: desde, yAxis: 0, itemStyle: { color: `${COLORES.bien}0d` }, label: { position: "insideBottomRight" } },
                     { xAxis: maxEje, yAxis: promedioPts },
                   ],
                   [
-                    { name: "Alto volumen, alta inasistencia", xAxis: desde, yAxis: promedioPts, itemStyle: { color: "rgba(208,59,59,.05)" }, label: { position: "insideTopRight" } },
+                    { name: "Alto volumen, alta inasistencia", xAxis: desde, yAxis: promedioPts, itemStyle: { color: `${COLORES.critico}0d` }, label: { position: "insideTopRight" } },
                     { xAxis: maxEje, yAxis: "max" },
                   ],
                 ],
@@ -450,30 +421,27 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
 
 /* ── Pareto de citas perdidas ───────────────── */
 
-const leyendaBarras = { top: 0, left: 0, itemWidth: 12, itemHeight: 10, textStyle: { color: TINTA_2 } };
+const leyendaBarras = { top: 0, left: 0, itemWidth: 12, itemHeight: 10 };
 
 /** Filas: pareto(...).filas; se dibujan los 15 primeros. */
 export function opcionesPareto(filas: FilaPareto[]) {
   const top = filas.slice(0, TOP_PARETO);
   return {
-    textStyle: textoBase,
     grid: { left: 170, right: 76, top: 26, bottom: 20 },
     legend: { ...leyendaBarras, data: ["Inasistidas", "Disponibles"] },
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = top[p[0].dataIndex];
         return `<b>${d.nombre}</b><br>Inasistidas ${fmtNumero(d.inasistidas)} · Disponibles ${fmtNumero(d.disponibles)}<br>Acumulado: ${fmtPct(d.acumulado, 0)} del total<br><span style="opacity:.7">Clic para ver la ficha</span>`;
       },
     },
-    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    xAxis: { type: "value" },
     yAxis: {
       type: "category",
       inverse: true,
       data: top.map((p) => recortar(p.nombre, 24)),
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: { color: TINTA, fontSize: 11.5 },
     },
@@ -484,8 +452,9 @@ export function opcionesPareto(filas: FilaPareto[]) {
         stack: "perdidas",
         barWidth: 13,
         cursor: "pointer",
-        itemStyle: { color: "#1c5cab" },
-        data: top.map((p) => ({ value: p.inasistidas, itemStyle: { color: p.dentro_corte ? "#1c5cab" : "#9ec5f4" } })),
+        itemStyle: { color: ESCALA_SECUENCIAL[5] },
+        // Fuera del corte del Pareto: tonos claros de la misma escala (cada barra lleva etiqueta)
+        data: top.map((p) => ({ value: p.inasistidas, itemStyle: { color: p.dentro_corte ? ESCALA_SECUENCIAL[5] : ESCALA_SECUENCIAL[2] } })),
       },
       {
         name: "Disponibles",
@@ -493,10 +462,10 @@ export function opcionesPareto(filas: FilaPareto[]) {
         stack: "perdidas",
         barWidth: 13,
         cursor: "pointer",
-        itemStyle: { color: "#86b6ef" },
+        itemStyle: { color: ESCALA_SECUENCIAL[3] },
         data: top.map((p) => ({
           value: p.disponibles,
-          itemStyle: { color: p.dentro_corte ? "#86b6ef" : "#cde2fb", borderRadius: [0, 4, 4, 0] },
+          itemStyle: { color: p.dentro_corte ? ESCALA_SECUENCIAL[3] : ESCALA_SECUENCIAL[1], borderRadius: [0, 4, 4, 0] },
         })),
         label: {
           show: true,
@@ -514,35 +483,32 @@ export function opcionesPareto(filas: FilaPareto[]) {
 
 export function opcionesServiciosFicha(servicios: NodoServicio[]) {
   return {
-    textStyle: textoBase,
     grid: { left: 190, right: 48, top: 24, bottom: 10 },
     legend: leyendaBarras,
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = servicios[p[0].dataIndex];
         return `<b>${d.nombre}</b><br>Asignadas ${fmtNumero(d.asignadas)} · Inasistidas ${fmtNumero(d.inasistidas)} (${fmtPct(d.pct_inasistencia)})`;
       },
     },
-    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    xAxis: { type: "value" },
     yAxis: {
       type: "category",
       inverse: true,
       data: servicios.map((s) => recortar(s.nombre, 30)),
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: { color: TINTA, fontSize: 11 },
     },
     series: [
-      { name: "Atendidas", type: "bar", stack: "asignadas", barWidth: 14, itemStyle: { color: "#3987e5" }, data: servicios.map((s) => s.atendidas) },
+      { name: "Atendidas", type: "bar", stack: "asignadas", barWidth: 14, itemStyle: { color: ESCALA_SECUENCIAL[4] }, data: servicios.map((s) => s.atendidas) },
       {
         name: "Inasistidas",
         type: "bar",
         stack: "asignadas",
         barWidth: 14,
-        itemStyle: { color: "#e34948", borderRadius: [0, 4, 4, 0] },
+        itemStyle: { color: ROJO_MALO, borderRadius: [0, 4, 4, 0] },
         data: servicios.map((s) => s.inasistidas),
         label: {
           show: true,

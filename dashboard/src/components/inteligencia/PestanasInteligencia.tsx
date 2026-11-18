@@ -1,3 +1,4 @@
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
 import type { Pestana } from "@/lib/inteligencia/parametros";
 
 /** Pestañas de la sección (`disponible` permite anunciar una pestaña futura). */
@@ -15,7 +16,7 @@ const SUBTITULO: Record<Pestana, string> = {
 
 export function PestanasInteligencia({ activa, onCambiar }: { activa: Pestana; onCambiar: (p: Pestana) => void }) {
   return (
-    <div role="tablist" aria-label="Herramientas de Inteligencia" className="flex flex-wrap gap-1 border-b border-gray-200">
+    <div role="tablist" aria-label="Herramientas de Inteligencia" className="flex flex-wrap gap-1">
       {PESTANAS.map((p) => {
         const seleccionada = p.clave === activa;
         return (
@@ -26,17 +27,17 @@ export function PestanasInteligencia({ activa, onCambiar }: { activa: Pestana; o
             aria-selected={seleccionada}
             disabled={!p.disponible}
             onClick={() => p.disponible && !seleccionada && onCambiar(p.clave)}
-            className={`-mb-px px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 sm:px-3.5 py-2 rounded-control text-sm font-semibold transition-colors ${
               seleccionada
-                ? "border-brand-green text-brand-navy"
+                ? "bg-primario text-white"
                 : p.disponible
-                  ? "border-transparent text-gray-500 hover:text-brand-navy"
-                  : "border-transparent text-gray-400 cursor-not-allowed"
+                  ? "text-tinta-2 hover:bg-primario-suave hover:text-primario"
+                  : "text-tinta-3 cursor-not-allowed"
             }`}
           >
             {p.etiqueta}
             {!p.disponible && (
-              <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">
+              <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-wide bg-superficie-2 text-tinta-3 rounded px-1.5 py-0.5">
                 Próximamente
               </span>
             )}
@@ -47,7 +48,13 @@ export function PestanasInteligencia({ activa, onCambiar }: { activa: Pestana; o
   );
 }
 
-/** Título de la sección, controles de la pestaña (periodo, filtros) y pestañas. */
+const MIGAS = [{ etiqueta: "Análisis" }, { etiqueta: "Inteligencia" }] as const;
+
+/**
+ * Cabecera de la sección (EncabezadoPagina con degradado) y, debajo, una
+ * barra con las pestañas a la izquierda y los controles de la pestaña
+ * (periodo, filtros) a la derecha.
+ */
 export function EncabezadoInteligencia({
   pestana,
   onPestana,
@@ -59,16 +66,11 @@ export function EncabezadoInteligencia({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Inteligencia</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {SUBTITULO[pestana]}
-          </p>
-        </div>
+      <EncabezadoPagina migas={MIGAS} titulo="Inteligencia" subtitulo={SUBTITULO[pestana]} />
+      <div className="bg-superficie border border-borde rounded-tarjeta shadow-tarjeta px-3 sm:px-4 py-3 flex flex-wrap items-end justify-between gap-3">
+        <PestanasInteligencia activa={pestana} onCambiar={onPestana} />
         <div className="flex flex-wrap items-end gap-3">{children}</div>
       </div>
-      <PestanasInteligencia activa={pestana} onCambiar={onPestana} />
     </div>
   );
 }

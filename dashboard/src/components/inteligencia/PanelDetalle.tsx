@@ -35,7 +35,7 @@ function enlaces(nodo: Nodo, granularidad: Granularidad, periodo: string | null)
 
 function Contenedor({ children }: { children: React.ReactNode }) {
   return (
-    <section aria-label="Detalle" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4 min-w-0">
+    <section aria-label="Detalle" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 space-y-4 min-w-0">
       {children}
     </section>
   );
@@ -47,8 +47,8 @@ function DetalleModelo({ esquema }: { esquema: Esquema | null }) {
   return (
     <Contenedor>
       <div>
-        <h2 className="text-[15px] font-semibold text-brand-navy">Modelo de la IPS</h2>
-        <p className="text-xs text-gray-500 mt-1">
+        <h2 className="font-titulo text-[15px] font-bold text-tinta">Modelo de la IPS</h2>
+        <p className="text-xs text-tinta-3 mt-1">
           Cada círculo es un tipo de objeto y cada flecha un tipo de relación. Elija un tipo o busque un
           profesional, servicio o programa para ver sus relaciones en el periodo.
         </p>
@@ -56,12 +56,12 @@ function DetalleModelo({ esquema }: { esquema: Esquema | null }) {
       <ul aria-label="Tipos de relación" className="space-y-2">
         {RELACIONES.map((r) => (
           <li key={r.clave} className="text-xs">
-            <p className="text-gray-700">
+            <p className="text-tinta-2">
               <span className="font-semibold">{defTipo(r.origen).etiqueta}</span> <i>{r.etiqueta}</i>{" "}
               <span className="font-semibold">{defTipo(r.destino).etiqueta}</span>
-              {cantidad.has(r.clave) && <span className="text-gray-400"> · {fmtNumero(cantidad.get(r.clave)!)}</span>}
+              {cantidad.has(r.clave) && <span className="text-tinta-3"> · {fmtNumero(cantidad.get(r.clave)!)}</span>}
             </p>
-            <p className="text-gray-400">{r.fuente}</p>
+            <p className="text-tinta-3">{r.fuente}</p>
           </li>
         ))}
       </ul>
@@ -113,19 +113,19 @@ export function PanelDetalle({
   return (
     <Contenedor>
       <div>
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-tinta-3">
           <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: colorTipo(nodo.tipo) }} />
           {def.etiqueta}
         </p>
-        <h2 className="text-[15px] font-semibold text-brand-navy mt-0.5 break-words">{nodo.etiqueta}</h2>
+        <h2 className="font-titulo text-[15px] font-bold text-tinta mt-0.5 break-words">{nodo.etiqueta}</h2>
       </div>
 
       {nodo.propiedades.length > 0 && (
         <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-xs">
           {nodo.propiedades.map((p) => (
             <div key={p.etiqueta} className="contents">
-              <dt className="text-gray-500 truncate">{p.etiqueta}</dt>
-              <dd className="text-right font-medium text-gray-800 tabular-nums break-words">{valor(p)}</dd>
+              <dt className="text-tinta-3 truncate">{p.etiqueta}</dt>
+              <dd className="text-right font-medium text-tinta-2 tabular-nums break-words">{valor(p)}</dd>
             </div>
           ))}
         </dl>
@@ -137,7 +137,7 @@ export function PanelDetalle({
             <Link
               key={l.texto}
               href={l.href}
-              className="text-xs font-semibold text-brand-navy border border-brand-navy/20 rounded-lg px-2.5 py-1.5 hover:bg-brand-navy/5"
+              className="text-xs font-semibold text-primario border border-primario/20 rounded-control px-2.5 py-1.5 hover:bg-primario-suave"
             >
               {l.texto}
             </Link>
@@ -146,7 +146,7 @@ export function PanelDetalle({
       )}
 
       {mas.length > 0 && (
-        <ul className="text-[11px] text-gray-400 space-y-0.5">
+        <ul className="text-[11px] text-tinta-3 space-y-0.5">
           {mas.map((m) => (
             <li key={`${m.relacion}|${m.tipo}`}>
               Se muestran {m.mostrados} de {fmtNumero(m.total)} {defTipo(m.tipo).plural.toLowerCase()}
@@ -157,18 +157,18 @@ export function PanelDetalle({
 
       {grupos.size > 0 && (
         <div>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Relaciones</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-tinta-3 mb-1">Relaciones</h3>
           <ul aria-label="Vecinos" className="max-h-[340px] overflow-y-auto pr-1 space-y-2">
             {Array.from(grupos.entries()).map(([clave, g]) => (
               <li key={clave}>
-                <p className="text-[11px] text-gray-500 first-letter:uppercase">{g.titulo}</p>
+                <p className="text-[11px] text-tinta-3 first-letter:uppercase">{g.titulo}</p>
                 <ul className="mt-0.5">
                   {g.nodos.map((v) => (
                     <li key={v.id} className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => onCentrar(v.id)}
-                        className="flex-1 min-w-0 truncate text-left text-xs text-gray-700 hover:text-brand-navy hover:underline py-0.5"
+                        className="flex-1 min-w-0 truncate text-left text-xs text-tinta-2 hover:text-primario hover:underline py-0.5"
                       >
                         {v.etiqueta}
                       </button>
@@ -178,7 +178,7 @@ export function PanelDetalle({
                         disabled={expandidos.has(v.id)}
                         aria-label={`Expandir ${v.etiqueta}`}
                         title="Agregar sus relaciones al mapa"
-                        className="text-[11px] text-gray-400 hover:text-brand-navy disabled:opacity-30 px-1"
+                        className="text-[11px] text-tinta-3 hover:text-primario disabled:opacity-30 px-1"
                       >
                         +
                       </button>

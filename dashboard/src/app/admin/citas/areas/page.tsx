@@ -10,6 +10,8 @@ import { fmtNumero } from "@/lib/citas/detalle";
 import type { AreasServicio, CambioArea } from "@/lib/citas/areas";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
 
 const API = "/api/admin/citas/areas";
 
@@ -76,34 +78,29 @@ export default function AreasServicioPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-navy">Áreas de servicio</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Área de productividad a la que pertenece cada servicio de Agenda Web
-          </p>
-          <Link
-            href="/admin/citas"
-            className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
-          >
-            Volver a Citas
-          </Link>
-        </div>
-        {editable ? (
-          <button
-            type="button"
-            onClick={() => guardar(cambiados, "Áreas guardadas")}
-            disabled={saving || !hayCambios}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-          >
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
-        ) : (
-          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-            Solo consulta: no puede cambiar las áreas.
-          </p>
-        )}
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Citas", href: "/admin/citas" }, { etiqueta: "Áreas de servicio" }]}
+        titulo="Áreas de servicio"
+        subtitulo="Área de productividad a la que pertenece cada servicio de Agenda Web"
+        acciones={
+          <>
+            {editable ? (
+              <button
+                type="button"
+                onClick={() => guardar(cambiados, "Áreas guardadas")}
+                disabled={saving || !hayCambios}
+                className={clasesBoton({ variante: "secundario" })}
+              >
+                {saving ? "Guardando…" : "Guardar"}
+              </button>
+            ) : (
+              <p className="text-xs text-tinta-3 bg-superficie-2 border border-borde rounded-control px-3 py-2">
+                Solo consulta: no puede cambiar las áreas.
+              </p>
+            )}
+          </>
+        }
+      />
 
       {errorCarga && !data ? (
         <ErrorState
@@ -116,19 +113,19 @@ export default function AreasServicioPage() {
       ) : (
         <>
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">
               {error}
             </p>
           )}
           {exito && (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2">
               {exito}
             </p>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="min-w-full text-sm">
-              <thead className="bg-brand-navy">
+          <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+            <table className="tabla tabla-texto">
+              <thead>
                 <tr>
                   {[
                     "Código",
@@ -139,34 +136,30 @@ export default function AreasServicioPage() {
                   ].map((h, i) => (
                     <th
                       key={i}
-                      className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody>
                 {data.servicios.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-10 text-gray-400">
+                    <td colSpan={5} className="text-center !py-10 text-tinta-3">
                       No hay servicios cargados
                     </td>
                   </tr>
                 )}
-                {data.servicios.map((f, idx) => (
-                  <tr
-                    key={f.codigo_servicio}
-                    className={idx % 2 === 0 ? "bg-white" : "bg-surface-alt"}
-                  >
-                    <td className="px-4 py-3 text-gray-500 tabular-nums">{f.codigo_servicio}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{f.nombre_servicio}</td>
-                    <td className="px-4 py-3 text-gray-500 tabular-nums">
+                {data.servicios.map((f) => (
+                  <tr key={f.codigo_servicio}>
+                    <td className="text-tinta-3 tabular-nums">{f.codigo_servicio}</td>
+                    <td className="font-medium text-tinta">{f.nombre_servicio}</td>
+                    <td className="text-tinta-3 tabular-nums">
                       {fmtNumero(f.asignadas)}
                     </td>
-                    <td className="px-4 py-2">
+                    <td>
                       <select
-                        className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none"
+                        className="w-full max-w-xs border border-borde rounded-control px-3 py-1.5 text-sm text-tinta-2 focus:outline-none"
                         aria-label={`Área de ${f.nombre_servicio}`}
                         value={seleccion[f.codigo_servicio] ?? f.area}
                         disabled={!editable}
@@ -183,12 +176,12 @@ export default function AreasServicioPage() {
                         ))}
                       </select>
                       {f.area_editada && (
-                        <p className="text-xs text-amber-700 mt-1">
+                        <p className="text-xs text-atencion mt-1">
                           Editada · regla: {f.area_regla}
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td>
                       {editable && f.area_editada && (
                         <button
                           type="button"
@@ -199,7 +192,7 @@ export default function AreasServicioPage() {
                               `${f.nombre_servicio}: área restablecida a la regla`
                             )
                           }
-                          className="text-xs font-semibold text-brand-navy underline whitespace-nowrap disabled:opacity-60"
+                          className="text-xs font-semibold text-primario underline whitespace-nowrap disabled:opacity-60"
                         >
                           Restablecer a la regla
                         </button>
@@ -210,7 +203,7 @@ export default function AreasServicioPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-tinta-3">
             Los servicios nuevos reciben el área según su nombre. Un área elegida aquí queda fija:
             las cargas siguientes no la cambian. «Restablecer a la regla» vuelve a la asignación
             automática.

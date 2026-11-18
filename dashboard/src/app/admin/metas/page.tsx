@@ -17,6 +17,9 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
 import { usePuedeEditar } from "@/components/layout/RolContext";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
+import { CLASES_CAMPO, cx } from "@/components/ui/clases";
 
 interface Meta {
   programa: string;
@@ -183,85 +186,85 @@ export default function MetasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-navy">Metas</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Metas" }]}
+        titulo="Metas"
+        subtitulo={
+          <>
             Metas de órdenes por programa y categoría — {anio}
-          </p>
-          <Link
-            href="/admin/metas/programas"
-            className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
-          >
-            Programas por especialidad
-          </Link>
-          {!editable && (
-            <p className="inline-block mt-1 ml-3 text-xs text-gray-400">Solo lectura</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none"
-            aria-label="Año"
-            value={anio}
-            onChange={(e) => cambiarAnio(Number(e.target.value))}
-          >
-            {anios.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          {!editable ? null : agregandoAnio ? (
-            <form onSubmit={agregarAnio} className="flex items-center gap-2">
-              <input
-                autoFocus
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="Año"
-                aria-label="Año a agregar"
-                value={anioNuevo}
-                onChange={(e) => setAnioNuevo(e.target.value)}
-                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-brand-navy border border-gray-200 hover:bg-gray-50 transition-colors"
+            {!editable && <span className="ml-2 rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold">Solo lectura</span>}
+          </>
+        }
+        acciones={
+          <>
+            <Link href="/admin/metas/programas" className={clasesBoton({ variante: "secundario" })}>
+              Programas por especialidad
+            </Link>
+            <div className="flex items-center gap-2">
+              <select
+                className={CLASES_CAMPO}
+                aria-label="Año"
+                value={anio}
+                onChange={(e) => cambiarAnio(Number(e.target.value))}
               >
-                Agregar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAgregandoAnio(false);
-                  setAnioNuevo("");
-                }}
-                className="px-2 py-2 text-sm text-gray-400 hover:text-gray-600"
-              >
-                Cancelar
-              </button>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAgregandoAnio(true)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-brand-navy border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              + Agregar año
-            </button>
-          )}
-          {editable && (
-            <button
-              type="button"
-              onClick={handleGuardar}
-              disabled={saving || !hayCambios || hayInvalidas}
-              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-            >
-              {saving ? "Guardando…" : "Guardar"}
-            </button>
-          )}
-        </div>
-      </div>
+                {anios.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+              {!editable ? null : agregandoAnio ? (
+                <form onSubmit={agregarAnio} className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="Año"
+                    aria-label="Año a agregar"
+                    value={anioNuevo}
+                    onChange={(e) => setAnioNuevo(e.target.value)}
+                    className={cx(CLASES_CAMPO, "w-20")}
+                  />
+                  <button
+                    type="submit"
+                    className={clasesBoton({ variante: "secundario" })}
+                  >
+                    Agregar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAgregandoAnio(false);
+                      setAnioNuevo("");
+                    }}
+                    className="px-2 py-2 text-sm font-semibold text-white/85 hover:text-white"
+                  >
+                    Cancelar
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAgregandoAnio(true)}
+                  className={clasesBoton({ variante: "secundario" })}
+                >
+                  + Agregar año
+                </button>
+              )}
+              {editable && (
+                <button
+                  type="button"
+                  onClick={handleGuardar}
+                  disabled={saving || !hayCambios || hayInvalidas}
+                  className={clasesBoton({ variante: "secundario" })}
+                >
+                  {saving ? "Guardando…" : "Guardar"}
+                </button>
+              )}
+            </div>
+          </>
+        }
+      />
 
       {errorCarga && !data ? (
         <ErrorState
@@ -274,8 +277,8 @@ export default function MetasPage() {
       ) : (
         <>
           {sinDatos && (
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-              <p className="text-sm text-gray-600">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-5 py-4">
+              <p className="text-sm text-tinta-2">
                 No hay metas registradas para {anio}.
               </p>
               {editable && (
@@ -283,7 +286,7 @@ export default function MetasPage() {
                   type="button"
                   onClick={copiarAnioAnterior}
                   disabled={copiando}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white disabled:opacity-60 transition-colors"
+                  className="px-4 py-2 rounded-control text-sm font-semibold text-primario bg-primario-suave hover:bg-primario hover:text-white disabled:opacity-60 transition-colors"
                 >
                   {copiando ? "Copiando…" : "Copiar metas del año anterior"}
                 </button>
@@ -292,55 +295,54 @@ export default function MetasPage() {
           )}
 
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">
               {error}
             </p>
           )}
           {exito && (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2">
               {exito}
             </p>
           )}
           {aviso && (
-            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-atencion bg-atencion-suave border border-atencion/30 rounded-control px-3 py-2">
               {aviso}
             </p>
           )}
           {hayCambios && hayInvalidas && (
-            <p className="text-xs text-red-600">
+            <p className="text-xs text-critico">
               Las metas deben ser números mayores que cero y una meta guardada no se puede dejar
               vacía.
             </p>
           )}
 
           {/* Matriz programa × categoría */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="min-w-full text-sm">
-              <thead className="bg-brand-navy">
+          <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+            <table className="tabla tabla-texto">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
+                  <th>
                     Programa
                   </th>
                   {CATEGORIAS.map((c) => (
                     <th
                       key={c.clave}
-                      className="px-3 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide"
                     >
                       {c.etiqueta}
-                      <span className="block font-normal normal-case text-white/60">
+                      <span className="block font-normal normal-case tracking-normal text-tinta-3">
                         {c.escala === "x100" ? "×100" : "por cita"}
                       </span>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {PROGRAMAS_EDITABLES.map((programa, idx) => (
-                  <tr key={programa} className={idx % 2 === 0 ? "bg-white" : "bg-surface-alt"}>
-                    <td className="px-4 py-3 font-medium text-gray-800 min-w-[14rem] max-w-xs">
+              <tbody>
+                {PROGRAMAS_EDITABLES.map((programa) => (
+                  <tr key={programa}>
+                    <td className="font-medium text-tinta min-w-[14rem] max-w-xs">
                       {etiquetaPrograma(programa)}
                       {programa === PROGRAMA_TOTAL_MGI && (
-                        <span className="block text-xs font-normal text-gray-400">
+                        <span className="block text-xs font-normal text-tinta-3">
                           Informativa: no se asigna a profesionales
                         </span>
                       )}
@@ -351,10 +353,10 @@ export default function MetasPage() {
                       const invalida =
                         hayCambios && !celdaValida(valores[clave], originales[clave]);
                       return (
-                        <td key={c.clave} className="px-3 py-2">
+                        <td key={c.clave} >
                           <input
-                            className={`w-28 border rounded-lg px-3 py-1.5 text-sm text-right text-gray-700 focus:outline-none ${
-                              invalida ? "border-red-400 bg-red-50" : "border-gray-200"
+                            className={`w-28 border rounded-control px-3 py-1.5 text-sm text-right text-tinta-2 focus:outline-none ${
+                              invalida ? "border-critico bg-critico-suave" : "border-borde"
                             }`}
                             inputMode="decimal"
                             readOnly={!editable}
@@ -374,7 +376,7 @@ export default function MetasPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-tinta-3">
             «Por cita»: órdenes por cada cita atendida. «×100»: órdenes por cada 100 citas
             atendidas. Se acepta coma o punto como separador decimal. Un programa sin metas deja
             a sus profesionales sin porcentaje.

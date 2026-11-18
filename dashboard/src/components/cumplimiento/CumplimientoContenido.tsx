@@ -14,6 +14,7 @@ import { LeyendaTendencia, TendenciaIndicador } from "./TendenciaIndicador";
 import { TablaRanking } from "./TablaRanking";
 import { TablaHistorial } from "./TablaHistorial";
 import { usePuedeVer } from "@/components/layout/RolContext";
+import { clasesBoton } from "@/components/ui/Boton";
 
 interface Props {
   datos: RespuestaCumplimiento;
@@ -31,7 +32,7 @@ function BotonVolver({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
+      className={clasesBoton({ variante: "secundario" })}
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -48,16 +49,16 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
   // ── Sin citas cargadas en ningún periodo ──
   if (datos.periodos_disponibles.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">Aún no hay citas atendidas cargadas</h2>
-        <p className="text-sm text-gray-500 max-w-xl mx-auto">
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-8 text-center space-y-3">
+        <h2 className="font-titulo text-lg font-bold text-tinta">Aún no hay citas atendidas cargadas</h2>
+        <p className="text-sm text-tinta-3 max-w-xl mx-auto">
           El cumplimiento compara las órdenes de cada profesional con sus citas atendidas. Cargue primero
           las citas atendidas del periodo para ver este tablero.
         </p>
         {veCitas && (
           <Link
             href={RUTA_CITAS}
-            className="inline-flex px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
+            className={clasesBoton()}
           >
             Ir a Citas
           </Link>
@@ -66,7 +67,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
     );
   }
 
-  const atribucion = <p className="text-[11px] text-gray-500">{TEXTO_ATRIBUCION[datos.atribucion]}</p>;
+  const atribucion = <p className="text-[11px] text-tinta-3">{TEXTO_ATRIBUCION[datos.atribucion]}</p>;
 
   // ── Tablero de un profesional ──
   if (documento !== null) {
@@ -74,8 +75,8 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
 
     if (!profesional) {
       return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center space-y-4">
-          <p className="text-sm text-gray-500">
+        <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-8 text-center space-y-4">
+          <p className="text-sm text-tinta-3">
             El profesional seleccionado no tiene citas atendidas en el rango y los programas seleccionados.
           </p>
           <div className="flex justify-center">
@@ -93,18 +94,18 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
       <div className="space-y-6">
         <div
           data-testid="encabezado-profesional"
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 flex flex-wrap items-center justify-between gap-4"
+          className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-6 py-5 flex flex-wrap items-center justify-between gap-4"
         >
           <div className="min-w-0">
-            <h2 className="text-lg sm:text-xl font-bold text-brand-navy break-words">{profesional.nombre}</h2>
+            <h2 className="font-titulo text-lg sm:text-xl font-bold text-tinta break-words">{profesional.nombre}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="text-sm text-gray-500 tabular-nums">Cédula {profesional.documento}</span>
+              <span className="text-sm text-tinta-3 tabular-nums">Cédula {profesional.documento}</span>
               {profesional.programa ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-blue-soft text-brand-navy">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primario-suave text-primario">
                   {profesional.programa}
                 </span>
               ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-atencion-suave text-atencion">
                   Sin programa
                 </span>
               )}
@@ -114,7 +115,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
         </div>
 
         {sinPrograma && (
-          <p role="note" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          <p role="note" className="rounded-tarjeta border border-atencion/30 bg-atencion-suave px-5 py-4 text-sm text-atencion">
             Este profesional tiene citas atendidas en periodos sin programa asignado. Sin programa no hay
             meta y no se calcula el porcentaje de esos periodos.{" "}
             <Link href={RUTA_MAPEO_PROGRAMAS} className="font-semibold underline">
@@ -132,7 +133,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Tendencia por indicador</p>
+            <h2 className="font-titulo text-[15px] font-bold text-tinta">Tendencia por indicador</h2>
             <LeyendaTendencia />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -155,7 +156,7 @@ export function CumplimientoContenido({ datos, documento, onSeleccionar }: Props
   return (
     <div className="space-y-6">
       {sinPrograma > 0 && (
-        <p role="note" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <p role="note" className="rounded-tarjeta border border-atencion/30 bg-atencion-suave px-5 py-4 text-sm text-atencion">
           {sinPrograma === 1
             ? "1 profesional del listado tiene citas atendidas pero no tiene programa asignado."
             : `${sinPrograma} profesionales del listado tienen citas atendidas pero no tienen programa asignado.`}{" "}

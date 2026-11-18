@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-surface-app print:block print:min-h-0 print:bg-white">
+    <div className="flex min-h-screen bg-fondo print:block print:min-h-0 print:bg-superficie">
       {/* Sidebar desktop — oculto en mobile y al imprimir */}
       <div className="hidden md:block print:hidden">
         <Sidebar onNavigate={() => {}} />
@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden print:hidden"
+            className="fixed inset-0 bg-tinta/50 z-40 md:hidden print:hidden"
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}
@@ -40,18 +40,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 print:block">
         {/* Mobile header */}
-        <header className="md:hidden print:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-30">
+        <header className="md:hidden print:hidden flex items-center gap-3 px-4 py-3 bg-menu-fondo sticky top-0 z-30">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="p-2 -ml-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Abrir menú"
+            className="p-2 -ml-2 rounded-control text-menu-tinta hover:bg-white/10 hover:text-white transition-colors"
           >
             <IconMenu className="w-5 h-5" />
           </button>
-          <span className="text-sm font-bold text-brand-navy">Interconsultas</span>
+          <span className="font-titulo text-sm font-bold text-white">Interconsultas</span>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto print:p-0 print:overflow-visible">
+        <main className="flex-1 p-4 sm:p-6 md:px-7 md:py-6 overflow-auto print:p-0 print:overflow-visible">
           {/* useSearchParams exige un límite de Suspense en el App Router */}
           <Suspense fallback={null}>
             <AvisoSinAcceso />

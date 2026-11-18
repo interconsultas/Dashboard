@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import type { Alerta, TipoAmbito } from "@/lib/inteligencia/alertas";
 import type { ClaveRegla, Gravedad, ReglaAlerta } from "@/lib/inteligencia/reglas";
+import { CLASES_CAMPO, CLASES_ETIQUETA_CAMPO } from "@/components/ui/clases";
 
 const ESTILO_GRAVEDAD: Record<Gravedad, { etiqueta: string; clase: string }> = {
-  alta: { etiqueta: "Alta", clase: "bg-red-50 text-red-700 ring-red-200" },
-  media: { etiqueta: "Media", clase: "bg-amber-50 text-amber-800 ring-amber-200" },
+  alta: { etiqueta: "Alta", clase: "bg-critico-suave text-critico ring-critico/30" },
+  media: { etiqueta: "Media", clase: "bg-atencion-suave text-atencion ring-atencion/30" },
 };
 
 const ETIQUETA_AMBITO: Record<TipoAmbito, string> = { area: "Área", servicio: "Servicio", profesional: "Profesional" };
@@ -54,14 +55,14 @@ function Selector({
   const id = useId();
   return (
     <div className="flex flex-col">
-      <label htmlFor={id} className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+      <label htmlFor={id} className={CLASES_ETIQUETA_CAMPO}>
         {etiqueta}
       </label>
       <select
         id={id}
         value={valor}
         onChange={(e) => onCambiar(e.target.value)}
-        className="mt-0.5 max-w-[240px] rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-brand-navy"
+        className={`${CLASES_CAMPO} max-w-[240px]`}
       >
         {opciones.map((o) => (
           <option key={o.valor} value={o.valor}>
@@ -89,10 +90,10 @@ export function ListaAlertas({
   const visibles = alertas.filter((a) => (!gravedad || a.gravedad === gravedad) && (!regla || a.regla === regla));
 
   return (
-    <section aria-label="Alertas activas" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <section aria-label="Alertas activas" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4">
       <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
-        <h2 className="text-base font-semibold text-brand-navy">
-          Alertas activas <span className="text-gray-400 font-normal">({alertas.length})</span>
+        <h2 className="font-titulo text-[15px] font-bold text-tinta">
+          Alertas activas <span className="text-tinta-3 font-normal">({alertas.length})</span>
         </h2>
         {alertas.length > 0 && (
           <div className="flex flex-wrap gap-3">
@@ -118,27 +119,27 @@ export function ListaAlertas({
 
       {alertas.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-sm font-semibold text-brand-navy">Sin alertas activas</p>
-          <p className="text-xs text-gray-500 mt-1">Ninguna regla activa se cumple en el último periodo cargado.</p>
+          <p className="text-sm font-semibold text-primario">Sin alertas activas</p>
+          <p className="text-xs text-tinta-3 mt-1">Ninguna regla activa se cumple en el último periodo cargado.</p>
         </div>
       ) : visibles.length === 0 ? (
-        <p className="py-6 text-center text-sm text-gray-500">Ninguna alerta coincide con el filtro</p>
+        <p className="py-6 text-center text-sm text-tinta-3">Ninguna alerta coincide con el filtro</p>
       ) : (
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-borde">
           {visibles.map((a) => (
             <li key={`${a.regla}|${a.ambito.tipo}|${a.ambito.id}`} className="py-3 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
               <div className="flex-shrink-0 sm:w-20">
                 <InsigniaGravedad gravedad={a.gravedad} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400">
+                <p className="text-[11px] uppercase tracking-wide text-tinta-3">
                   {ETIQUETA_AMBITO[a.ambito.tipo]}
                   {a.ambito.tipo !== "area" && a.ambito.area ? ` · ${a.ambito.area}` : ""} · {nombreRegla.get(a.regla) ?? a.regla}
                 </p>
-                <p className="text-sm text-brand-navy mt-0.5 break-words">{a.mensaje}</p>
+                <p className="text-sm text-primario mt-0.5 break-words">{a.mensaje}</p>
               </div>
               {veProductividad && (
-                <Link href={a.enlace} className="flex-shrink-0 text-xs font-semibold text-brand-navy underline whitespace-nowrap">
+                <Link href={a.enlace} className="flex-shrink-0 text-xs font-semibold text-primario underline whitespace-nowrap">
                   Ver en Productividad
                 </Link>
               )}
