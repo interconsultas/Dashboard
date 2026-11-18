@@ -25,6 +25,17 @@ jest.mock("@/components/productividad/Grafico", () => ({
   },
 }));
 
+// La ficha consulta su propia API; aquí basta saber si se abre y con qué documento
+jest.mock("@/components/productividad/FichaProfesional", () => ({
+  FichaProfesional: (props: { documento: string; onCerrar: () => void }) => (
+    <div role="dialog" aria-label={`Ficha ${props.documento}`}>
+      <button type="button" onClick={props.onCerrar}>
+        Cerrar ficha
+      </button>
+    </div>
+  ),
+}));
+
 import ProductividadView from "@/components/productividad/ProductividadView";
 import { RESPUESTA } from "@/test-utils/productividad-fixtures";
 
@@ -133,5 +144,69 @@ describe("ProductividadView", () => {
       expect(screen.getByRole("img", { name: nombre })).toBeInTheDocument();
     }
     expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  describe("ficha individual", () => {
+    function clicGrafico(etiqueta: string, params: unknown) {
+      const g = mockGraficos[etiqueta];
+      if (!g?.eventos?.click) throw new Error(`El gráfico ${etiqueta} no tiene manejador de clic`);
+      (g.eventos.click as (p: unknown) => void)(params);
+    }
+
+    it("muestra la dispersión y el Pareto de profesionales", () => {
+      render(<ProductividadView />);
+      expect(screen.getByText("Productividad de los profesionales")).toBeInTheDocument();
+      expect(screen.getByText("Pareto de citas perdidas")).toBeInTheDocument();
+    });
+
+    it("con ficha en la URL abre la ficha de ese profesional", () => {
+      mockParams = new URLSearchParams("area=Salud%20oral&ficha=1053");
+      render(<ProductividadView />);
+      expect(screen.getByRole("dialog", { name: "Ficha 1053" })).toBeInTheDocument();
+      // La ficha no es un filtro: no cambia la consulta del tablero
+      expect(mockUseSWR.mock.calls[0][0]).toBe("/api/productividad?area=Salud+oral");
+    });
+
+    it("cerrar la ficha la quita de la URL y conserva los filtros", () => {
+      mockParams = new URLSearchParams("area=Salud%20oral&ficha=1053");
+      render(<ProductividadView />);
+      fireEvent.click(screen.getByRole("button", { name: "Cerrar ficha" }));
+      const q = ultimaUrl();
+      expect(q.get("ficha")).toBeNull();
+      expect(q.get("area")).toBe("Salud oral");
+    });
+
+    it("Ver ficha en el chip del profesional abre su ficha", () => {
+      mockParams = new URLSearchParams("profesional=1053");
+      render(<ProductividadView />);
+      fireEvent.click(screen.getByRole("button", { name: /ver ficha/i }));
+      const q = ultimaUrl();
+      expect(q.get("ficha")).toBe("1053");
+      expect(q.get("profesional")).toBe("1053");
+    });
+
+    it("un clic en un punto de la dispersión abre la ficha", () => {
+      swr({
+        data: {
+          ...RESPUESTA,
+          profesionales: {
+            ...RESPUESTA.profesionales,
+            lista: [
+              {
+                documento: "2077",
+                nombre: "PROFESIONAL DOS",
+                area_principal: "Medicina general",
+                ...RESPUESTA.kpis.actual,
+              },
+            ],
+          },
+        },
+      });
+      render(<ProductividadView />);
+      const etiqueta = Object.keys(mockGraficos).find((k) => /profesionales/i.test(k) && !/pareto/i.test(k));
+      expect(etiqueta).toBeDefined();
+      clicGrafico(etiqueta!, { data: { documento: "2077" } });
+      expect(ultimaUrl().get("ficha")).toBe("2077");
+    });
   });
 });

@@ -18,7 +18,8 @@ import {
   fmtNumero,
   fmtPct,
 } from "./presentacion";
-import type { Embudo, NodoArea, PuntoSerie, RespuestaProductividad } from "./tipos";
+import { umbralesDispersion, TOP_PARETO, type FilaPareto } from "./profesionales";
+import type { Embudo, NodoArea, NodoServicio, PuntoSerie, ResumenProfesional, RespuestaProductividad } from "./tipos";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- los parámetros de los formatters de ECharts no tienen un tipo útil */
 
@@ -359,4 +360,204 @@ export function opcionesArbol(
       },
     ],
   };
+}
+
+/* ── Dispersograma de profesionales ─────────── */
+
+const recortar = (texto: string, max: number) => (texto.length > max ? `${texto.slice(0, max - 1)}…` : texto);
+
+/** Puntos: profesionales ya elegibles (elegiblesDispersion). */
+export function opcionesDispersion(puntos: ResumenProfesional[]) {
+  const { promedio, medianaVolumen, maxEje } = umbralesDispersion(puntos);
+  const maxDisponibles = Math.max(1, ...puntos.map((p) => p.disponibles));
+  const promedioPts = promedio === null ? null : Number((promedio * 100).toFixed(1));
+  const desde = medianaVolumen === null ? null : Math.max(medianaVolumen, 1);
+  const etiquetaEje = { color: TINTA_3 };
+  return {
+    textStyle: textoBase,
+    grid: { left: 54, right: 24, top: 24, bottom: 44 },
+    tooltip: {
+      ...cajaTooltip,
+      formatter: (p: any) => {
+        const d = puntos[p.dataIndex];
+        if (!d) return "";
+        return `<b>${d.nombre}</b><br>${d.area_principal ?? "Sin área"}<br>Asignadas ${fmtNumero(d.asignadas)} · Inasistidas ${fmtNumero(d.inasistidas)}<br>% inasistencia <b>${fmtPct(d.pct_inasistencia)}</b><br>Disponibles sin asignar ${fmtNumero(d.disponibles)}<br><span style="opacity:.7">Clic para ver la ficha</span>`;
+      },
+    },
+    xAxis: {
+      type: "log",
+      name: "Citas asignadas en el periodo (escala logarítmica)",
+      nameLocation: "middle",
+      nameGap: 28,
+      nameTextStyle: etiquetaEje,
+      axisLabel: { ...etiquetaEje, formatter: (v: number) => fmtNumero(v) },
+      splitLine: { lineStyle: { color: REJILLA } },
+      min: 10,
+      max: maxEje,
+    },
+    yAxis: {
+      type: "value",
+      name: "% inasistencia",
+      nameTextStyle: etiquetaEje,
+      min: 0,
+      axisLabel: { ...etiquetaEje, formatter: (v: number) => `${v} %` },
+      splitLine: { lineStyle: { color: REJILLA } },
+    },
+    series: [
+      {
+        type: "scatter",
+        data: puntos.map((p) => ({
+          value: [Math.max(p.asignadas, 1), Number(((p.pct_inasistencia ?? 0) * 100).toFixed(1))],
+          documento: p.documento,
+          symbolSize: 8 + 26 * Math.sqrt(p.disponibles / maxDisponibles),
+        })),
+        itemStyle: { color: "rgba(42,120,214,.55)", borderColor: "#fff", borderWidth: 1 },
+        emphasis: { itemStyle: { color: "#1c5cab", borderColor: TINTA, borderWidth: 2 } },
+        cursor: "pointer",
+        markLine: {
+          symbol: "none",
+          silent: true,
+          lineStyle: { type: "dashed", color: "#9AA7B8" },
+          label: { color: TINTA_3, fontSize: 11 },
+          data: [
+            ...(promedioPts === null
+              ? []
+              : [{ yAxis: promedioPts, label: { formatter: `Promedio ${fmtPuntos(promedioPts)}`, position: "insideEndTop" } }]),
+            ...(desde === null ? [] : [{ xAxis: desde, label: { show: false } }]),
+          ],
+        },
+        markArea: {
+          silent: true,
+          label: { color: TINTA_3, fontSize: 11 },
+          data:
+            desde === null || promedioPts === null
+              ? []
+              : [
+                  [
+                    { name: "Alto volumen, baja inasistencia", xAxis: desde, yAxis: 0, itemStyle: { color: "rgba(12,163,12,.05)" }, label: { position: "insideBottomRight" } },
+                    { xAxis: maxEje, yAxis: promedioPts },
+                  ],
+                  [
+                    { name: "Alto volumen, alta inasistencia", xAxis: desde, yAxis: promedioPts, itemStyle: { color: "rgba(208,59,59,.05)" }, label: { position: "insideTopRight" } },
+                    { xAxis: maxEje, yAxis: "max" },
+                  ],
+                ],
+        },
+      },
+    ],
+  };
+}
+
+/* ── Pareto de citas perdidas ───────────────── */
+
+const leyendaBarras = { top: 0, left: 0, itemWidth: 12, itemHeight: 10, textStyle: { color: TINTA_2 } };
+
+/** Filas: pareto(...).filas; se dibujan los 15 primeros. */
+export function opcionesPareto(filas: FilaPareto[]) {
+  const top = filas.slice(0, TOP_PARETO);
+  return {
+    textStyle: textoBase,
+    grid: { left: 170, right: 76, top: 26, bottom: 20 },
+    legend: { ...leyendaBarras, data: ["Inasistidas", "Disponibles"] },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      ...cajaTooltip,
+      formatter: (p: any) => {
+        const d = top[p[0].dataIndex];
+        return `<b>${d.nombre}</b><br>Inasistidas ${fmtNumero(d.inasistidas)} · Disponibles ${fmtNumero(d.disponibles)}<br>Acumulado: ${fmtPct(d.acumulado, 0)} del total<br><span style="opacity:.7">Clic para ver la ficha</span>`;
+      },
+    },
+    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    yAxis: {
+      type: "category",
+      inverse: true,
+      data: top.map((p) => recortar(p.nombre, 24)),
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: { color: TINTA, fontSize: 11.5 },
+    },
+    series: [
+      {
+        name: "Inasistidas",
+        type: "bar",
+        stack: "perdidas",
+        barWidth: 13,
+        cursor: "pointer",
+        itemStyle: { color: "#1c5cab" },
+        data: top.map((p) => ({ value: p.inasistidas, itemStyle: { color: p.dentro_corte ? "#1c5cab" : "#9ec5f4" } })),
+      },
+      {
+        name: "Disponibles",
+        type: "bar",
+        stack: "perdidas",
+        barWidth: 13,
+        cursor: "pointer",
+        itemStyle: { color: "#86b6ef" },
+        data: top.map((p) => ({
+          value: p.disponibles,
+          itemStyle: { color: p.dentro_corte ? "#86b6ef" : "#cde2fb", borderRadius: [0, 4, 4, 0] },
+        })),
+        label: {
+          show: true,
+          position: "right",
+          color: TINTA_2,
+          fontSize: 11,
+          formatter: (p: any) => `${fmtNumero(top[p.dataIndex].perdidas)} · ${Math.round(top[p.dataIndex].acumulado * 100)} %`,
+        },
+      },
+    ],
+  };
+}
+
+/* ── Ficha individual ───────────────────────── */
+
+export function opcionesServiciosFicha(servicios: NodoServicio[]) {
+  return {
+    textStyle: textoBase,
+    grid: { left: 190, right: 48, top: 24, bottom: 10 },
+    legend: leyendaBarras,
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      ...cajaTooltip,
+      formatter: (p: any) => {
+        const d = servicios[p[0].dataIndex];
+        return `<b>${d.nombre}</b><br>Asignadas ${fmtNumero(d.asignadas)} · Inasistidas ${fmtNumero(d.inasistidas)} (${fmtPct(d.pct_inasistencia)})`;
+      },
+    },
+    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    yAxis: {
+      type: "category",
+      inverse: true,
+      data: servicios.map((s) => recortar(s.nombre, 30)),
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: { color: TINTA, fontSize: 11 },
+    },
+    series: [
+      { name: "Atendidas", type: "bar", stack: "asignadas", barWidth: 14, itemStyle: { color: "#3987e5" }, data: servicios.map((s) => s.atendidas) },
+      {
+        name: "Inasistidas",
+        type: "bar",
+        stack: "asignadas",
+        barWidth: 14,
+        itemStyle: { color: "#e34948", borderRadius: [0, 4, 4, 0] },
+        data: servicios.map((s) => s.inasistidas),
+        label: {
+          show: true,
+          position: "right",
+          color: TINTA_2,
+          fontSize: 11,
+          formatter: (p: any) => fmtPct(servicios[p.dataIndex].pct_inasistencia, 0),
+        },
+      },
+    ],
+  };
+}
+
+/** Tendencia del % de inasistencia del profesional: la del tablero, sin zoom. */
+export function opcionesTendenciaFicha(serie: PuntoSerie[], seleccionado: string | null) {
+  const { dataZoom: _zoom, ...base } = opcionesTendencia(serie, seleccionado);
+  return { ...base, grid: { left: 46, right: 24, top: 24, bottom: 28 } };
 }

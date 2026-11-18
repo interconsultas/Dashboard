@@ -3,7 +3,7 @@ import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/middleware-roles";
 import { getCached, setCache } from "@/lib/cache";
 import { validarParametros, type OpcionServicio } from "@/lib/productividad/filtros";
-import { CLAVES_METRICAS } from "@/lib/productividad/metricas";
+import { SQL_CARGAS, SQL_PROFESIONALES_CARGA, SUMAS, conNumeros } from "@/lib/productividad/sql";
 import {
   construirProductividad,
   resolverCarga,
@@ -17,18 +17,6 @@ import type { RespuestaProductividad } from "@/lib/productividad/tipos";
 
 /** Las áreas se editan en Citas › Áreas, que no vacía el caché: TTL corto. */
 const CACHE_TTL_MS = 60_000;
-
-/** SUM de cada métrica; los nombres salen de una lista fija, nunca de la solicitud. */
-const SUMAS = CLAVES_METRICAS.map((k) => `SUM(v.${k})::int AS ${k}`).join(",\n                ");
-
-/* ── Helpers ─────────────────────────────────── */
-
-/** pg puede entregar enteros grandes como texto: se normalizan a número. */
-function conNumeros<T extends object>(fila: T): T {
-  const copia = { ...fila } as Record<string, unknown>;
-  for (const k of CLAVES_METRICAS) copia[k] = Number(copia[k] ?? 0);
-  return copia as T;
-}
 
 /* ── Handler ─────────────────────────────────── */
 
@@ -61,11 +49,7 @@ export async function GET(request: Request) {
     }
 
     const [cargasR, serviciosR, filasR] = await Promise.all([
-      query<CargaBD>(
-        `SELECT DISTINCT granularidad, periodo, fecha_inicial, fecha_final
-         FROM citas_profesional_servicio
-         ORDER BY fecha_inicial`
-      ),
+      query<CargaBD>(SQL_CARGAS),
       query<OpcionServicio>(
         `SELECT s.codigo_servicio AS codigo, s.nombre_servicio AS nombre, s.area
          FROM servicios_citas s
@@ -95,22 +79,11 @@ export async function GET(request: Request) {
     const profesionalesR =
       carga === null
         ? []
-        : await query<FilaProfesionalBD>(
-            `SELECT v.documento::text AS documento,
-                    MAX(v.nombre_profesional) AS nombre,
-                    v.codigo_servicio, v.area, p.area_principal,
-                    ${SUMAS}
-             FROM v_citas_area v
-             LEFT JOIN v_citas_area_principal p
-               ON p.granularidad = v.granularidad
-              AND p.fecha_inicial = v.fecha_inicial
-              AND p.fecha_final = v.fecha_final
-              AND p.tipo_documento = v.tipo_documento
-              AND p.documento = v.documento
-             WHERE v.granularidad = $1 AND v.fecha_inicial = $2 AND v.fecha_final = $3
-             GROUP BY v.documento, v.codigo_servicio, v.area, p.area_principal`,
-            [carga.granularidad, carga.fecha_inicial, carga.fecha_final]
-          );
+        : await query<FilaProfesionalBD>(SQL_PROFESIONALES_CARGA, [
+            carga.granularidad,
+            carga.fecha_inicial,
+            carga.fecha_final,
+          ]);
 
     const result = construirProductividad({
       filtros,

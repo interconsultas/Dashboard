@@ -26,6 +26,8 @@ export interface PropsSegmentadores {
   onServicio: (codigo: string | null) => void;
   onProfesional: (documento: string | null) => void;
   onLimpiar: () => void;
+  /** Abre la ficha del profesional filtrado (elegirlo no la abre sola). */
+  onVerFicha?: (documento: string) => void;
 }
 
 /* ── Component ──────────────────────────────────── */
@@ -41,6 +43,7 @@ export function Segmentadores({
   onServicio,
   onProfesional,
   onLimpiar,
+  onVerFicha,
 }: PropsSegmentadores) {
   const id = useId();
   const listaPeriodos = periodos[filtros.granularidad];
@@ -71,7 +74,7 @@ export function Segmentadores({
     if (documento !== null && documento !== filtros.profesional) onProfesional(documento);
   }
 
-  const chips: { clave: string; texto: string; quitar?: () => void }[] = [];
+  const chips: { clave: string; texto: string; quitar?: () => void; verFicha?: () => void }[] = [];
   const periodoSel = listaPeriodos.find((p) => p.clave === periodo);
   if (periodoSel) chips.push({ clave: "periodo", texto: periodoSel.etiqueta_larga });
   if (filtros.area) chips.push({ clave: "area", texto: filtros.area, quitar: () => onArea(null) });
@@ -80,10 +83,12 @@ export function Segmentadores({
     chips.push({ clave: "servicio", texto: s?.nombre ?? filtros.servicio, quitar: () => onServicio(null) });
   }
   if (filtros.profesional) {
+    const documentoSel = filtros.profesional;
     chips.push({
       clave: "profesional",
       texto: profesionalSel?.nombre ?? filtros.profesional,
       quitar: () => onProfesional(null),
+      verFicha: onVerFicha && (() => onVerFicha(documentoSel)),
     });
   }
 
@@ -202,6 +207,15 @@ export function Segmentadores({
             className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue-soft text-brand-navy px-2.5 py-1 text-xs font-semibold max-w-[260px]"
           >
             <span className="truncate">{c.texto}</span>
+            {c.verFicha && (
+              <button
+                type="button"
+                onClick={c.verFicha}
+                className="shrink-0 underline decoration-brand-navy/40 hover:decoration-brand-navy font-semibold"
+              >
+                Ver ficha
+              </button>
+            )}
             {c.quitar && (
               <button
                 type="button"

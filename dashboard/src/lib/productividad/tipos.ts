@@ -84,3 +84,27 @@ export interface RespuestaProductividad {
     lista: ResumenProfesional[];
   };
 }
+
+/** Contrato de GET /api/productividad/profesional (ficha individual). */
+export interface RespuestaFichaProfesional {
+  documento: string;
+  nombre: string;
+  /** Área principal en el periodo seleccionado; null si no tuvo agenda. */
+  area_principal: string | null;
+  granularidad: Granularidad;
+  /** Clave del periodo seleccionado; null si no hay cargas de la granularidad. */
+  periodo: string | null;
+  etiqueta_periodo: string | null;
+  /** Totales del profesional en el periodo (con los filtros de área y servicio). */
+  actual: Indicadores | null;
+  /** Todos los profesionales del periodo con los mismos filtros. */
+  institucion: { pct_inasistencia: number | null };
+  /** % de pares con mayor inasistencia; null con menos de 50 asignadas. */
+  percentil: number | null;
+  /** Profesionales con ≥ 50 asignadas contra los que se calcula el percentil. */
+  pares: number;
+  /** Servicios del periodo, de más a menos asignadas. */
+  servicios: NodoServicio[];
+  /** Todos los periodos cargados de la granularidad. */
+  tendencia: PuntoSerie[];
+}

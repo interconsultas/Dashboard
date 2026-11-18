@@ -72,7 +72,7 @@ export interface EntradaProductividad {
 
 /* ── Periodos ───────────────────────────────── */
 
-function cargasDe(cargas: readonly CargaBD[], granularidad: Granularidad): CargaBD[] {
+export function cargasDe(cargas: readonly CargaBD[], granularidad: Granularidad): CargaBD[] {
   return cargas
     .filter((c) => c.granularidad === granularidad)
     .sort((a, b) => a.fecha_inicial.localeCompare(b.fecha_inicial));
@@ -88,7 +88,7 @@ export function resolverCarga(
   return lista.find((c) => claveCarga(c) === clave) ?? lista[lista.length - 1] ?? null;
 }
 
-function periodoCarga(c: CargaBD): PeriodoCarga {
+export function periodoCarga(c: CargaBD): PeriodoCarga {
   return {
     clave: claveCarga(c),
     etiqueta: etiquetaCarga(c),
@@ -100,12 +100,12 @@ function periodoCarga(c: CargaBD): PeriodoCarga {
 
 /* ── Filtros ────────────────────────────────── */
 
-interface Aplica {
+export interface Aplica {
   area?: boolean;
   servicio?: boolean;
 }
 
-function coincide(
+export function coincide(
   fila: { area: string; codigo_servicio: string },
   f: FiltrosProductividad,
   aplica: Aplica
@@ -121,7 +121,7 @@ function soloMetricas(m: Metricas): Metricas {
 
 /* ── Visuales ───────────────────────────────── */
 
-function serie(
+export function serie(
   cargas: readonly CargaBD[],
   filas: readonly FilaServicioBD[],
   f: FiltrosProductividad

@@ -121,4 +121,18 @@ describe("Segmentadores", () => {
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(h.onLimpiar).toHaveBeenCalled();
   });
+
+  it("profesional: el chip ofrece Ver ficha sin abrirla al elegirlo", () => {
+    const documento = RESPUESTA.opciones.profesionales[0].documento;
+    const onVerFicha = jest.fn();
+    renderizar({ filtros: { ...FILTROS_VACIOS, profesional: documento }, onVerFicha });
+    expect(onVerFicha).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /ver ficha/i }));
+    expect(onVerFicha).toHaveBeenCalledWith(documento);
+  });
+
+  it("sin profesional filtrado no hay botón Ver ficha", () => {
+    renderizar({ onVerFicha: jest.fn() });
+    expect(screen.queryByRole("button", { name: /ver ficha/i })).not.toBeInTheDocument();
+  });
 });

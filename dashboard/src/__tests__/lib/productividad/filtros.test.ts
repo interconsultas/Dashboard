@@ -3,7 +3,10 @@ import {
   aQueryString,
   aplicarArea,
   aplicarServicio,
+  esDocumento,
+  leerFicha,
   leerFiltros,
+  queryConFicha,
   validarParametros,
 } from "@/lib/productividad/filtros";
 
@@ -97,5 +100,30 @@ describe("validarParametros (API, estricto)", () => {
     const r = validarParametros(sp(qs), areas);
     expect(r).toHaveProperty("error");
     expect(typeof (r as { error: string }).error).toBe("string");
+  });
+});
+
+describe("ficha del profesional en la URL", () => {
+  it("esDocumento: solo dígitos, hasta 15", () => {
+    expect(esDocumento("1053")).toBe(true);
+    expect(esDocumento("CC1053")).toBe(false);
+    expect(esDocumento("1".repeat(16))).toBe(false);
+  });
+
+  it("leerFicha: el documento de `ficha` o null si no es válido", () => {
+    expect(leerFicha(sp("ficha=1053&area=X"))).toBe("1053");
+    expect(leerFicha(sp("ficha=abc"))).toBeNull();
+    expect(leerFicha(sp(""))).toBeNull();
+  });
+
+  it("queryConFicha: los filtros activos más la ficha (o sin ella)", () => {
+    const f = { ...FILTROS_VACIOS, area: "Salud oral" };
+    expect(queryConFicha(f, "1053")).toBe("area=Salud+oral&ficha=1053");
+    expect(queryConFicha(f, null)).toBe("area=Salud+oral");
+    expect(queryConFicha(FILTROS_VACIOS, "7")).toBe("ficha=7");
+  });
+
+  it("la ficha no es un filtro: no cambia la consulta del tablero", () => {
+    expect(aQueryString(leerFiltros(sp("ficha=1053")))).toBe("");
   });
 });

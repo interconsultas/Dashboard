@@ -10,7 +10,9 @@ import {
   aQueryString,
   aplicarArea,
   aplicarServicio,
+  leerFicha,
   leerFiltros,
+  queryConFicha,
   type FiltrosProductividad,
 } from "@/lib/productividad/filtros";
 import type { Granularidad } from "@/lib/productividad/periodos";
@@ -18,10 +20,13 @@ import type { RespuestaProductividad } from "@/lib/productividad/tipos";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonChart, SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ArbolPerdidas } from "./ArbolPerdidas";
+import { DispersionProfesionales } from "./DispersionProfesionales";
+import { FichaProfesional } from "./FichaProfesional";
 import { GraficaEmbudo } from "./GraficaEmbudo";
 import { GraficaTendencia } from "./GraficaTendencia";
 import { MapaCalor } from "./MapaCalor";
 import { MatrizDetalle } from "./MatrizDetalle";
+import { ParetoPerdidas } from "./ParetoPerdidas";
 import { Segmentadores } from "./Segmentadores";
 import { TarjetasKpi } from "./TarjetasKpi";
 
@@ -58,6 +63,8 @@ export default function ProductividadView() {
 
   const filtros = useMemo(() => leerFiltros(new URLSearchParams(searchParams.toString())), [searchParams]);
   const qs = aQueryString(filtros);
+  // La ficha abierta vive en la URL pero no es un filtro: no cambia la consulta del tablero
+  const ficha = leerFicha(new URLSearchParams(searchParams.toString()));
 
   const { data, error, isLoading, isValidating } = useSWR<RespuestaProductividad>(
     qs ? `/api/productividad?${qs}` : "/api/productividad",
@@ -88,6 +95,8 @@ export default function ProductividadView() {
   const onProfesional = (profesional: string | null) => navegar({ ...filtros, profesional });
   const onLimpiar = () => navegar({ ...FILTROS_VACIOS, granularidad: filtros.granularidad });
   const onCelda = (area: string, periodo: string) => navegar({ ...aplicarArea(filtros, area, servicios), periodo });
+  const abrirFicha = (documento: string) => router.push(`${pathname}?${queryConFicha(filtros, documento)}`, { scroll: false });
+  const cerrarFicha = () => navegar(filtros);
 
   /* ── Render ── */
 
@@ -143,6 +152,7 @@ export default function ProductividadView() {
         onServicio={onServicio}
         onProfesional={onProfesional}
         onLimpiar={onLimpiar}
+        onVerFicha={abrirFicha}
       />
 
       {sinCargas ? (
@@ -185,7 +195,14 @@ export default function ProductividadView() {
             </div>
           </div>
 
-          {/* Siguiente paso: dispersograma de profesionales (7) + Pareto de citas perdidas (5), desde data.profesionales.lista */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+            <div className="xl:col-span-7 min-w-0">
+              <DispersionProfesionales lista={data.profesionales.lista} onFicha={abrirFicha} />
+            </div>
+            <div className="xl:col-span-5 min-w-0">
+              <ParetoPerdidas lista={data.profesionales.lista} onFicha={abrirFicha} />
+            </div>
+          </div>
 
           <MatrizDetalle
             matriz={data.matriz}
@@ -196,6 +213,8 @@ export default function ProductividadView() {
           />
         </>
       )}
+
+      {ficha && <FichaProfesional documento={ficha} filtros={filtros} onCerrar={cerrarFicha} />}
     </div>
   );
 }

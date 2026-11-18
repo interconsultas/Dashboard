@@ -61,6 +61,27 @@ export function aQueryString(f: FiltrosProductividad): string {
   return params.toString();
 }
 
+/** ¿El texto es un documento (cédula) válido? */
+export function esDocumento(valor: string): boolean {
+  return RE_DOCUMENTO.test(valor);
+}
+
+/**
+ * Documento del profesional cuya ficha está abierta (`ficha` en la URL).
+ * No es un filtro: abrirla no vuelve a consultar el tablero.
+ */
+export function leerFicha(params: URLSearchParams): string | null {
+  const v = texto(params, "ficha");
+  return v !== null && esDocumento(v) ? v : null;
+}
+
+/** Query string de los filtros activos con la ficha abierta (o cerrada con null). */
+export function queryConFicha(f: FiltrosProductividad, documento: string | null): string {
+  const params = new URLSearchParams(aQueryString(f));
+  if (documento) params.set("ficha", documento);
+  return params.toString();
+}
+
 /** Cambia el área; un servicio de otra área deja de aplicar. */
 export function aplicarArea(
   f: FiltrosProductividad,
@@ -115,7 +136,7 @@ export function validarParametros(
   if (servicio !== null && !RE_SERVICIO.test(servicio)) return { error: "El código de servicio no es válido" };
 
   const profesional = texto(params, "profesional");
-  if (profesional !== null && !RE_DOCUMENTO.test(profesional)) {
+  if (profesional !== null && !esDocumento(profesional)) {
     return { error: "El documento del profesional debe contener solo dígitos" };
   }
 
