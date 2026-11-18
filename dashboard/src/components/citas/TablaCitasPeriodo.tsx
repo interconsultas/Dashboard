@@ -31,10 +31,8 @@ const COLUMNAS_TABLA: Metrica[] = [
   "canceladas",
 ];
 
-const thCls =
-  "px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap";
 const inputCls =
-  "border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none";
+  "border border-borde bg-superficie rounded-control px-3 py-2 text-sm text-tinta-2 focus:outline-none focus:ring-2 focus:ring-primario/30 focus:border-primario";
 
 function Encabezado({
   columna,
@@ -52,13 +50,13 @@ function Encabezado({
   const activa = orden.columna === columna;
   return (
     <th
-      className={`${thCls} ${alinear === "right" ? "text-right" : "text-left"}`}
+      className={alinear === "right" ? "text-right" : "text-left"}
       aria-sort={activa ? (orden.descendente ? "descending" : "ascending") : "none"}
     >
       <button
         type="button"
         onClick={() => onOrdenar(columna)}
-        className="inline-flex items-center gap-1 uppercase tracking-wide hover:underline"
+        className="inline-flex items-center gap-1 uppercase tracking-[0.08em] font-bold hover:text-primario"
       >
         {etiqueta}
         <span aria-hidden="true" className={activa ? "" : "opacity-40"}>
@@ -72,25 +70,25 @@ function Encabezado({
 function DesgloseServicios({ detalle }: { detalle: DetalleCitas["profesionales"][number] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-xs">
+      <table className="tabla tabla-texto tabla-compacta text-xs">
         <thead>
-          <tr className="text-gray-500">
-            <th className="px-3 py-2 text-left font-semibold">Código</th>
-            <th className="px-3 py-2 text-left font-semibold">Servicio</th>
+          <tr>
+            <th>Código</th>
+            <th>Servicio</th>
             {METRICAS.map((m) => (
-              <th key={m} className="px-3 py-2 text-right font-semibold">
+              <th key={m} className="text-right">
                 {ETIQUETAS_METRICA[m]}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody>
           {detalle.servicios.map((s) => (
             <tr key={s.codigo_servicio}>
-              <td className="px-3 py-1.5 text-gray-500">{s.codigo_servicio}</td>
-              <td className="px-3 py-1.5 text-gray-700">{s.nombre_servicio}</td>
+              <td className="text-tinta-3">{s.codigo_servicio}</td>
+              <td className="text-tinta-2">{s.nombre_servicio}</td>
               {METRICAS.map((m) => (
-                <td key={m} className="px-3 py-1.5 text-right tabular-nums text-gray-700">
+                <td key={m} className="text-right tabular-nums text-tinta-2">
                   {fmtNumero(s[m])}
                 </td>
               ))}
@@ -115,13 +113,13 @@ export function TablaCitasPeriodo({ detalle, onIrAPeriodo }: Props) {
   if (detalle.profesionales.length === 0) {
     const ultimo = detalle.periodos.find((p) => p !== detalle.periodo);
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center space-y-2">
-        <p className="text-sm text-gray-500">No hay informe cargado para este mes</p>
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-8 text-center space-y-2">
+        <p className="text-sm text-tinta-3">No hay informe cargado para este mes</p>
         {ultimo !== undefined && (
           <button
             type="button"
             onClick={() => onIrAPeriodo(ultimo)}
-            className="text-sm font-semibold text-brand-navy hover:underline"
+            className="text-sm font-semibold text-primario hover:underline"
           >
             Ver el último informe cargado ({fmtPeriodo(ultimo)})
           </button>
@@ -160,9 +158,9 @@ export function TablaCitasPeriodo({ detalle, onIrAPeriodo }: Props) {
         onChange={(e) => setBusqueda(e.target.value)}
       />
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead className="bg-brand-navy">
+      <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+        <table className="tabla tabla-texto">
+          <thead>
             <tr>
               <Encabezado columna="nombre" etiqueta="Profesional" orden={orden} alinear="left" onOrdenar={ordenar} />
               <Encabezado columna="num_servicios" etiqueta="Servicios" orden={orden} alinear="right" onOrdenar={ordenar} />
@@ -178,55 +176,51 @@ export function TablaCitasPeriodo({ detalle, onIrAPeriodo }: Props) {
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody>
             {visibles.length === 0 && (
               <tr>
-                <td colSpan={totalColumnas} className="text-center py-10 text-gray-500">
+                <td colSpan={totalColumnas} className="text-center !py-10 text-tinta-3">
                   Sin resultados para esa búsqueda
                 </td>
               </tr>
             )}
-            {visibles.map((p, idx) => {
+            {visibles.map((p) => {
               const clave = `${p.tipo_documento}|${p.documento}`;
               const abierto = abiertos.has(clave);
               return (
                 <Fragment key={clave}>
-                  <tr
-                    className={`${
-                      idx % 2 === 0 ? "bg-white" : "bg-surface-alt"
-                    } hover:bg-brand-blue-soft-2 transition-colors`}
-                  >
-                    <td className="px-3 py-2">
+                  <tr>
+                    <td>
                       <div className="flex items-start gap-2">
                         <button
                           type="button"
                           onClick={() => alternar(clave)}
                           aria-expanded={abierto}
                           aria-label={`${abierto ? "Ocultar" : "Ver"} servicios de ${p.nombre}`}
-                          className="mt-0.5 text-gray-400 hover:text-brand-navy"
+                          className="mt-0.5 text-tinta-3 hover:text-primario"
                         >
                           <span aria-hidden="true">{abierto ? "▾" : "▸"}</span>
                         </button>
                         <div>
-                          <p className="font-medium text-gray-800">{p.nombre}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="font-medium text-tinta">{p.nombre}</p>
+                          <p className="text-xs text-tinta-3">
                             {p.tipo_documento} {p.documento}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-gray-700">
+                    <td className="text-right tabular-nums text-tinta-2">
                       {fmtNumero(p.num_servicios)}
                     </td>
                     {COLUMNAS_TABLA.map((m) => (
-                      <td key={m} className="px-3 py-2 text-right tabular-nums text-gray-700">
+                      <td key={m} className="text-right tabular-nums text-tinta-2">
                         {fmtNumero(p[m])}
                       </td>
                     ))}
                   </tr>
                   {abierto && (
-                    <tr className="bg-gray-50">
-                      <td colSpan={totalColumnas} className="px-6 py-3">
+                    <tr className="bg-superficie-2">
+                      <td colSpan={totalColumnas} >
                         <DesgloseServicios detalle={p} />
                       </td>
                     </tr>
@@ -235,12 +229,12 @@ export function TablaCitasPeriodo({ detalle, onIrAPeriodo }: Props) {
               );
             })}
           </tbody>
-          <tfoot className="bg-gray-50 border-t-2 border-gray-200">
-            <tr className="font-semibold text-brand-navy">
-              <td className="px-3 py-2">Total ({fmtNumero(totales.profesionales)} profesionales)</td>
-              <td className="px-3 py-2" />
+          <tfoot className="bg-superficie-2 border-t-2 border-borde">
+            <tr className="font-semibold text-primario">
+              <td>Total ({fmtNumero(totales.profesionales)} profesionales)</td>
+              <td />
               {COLUMNAS_TABLA.map((m) => (
-                <td key={m} className="px-3 py-2 text-right tabular-nums">
+                <td key={m} className="text-right tabular-nums">
                   {fmtNumero(totales[m])}
                 </td>
               ))}

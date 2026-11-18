@@ -118,16 +118,16 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="h-80 bg-gray-50 rounded-xl animate-pulse" />
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
+        <div className="h-80 bg-superficie-2 rounded-control animate-pulse" />
       </div>
     );
   }
 
   if (serieDiaria.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
-        <p className="text-sm text-gray-400">Sin datos para mostrar tendencia diaria</p>
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 text-center">
+        <p className="text-sm text-tinta-3">Sin datos para mostrar tendencia diaria</p>
       </div>
     );
   }
@@ -136,22 +136,22 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
   const absVar = variacionPct !== null ? Math.abs(variacionPct) : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4 animate-fade-slide-up">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Tendencia diaria</p>
-          <p className="text-[11px] text-gray-300 mt-0.5">Total del mes: {fmtNum(totalGeneral)}</p>
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">Tendencia diaria</h2>
+          <p className="text-xs text-tinta-3 mt-0.5">Total del mes: {fmtNum(totalGeneral)}</p>
         </div>
         <div className="flex items-center gap-2">
           {sinFechaTotal > 0 && (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-atencion-suave text-atencion">
               Sin fecha: {fmtNum(sinFechaTotal)}
             </span>
           )}
           {absVar !== null && (
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold ${
-                isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm font-semibold ${
+                isPositive ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"
               }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -195,7 +195,7 @@ export default function TendenciaDiaria({ serieDiaria, loading }: Props) {
               strokeWidth={2.5}
               fill="url(#gradDiaria)"
               dot={{ r: 3, fill: NAVY, strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: NAVY, stroke: COLORES.superficie, strokeWidth: 2 }}
               isAnimationActive
               animationDuration={800}
             >

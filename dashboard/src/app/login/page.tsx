@@ -52,7 +52,7 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-sm bg-superficie border border-borde rounded-tarjeta shadow-tarjeta p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="bg-white rounded-control shadow-logo px-4 py-3">
+            <div className="bg-superficie rounded-control shadow-logo px-4 py-3">
               <Image
                 src="/logo.png"
                 alt="IPS Manizales — Interconsultas"

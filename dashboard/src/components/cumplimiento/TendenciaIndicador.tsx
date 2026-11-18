@@ -30,7 +30,7 @@ interface Props {
 /** Leyenda compartida por la grilla de tendencias: línea real frente a la meta fija del 100%. */
 export function LeyendaTendencia() {
   return (
-    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500">
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-tinta-3">
       <span className="flex items-center gap-1.5">
         <span className="inline-block w-5 border-t-2" style={{ borderColor: NAVY }} />
         % real
@@ -51,19 +51,19 @@ export function TendenciaIndicador({ etiqueta, serie }: Props) {
   const valorUltimo = ultimo ? serie.find((s) => s.periodo === ultimo.periodo)?.valor ?? null : null;
 
   return (
-    <div data-testid="tendencia-indicador" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+    <div data-testid="tendencia-indicador" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{etiqueta}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-tinta-3">{etiqueta}</p>
         {ultimo && (
           <p data-testid="ultimo-valor" className="text-right text-sm leading-tight">
             <PorcentajeMeta valor={valorUltimo} />
-            <span className="block text-[10px] text-gray-500">{ultimo.etiquetaLarga}</span>
+            <span className="block text-[10px] text-tinta-3">{ultimo.etiquetaLarga}</span>
           </p>
         )}
       </div>
 
       {!ultimo ? (
-        <p className="h-32 flex items-center justify-center text-sm text-gray-500">Sin datos</p>
+        <p className="h-32 flex items-center justify-center text-sm text-tinta-3">Sin datos</p>
       ) : (
         <>
           <div className="h-32" aria-hidden="true">
@@ -110,8 +110,8 @@ export function TendenciaIndicador({ etiqueta, serie }: Props) {
                   dataKey="pct"
                   stroke={NAVY}
                   strokeWidth={2}
-                  dot={{ r: 4, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
-                  activeDot={{ r: 6, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
+                  dot={{ r: 4, fill: NAVY, stroke: COLORES.superficie, strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: NAVY, stroke: COLORES.superficie, strokeWidth: 2 }}
                   connectNulls={false}
                   animationDuration={800}
                   animationEasing="ease-out"

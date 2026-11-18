@@ -44,7 +44,7 @@ function InsigniaDelta({ d, subirEsBueno }: { d: Diferencia; subirEsBueno: boole
     <span className="inline-flex flex-wrap items-baseline gap-1 text-[11px]">
       <span
         data-sentido={bueno ? "bueno" : "malo"}
-        className={`rounded-full px-1.5 py-px font-semibold ${bueno ? "bg-[#EAF6E4] text-[#2F7A1F]" : "bg-[#FDECEC] text-[#B42318]"}`}
+        className={`rounded-full px-1.5 py-px font-semibold ${bueno ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"}`}
       >
         {d.delta > 0 ? "▲" : "▼"} {fmtNumero(Math.abs(d.delta))}
         {pct}
@@ -61,7 +61,7 @@ function Tarjeta({ titulo, d, subirEsBueno, detalle }: { titulo: string; d: Dife
       <p className="mt-1 flex items-baseline gap-1.5 tabular-nums">
         <span className="text-sm text-tinta-3">{fmtNumero(d.base)}</span>
         <span aria-label="pasaría a" className="text-tinta-3">→</span>
-        <span className="text-lg font-bold text-brand-navy">{fmtNumero(d.escenario)}</span>
+        <span className="text-lg font-bold text-primario">{fmtNumero(d.escenario)}</span>
       </p>
       <div className="mt-1">
         <InsigniaDelta d={d} subirEsBueno={subirEsBueno} />
@@ -76,7 +76,7 @@ function EstadoMeta({ cumple }: { cumple: boolean | null }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-1.5 py-px text-[11px] font-semibold ${
-        cumple ? "bg-[#EAF6E4] text-[#2F7A1F]" : "bg-[#FFF6E5] text-[#9A6200]"
+        cumple ? "bg-bien-suave text-bien" : "bg-atencion-suave text-atencion"
       }`}
     >
       {cumple ? "✓ En la meta" : "✕ Fuera de la meta"}
@@ -89,7 +89,7 @@ function TarjetaMeta({ base, escenario }: { base: ResultadoSimulador; escenario:
     <div className="flex flex-wrap items-center justify-between gap-1">
       <span className="text-tinta-3">{nombre}</span>
       <span className="flex items-center gap-1.5 tabular-nums">
-        <span className="font-semibold text-brand-navy">{fmtPct(r.pct_inasistencia)}</span>
+        <span className="font-semibold text-primario">{fmtPct(r.pct_inasistencia)}</span>
         <EstadoMeta cumple={r.cumple_meta} />
       </span>
       {r.inasistencias_a_evitar > 0 && (
@@ -127,7 +127,7 @@ export function SimuladorResultados({ base, escenario, resumen }: Props) {
 
   return (
     <section aria-label="Resultado del escenario" className="space-y-3">
-      <p role="status" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 text-sm text-brand-navy">
+      <p role="status" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 text-sm text-primario">
         {resumen}
       </p>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -139,7 +139,7 @@ export function SimuladorResultados({ base, escenario, resumen }: Props) {
         </div>
       </div>
       <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-3 sm:p-4">
-        <h2 className="text-sm font-bold text-brand-navy">Actual vs escenario</h2>
+        <h2 className="font-titulo text-sm font-bold text-tinta">Actual vs escenario</h2>
         <p className="text-[11px] text-tinta-3">Citas en el periodo</p>
         <Grafico opcion={opcion} etiqueta="Actual vs escenario en el periodo" className="h-[260px] mt-2" />
       </div>

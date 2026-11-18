@@ -8,6 +8,7 @@ import { ListaArchivos } from "@/components/carga/ListaArchivos";
 import { fetcher } from "@/lib/fetcher";
 import { usePuedeEditar } from "@/components/layout/RolContext";
 import { LogCarga } from "@/types/carga";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
 
 export default function CargaPage() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -39,17 +40,15 @@ export default function CargaPage() {
 
   return (
     <div className="space-y-8">
-      {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Carga de archivos</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Sube los archivos DETALLADOS EPS semanales para actualizar el sistema.
-        </p>
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Carga de archivos" }]}
+        titulo="Carga de archivos"
+        subtitulo="Sube los archivos DETALLADOS EPS semanales para actualizar el sistema."
+      />
 
       {/* Panel de carga o informe activo */}
       {(editable || activeJobId) && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-superficie rounded-tarjeta border border-borde p-6 shadow-tarjeta">
           {activeJobId ? (
             <InformeValidacion jobId={activeJobId} onReset={handleReset} puedeConfirmar={editable} />
           ) : (
@@ -58,14 +57,14 @@ export default function CargaPage() {
         </div>
       )}
       {!editable && (
-        <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+        <p className="text-xs text-tinta-3 bg-superficie-2 border border-borde rounded-control px-3 py-2">
           Solo consulta: puede revisar el historial y los informes, pero no cargar ni eliminar archivos.
         </p>
       )}
 
       {/* Historial */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
+        <h2 className="font-titulo text-lg font-bold text-tinta mb-3">
           Historial de cargas
         </h2>
         <ListaArchivos

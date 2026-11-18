@@ -60,8 +60,8 @@ function fmtFecha(iso: string) {
   return `${dia}/${mes}/${anio}`;
 }
 
-const avisoCls = "text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2";
-const infoCls = "text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2";
+const avisoCls = "text-atencion bg-atencion-suave border border-atencion/30 rounded-control px-3 py-2";
+const infoCls = "text-primario bg-primario-suave border border-primario/30 rounded-control px-3 py-2";
 const enlaceCls = "font-semibold underline";
 
 /** Lista larga que se muestra solo si el usuario la despliega. */
@@ -80,7 +80,7 @@ function ResumenDetallado({ resultado }: { resultado: ResultadoDetallado }) {
     <>
       <p
         role="status"
-        className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"
+        className="text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2"
       >
         Informe detallado cargado: {fmtFecha(resultado.fecha_inicial)} –{" "}
         {fmtFecha(resultado.fecha_final)} ({resultado.granularidad}).{" "}
@@ -199,8 +199,8 @@ export function ImportarCitasExcel({ onImportado }: Props) {
         />
         <label
           htmlFor="importar-citas-input"
-          className={`px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy transition-colors ${
-            importando ? "opacity-60" : "hover:bg-brand-navy-dark cursor-pointer"
+          className={`px-5 py-2 rounded-control text-sm font-semibold text-white bg-primario transition-colors ${
+            importando ? "opacity-60" : "hover:bg-primario-oscuro cursor-pointer"
           }`}
         >
           {importando ? "Importando…" : "Importar informe"}
@@ -214,7 +214,7 @@ export function ImportarCitasExcel({ onImportado }: Props) {
           {excel && (
             <p
               role="status"
-              className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"
+              className="text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2"
             >
               Importación completada:{" "}
               {plural(resultado.registros, "registro cargado", "registros cargados")} de{" "}
@@ -301,7 +301,7 @@ export function ImportarCitasExcel({ onImportado }: Props) {
       {error && (
         <p
           role="alert"
-          className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+          className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2"
         >
           {error}
         </p>

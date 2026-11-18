@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-fondo print:block print:min-h-0 print:bg-white">
+    <div className="flex min-h-screen bg-fondo print:block print:min-h-0 print:bg-superficie">
       {/* Sidebar desktop — oculto en mobile y al imprimir */}
       <div className="hidden md:block print:hidden">
         <Sidebar onNavigate={() => {}} />
@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden print:hidden"
+            className="fixed inset-0 bg-tinta/50 z-40 md:hidden print:hidden"
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}

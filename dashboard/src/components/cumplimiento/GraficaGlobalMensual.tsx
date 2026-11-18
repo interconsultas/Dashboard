@@ -68,8 +68,8 @@ export function GraficaGlobalMensual({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="h-72 bg-gray-50 rounded-xl animate-pulse" />
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
+        <div className="h-72 bg-superficie-2 rounded-control animate-pulse" />
       </div>
     );
   }
@@ -77,14 +77,14 @@ export function GraficaGlobalMensual({
   const hayDatos = puntos.some((p) => p.pct !== null);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4 animate-fade-slide-up">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{titulo}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{subtitulo}</p>
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">{titulo}</h2>
+          <p className="text-xs text-tinta-3 mt-0.5">{subtitulo}</p>
         </div>
         {hayDatos && (
-          <p className="flex items-center gap-1.5 text-[11px] text-gray-500">
+          <p className="flex items-center gap-1.5 text-[11px] text-tinta-3">
             <span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: GREEN }} />
             Meta 100% (menor es mejor)
           </p>
@@ -92,7 +92,7 @@ export function GraficaGlobalMensual({
       </div>
 
       {!hayDatos ? (
-        <p className="text-sm text-gray-500 text-center py-8">Sin datos para mostrar la gráfica</p>
+        <p className="text-sm text-tinta-3 text-center py-8">Sin datos para mostrar la gráfica</p>
       ) : (
         <>
           <div className="h-72" aria-hidden="true">

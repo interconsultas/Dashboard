@@ -26,7 +26,7 @@ export function PorcentajeMeta({ valor, className = "" }: { valor: number | null
 
   if (estado === "sin_datos") {
     return (
-      <span title={ETIQUETA_ESTADO.sin_datos} className={`text-gray-400 `}>
+      <span title={ETIQUETA_ESTADO.sin_datos} className={`text-tinta-3 `}>
         {SIN_DATOS}
       </span>
     );
@@ -36,7 +36,7 @@ export function PorcentajeMeta({ valor, className = "" }: { valor: number | null
     return (
       <span
         title={ETIQUETA_ESTADO.sobre}
-        className={`inline-flex items-center gap-0.5 font-semibold text-red-600 tabular-nums ${className}`}
+        className={`inline-flex items-center gap-0.5 font-semibold text-critico tabular-nums ${className}`}
       >
         <IconSobreMeta className="w-3 h-3 flex-shrink-0" />
         {fmtPct(valor)}
@@ -46,7 +46,7 @@ export function PorcentajeMeta({ valor, className = "" }: { valor: number | null
   }
 
   return (
-    <span title={ETIQUETA_ESTADO.dentro} className={`text-gray-700 tabular-nums ${className}`}>
+    <span title={ETIQUETA_ESTADO.dentro} className={`text-tinta-2 tabular-nums ${className}`}>
       {fmtPct(valor)}
       <span className="sr-only"> dentro de la meta</span>
     </span>

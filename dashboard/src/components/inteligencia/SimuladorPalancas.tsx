@@ -105,7 +105,7 @@ function Palanca({
   return (
     <div className="py-3 border-b border-borde last:border-b-0">
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={`${id}-rango`} className="text-sm font-semibold text-brand-navy">
+        <label htmlFor={`${id}-rango`} className="text-sm font-semibold text-primario">
           {def.etiqueta}
         </label>
         <button
@@ -113,7 +113,7 @@ function Palanca({
           onClick={onRestablecer}
           disabled={!movida}
           aria-label={`Restablecer ${def.etiqueta}`}
-          className="text-[11px] font-semibold text-brand-navy underline disabled:no-underline disabled:text-gray-300"
+          className="text-[11px] font-semibold text-primario underline disabled:no-underline disabled:text-referencia"
         >
           Restablecer
         </button>
@@ -131,13 +131,13 @@ function Palanca({
             disabled={fijo}
             aria-valuetext={def.fmtValor(valor)}
             onChange={(e) => cambiar(e.target.value)}
-            className="w-full accent-[#2a78d6]"
+            className="w-full accent-primario"
           />
           {!fijo && (
             <span
               aria-hidden
               title="Valor real"
-              className="absolute top-full -mt-0.5 h-2 w-0.5 bg-gray-500 rounded"
+              className="absolute top-full -mt-0.5 h-2 w-0.5 bg-tinta-3 rounded"
               style={{ left: `calc(${posicionReal}% - 1px)` }}
             />
           )}
@@ -151,7 +151,7 @@ function Palanca({
           disabled={fijo}
           aria-label={`${def.etiqueta} (valor)`}
           onChange={(e) => cambiar(e.target.value)}
-          className="w-20 rounded-lg border border-borde bg-superficie px-2 py-1 text-sm text-right text-brand-navy tabular-nums"
+          className="w-20 rounded-control border border-borde bg-superficie px-2 py-1 text-sm text-right text-primario tabular-nums"
         />
         <span className="w-4 text-xs text-tinta-3">{def.porcentaje ? "%" : ""}</span>
       </div>
@@ -180,12 +180,12 @@ export function SimuladorPalancas({ palancas, real, limites, profesionalesBase, 
   return (
     <section aria-label="Palancas del escenario" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-bold text-brand-navy">Palancas</h2>
+        <h2 className="font-titulo text-sm font-bold text-tinta">Palancas</h2>
         <button
           type="button"
           onClick={() => onRestablecer(null)}
           disabled={palancasIguales(palancas, real)}
-          className="text-xs font-semibold text-brand-navy border border-borde rounded-lg px-2 py-1 hover:bg-superficie-2 disabled:opacity-40"
+          className="text-xs font-semibold text-primario border border-borde rounded-control px-2 py-1 hover:bg-superficie-2 disabled:opacity-40"
         >
           Restablecer todo
         </button>
@@ -206,7 +206,7 @@ export function SimuladorPalancas({ palancas, real, limites, profesionalesBase, 
         type="button"
         onClick={onLlevarMeta}
         disabled={enMeta}
-        className="mt-3 w-full rounded-lg bg-brand-navy px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+        className="mt-3 w-full rounded-control bg-primario px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
       >
         Llevar a la meta (menos del {META_INASISTENCIA * 100} % de inasistencia)
       </button>

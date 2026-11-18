@@ -31,22 +31,28 @@ import type {
   TendenciaInforme,
 } from "@/lib/cumplimiento/informe";
 import type { EstadoMeta } from "@/lib/cumplimiento/presentacion";
+import { COLORES } from "@/lib/tema/tokens";
 
 // Sin guiones de partición: los encabezados de las tablas se cortan por palabras completas
 Font.registerHyphenationCallback((palabra) => [palabra]);
 
-/* ── Paleta (la misma de las gráficas en pantalla) ── */
+/* ── Paleta: tokens de diseño (lib/tema/tokens). @react-pdf necesita hex literal ── */
 
-const NAVY = "#1A3F72";
-const NAVY_SERIE = "#1e3a5f";
-const GREEN = "#4EA234";
-const RED = "#dc2626";
-const EMERALD = "#059669";
-const GRAY = "#6b7280";
-const GRAY_CLARO = "#9ca3af";
-const BORDE = "#e5e7eb";
-const FONDO_SUAVE = "#f3f6fb";
-const GRILLA = "#f3f4f6";
+const NAVY = COLORES.primario;
+const NAVY_SERIE = COLORES.primario;
+/** Línea de meta (relleno, nunca texto). */
+const GREEN = COLORES.acento;
+const RED = COLORES.critico;
+const EMERALD = COLORES.bien;
+const GRAY = COLORES["tinta-3"];
+const GRAY_CLARO = COLORES.referencia;
+const BORDE = COLORES.borde;
+const FONDO_SUAVE = COLORES.fondo;
+const GRILLA = COLORES.borde;
+const TINTA_CUERPO = COLORES["tinta-2"];
+const BLANCO = COLORES.superficie;
+/** Texto secundario sobre el tile azul del resumen. */
+const TINTA_SOBRE_AZUL = COLORES["primario-suave"];
 
 const COLOR_ESTADO: Record<EstadoMeta, string> = {
   sobre: RED,
@@ -55,9 +61,16 @@ const COLOR_ESTADO: Record<EstadoMeta, string> = {
 };
 
 const FONDO_ESTADO: Record<EstadoMeta, string> = {
-  sobre: "#fef2f2",
-  dentro: "#ecfdf5",
-  sin_datos: GRILLA,
+  sobre: COLORES["critico-suave"],
+  dentro: COLORES["bien-suave"],
+  sin_datos: COLORES["superficie-2"],
+};
+
+/** Chip del tile global: el lima es relleno, su texto va oscuro. */
+const CHIP_GLOBAL: Record<EstadoMeta, { fondo: string; tinta: string }> = {
+  sobre: { fondo: COLORES.critico, tinta: BLANCO },
+  dentro: { fondo: COLORES["acento-lima"], tinta: COLORES["menu-activo-tinta"] },
+  sin_datos: { fondo: COLORES["primario-oscuro"], tinta: BLANCO },
 };
 
 /* ── Medidas: A4 horizontal (842 × 595 pt) ── */
@@ -72,7 +85,7 @@ const s = StyleSheet.create({
     paddingHorizontal: MARGEN,
     fontFamily: "Helvetica",
     fontSize: 9,
-    color: "#374151",
+    color: TINTA_CUERPO,
   },
   negrita: { fontWeight: "bold" },
   // Encabezado principal
@@ -89,7 +102,7 @@ const s = StyleSheet.create({
   titulo: { fontWeight: "bold", fontSize: 18, color: NAVY },
   subtitulo: { fontSize: 9, color: GRAY, marginTop: 2 },
   metaEncabezado: { alignItems: "flex-end", maxWidth: 420 },
-  metaLinea: { fontSize: 8.5, color: "#374151", marginTop: 2, textAlign: "right" },
+  metaLinea: { fontSize: 8.5, color: TINTA_CUERPO, marginTop: 2, textAlign: "right" },
   // Encabezado corto de las páginas siguientes
   encabezadoCorto: {
     flexDirection: "row",
@@ -114,9 +127,9 @@ const s = StyleSheet.create({
   notaSeccion: { fontSize: 7.5, color: GRAY, marginTop: 1, marginBottom: 6 },
   aviso: {
     borderWidth: 1,
-    borderColor: "#fde68a",
-    backgroundColor: "#fffbeb",
-    color: "#92400e",
+    borderColor: COLORES["atencion-suave"],
+    backgroundColor: COLORES["atencion-suave"],
+    color: COLORES.atencion,
     borderRadius: 4,
     padding: 6,
     fontSize: 8,
@@ -162,10 +175,10 @@ const s = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: FONDO_SUAVE,
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
+    borderBottomColor: BORDE,
   },
   fila: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: BORDE },
-  filaPar: { backgroundColor: "#fafafa" },
+  filaPar: { backgroundColor: COLORES["superficie-2"] },
   th: {
     fontWeight: "bold",
     fontSize: 6.5,
@@ -295,14 +308,14 @@ function Tile({ indicador }: { indicador: IndicadorInforme }) {
 
 function Resumen({ resumen }: { resumen: InformeCumplimiento["resumen"] }) {
   const { global } = resumen;
-  const chipGlobal = global.estado === "sobre" ? RED : global.estado === "dentro" ? GREEN : "#4b6a94";
+  const chipGlobal = CHIP_GLOBAL[global.estado];
   return (
     <View style={s.resumen} wrap={false}>
       <View style={s.tileGlobal}>
-        <Text style={[s.etiquetaTile, { color: "#c7d2e3", fontSize: 8 }]}>{global.etiqueta}</Text>
-        <Text style={[s.negrita, { fontSize: 34, color: "#ffffff", marginTop: 4 }]}>{global.texto}</Text>
-        <Text style={[s.chip, { marginTop: 8, color: "#ffffff", backgroundColor: chipGlobal }]}>{global.estadoTexto}</Text>
-        <Text style={{ fontSize: 7, color: "#c7d2e3", marginTop: 4 }}>{resumen.notaMeta}</Text>
+        <Text style={[s.etiquetaTile, { color: TINTA_SOBRE_AZUL, fontSize: 8 }]}>{global.etiqueta}</Text>
+        <Text style={[s.negrita, { fontSize: 34, color: BLANCO, marginTop: 4 }]}>{global.texto}</Text>
+        <Text style={[s.chip, { marginTop: 8, color: chipGlobal.tinta, backgroundColor: chipGlobal.fondo }]}>{global.estadoTexto}</Text>
+        <Text style={{ fontSize: 7, color: TINTA_SOBRE_AZUL, marginTop: 4 }}>{resumen.notaMeta}</Text>
       </View>
       <View style={s.tiles}>
         {[resumen.categorias.slice(0, 4), resumen.categorias.slice(4)].map((fila, i) => (
@@ -475,7 +488,7 @@ function Tendencia({ tendencia }: { tendencia: TendenciaInforme }) {
             ) : null
           )}
           {tramos.flat().map((p, i) => (
-            <Circle key={i} cx={p.x} cy={p.y} r={2.2} fill={NAVY_SERIE} stroke="#ffffff" strokeWidth={0.8} />
+            <Circle key={i} cx={p.x} cy={p.y} r={2.2} fill={NAVY_SERIE} stroke={BLANCO} strokeWidth={0.8} />
           ))}
           {tendencia.puntos.map((p, i) =>
             i % cadaCuanto === 0 || i === n - 1 ? (
@@ -522,7 +535,7 @@ const COL_RANKING_CATEGORIA =
 
 function Programa({ programa, ancho }: { programa: string | null; ancho: number }) {
   return (
-    <Text style={[s.td, { width: ancho, color: programa ? "#374151" : "#b45309" }]}>{programa ?? "Sin programa"}</Text>
+    <Text style={[s.td, { width: ancho, color: programa ? TINTA_CUERPO : COLORES.atencion }]}>{programa ?? "Sin programa"}</Text>
   );
 }
 
@@ -570,7 +583,7 @@ function TablaRanking({ filas }: { filas: FilaRankingInforme[] }) {
 
 const COL_HIST = { periodo: 50, citas: 38, programa: 78, global: 38 };
 const COL_HIST_SUB = (ANCHO_UTIL - COL_HIST.periodo - COL_HIST.citas - COL_HIST.programa - COL_HIST.global) / (CATEGORIAS.length * 3);
-const SEPARADOR = { borderLeftWidth: 0.5, borderLeftColor: "#d1d5db" };
+const SEPARADOR = { borderLeftWidth: 0.5, borderLeftColor: BORDE };
 
 function TablaHistorial({ filas }: { filas: FilaHistorialInforme[] }) {
   const thFijo = [s.th, { paddingTop: 20 }];

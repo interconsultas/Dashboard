@@ -56,7 +56,7 @@ function Esqueleto() {
 function Aviso({ titulo, children }: { titulo: string; children?: React.ReactNode }) {
   return (
     <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-10 text-center">
-      <p className="text-base font-semibold text-brand-navy">{titulo}</p>
+      <p className="text-base font-semibold text-primario">{titulo}</p>
       {children}
     </div>
   );
@@ -236,7 +236,7 @@ export function SimuladorVista() {
       <Aviso titulo="Aún no hay informes de citas cargados">
         <p className="text-sm text-tinta-3 mt-1">El simulador parte de las cargas de citas de cada periodo.</p>
         {veCitas && (
-          <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
+          <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-primario underline">
             Ir a Citas
           </Link>
         )}

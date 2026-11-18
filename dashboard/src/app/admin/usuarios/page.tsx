@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { MatrizPermisos } from "@/components/usuarios/MatrizPermisos";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
 
 interface Usuario {
   id: number; email: string; nombre: string;
@@ -23,12 +24,12 @@ const REGIONALES = [
 
 function BadgeRol({ rol }: { rol: string }) {
   const cls: Record<string, string> = {
-    admin:            "bg-brand-blue-soft-2 text-brand-navy",
-    direccion_medica: "bg-green-50 text-green-800",
-    coordinador:      "bg-amber-50 text-amber-800",
+    admin:            "bg-primario-suave text-primario",
+    direccion_medica: "bg-bien-suave text-bien",
+    coordinador:      "bg-atencion-suave text-atencion",
   };
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${cls[rol] ?? "bg-gray-100 text-gray-500"}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${cls[rol] ?? "bg-fondo text-tinta-3"}`}>
       {ROL_LABEL[rol] ?? rol}
     </span>
   );
@@ -48,12 +49,17 @@ export default function UsuariosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-navy">Gestión de usuarios</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Administra accesos al sistema</p>
-      </div>
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Usuarios" }]}
+        titulo="Gestión de usuarios"
+        subtitulo="Administra accesos al sistema"
+      />
 
-      <div role="tablist" className="flex gap-1 border-b border-gray-200">
+      <div
+        role="tablist"
+        aria-label="Usuarios y permisos"
+        className="bg-superficie border border-borde rounded-tarjeta shadow-tarjeta px-3 sm:px-4 py-3 flex flex-wrap gap-1"
+      >
         {PESTANAS.map((p) => (
           <button
             key={p.clave}
@@ -61,10 +67,10 @@ export default function UsuariosPage() {
             role="tab"
             aria-selected={pestana === p.clave}
             onClick={() => setPestana(p.clave)}
-            className={`px-4 py-2 text-sm font-semibold -mb-px border-b-2 transition-colors ${
+            className={`px-3 sm:px-3.5 py-2 rounded-control text-sm font-semibold transition-colors ${
               pestana === p.clave
-                ? "border-brand-navy text-brand-navy"
-                : "border-transparent text-gray-400 hover:text-gray-600"
+                ? "bg-primario text-white"
+                : "text-tinta-2 hover:bg-primario-suave hover:text-primario"
             }`}
           >
             {p.etiqueta}
@@ -120,28 +126,28 @@ function GestionUsuarios() {
     mutate("/api/admin/usuarios");
   }
 
-  const inputCls = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none";
+  const inputCls = "w-full border border-borde rounded-control px-3 py-2 text-sm text-tinta-2 focus:outline-none";
 
   return (
     <div className="space-y-6">
       {/* Formulario */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
+        <p className="text-sm font-semibold text-tinta-3 mb-4 uppercase tracking-wide">
           {editId ? "Editar usuario" : "Nuevo usuario"}
         </p>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Nombre completo</label>
+            <label className="block text-xs text-tinta-3 mb-1">Nombre completo</label>
             <input className={inputCls} value={form.nombre} required
               onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Correo electrónico</label>
+            <label className="block text-xs text-tinta-3 mb-1">Correo electrónico</label>
             <input type="email" className={inputCls} value={form.email} required disabled={!!editId}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{editId ? "Nueva contraseña (opcional)" : "Contraseña"}</label>
+            <label className="block text-xs text-tinta-3 mb-1">{editId ? "Nueva contraseña (opcional)" : "Contraseña"}</label>
             <input type="password" className={inputCls} value={form.password}
               required={!editId} placeholder={editId ? "Dejar en blanco para no cambiar" : ""}
               onChange={e => setForm(p => ({ ...p, password: e.target.value }))} />
@@ -149,7 +155,7 @@ function GestionUsuarios() {
           {editId && (
             <>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Rol</label>
+                <label className="block text-xs text-tinta-3 mb-1">Rol</label>
                 <select className={inputCls} value={form.rol}
                   onChange={e => setForm(p => ({ ...p, rol: e.target.value, regional: "" }))}>
                   <option value="admin">Administrador</option>
@@ -159,7 +165,7 @@ function GestionUsuarios() {
               </div>
               {form.rol === "coordinador" && (
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Regional</label>
+                  <label className="block text-xs text-tinta-3 mb-1">Regional</label>
                   <select className={inputCls} value={form.regional}
                     onChange={e => setForm(p => ({ ...p, regional: e.target.value }))}>
                     <option value="">— Seleccionar —</option>
@@ -172,18 +178,18 @@ function GestionUsuarios() {
 
           {error && (
             <div className="sm:col-span-2 lg:col-span-3">
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+              <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">{error}</p>
             </div>
           )}
 
           <div className="flex items-end gap-2">
             <button type="submit" disabled={saving}
-              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors">
+              className="px-5 py-2 rounded-control text-sm font-semibold text-white bg-primario hover:bg-primario-oscuro disabled:opacity-60 transition-colors">
               {saving ? "Guardando…" : editId ? "Actualizar" : "Crear usuario"}
             </button>
             {editId && (
               <button type="button" onClick={() => { setEditId(null); setForm({ ...EMPTY }); setError(""); }}
-                className="px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-500 hover:bg-gray-50">
+                className="px-4 py-2 rounded-control text-sm border border-borde text-tinta-3 hover:bg-primario-suave">
                 Cancelar
               </button>
             )}
@@ -192,43 +198,42 @@ function GestionUsuarios() {
       </div>
 
       {/* Lista */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead className="bg-brand-navy">
+      <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+        <table className="tabla tabla-texto">
+          <thead>
             <tr>
               {["Nombre", "Correo", "Rol", "Regional", "Último ingreso", "Estado", ""].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody>
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-10 text-gray-400">Cargando…</td></tr>
+              <tr><td colSpan={7} className="text-center !py-10 text-tinta-3">Cargando…</td></tr>
             )}
             {!isLoading && !usuarios?.length && (
-              <tr><td colSpan={7} className="text-center py-10 text-gray-400">No hay usuarios</td></tr>
+              <tr><td colSpan={7} className="text-center !py-10 text-tinta-3">No hay usuarios</td></tr>
             )}
-            {usuarios?.map((u, idx) => (
-              <tr key={u.id}
-                className={`${idx % 2 === 0 ? "bg-white" : "bg-surface-alt"} hover:bg-brand-blue-soft-2 transition-colors`}>
-                <td className="px-4 py-3 font-medium text-gray-800">{u.nombre}</td>
-                <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                <td className="px-4 py-3"><BadgeRol rol={u.rol} /></td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{u.regional ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{u.last_login ?? "Nunca"}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${u.activo ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+            {usuarios?.map((u) => (
+              <tr key={u.id}>
+                <td className="font-medium text-tinta">{u.nombre}</td>
+                <td className="text-tinta-3">{u.email}</td>
+                <td><BadgeRol rol={u.rol} /></td>
+                <td className="text-tinta-3 text-xs">{u.regional ?? "—"}</td>
+                <td className="text-tinta-3 text-xs">{u.last_login ?? "Nunca"}</td>
+                <td>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${u.activo ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"}`}>
                     {u.activo ? "Activo" : "Inactivo"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="text-right">
                   <div className="flex justify-end gap-2">
                     <button onClick={() => startEdit(u)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors">
+                      className="text-xs px-3 py-1.5 rounded-control font-semibold text-primario bg-primario-suave hover:bg-primario hover:text-white transition-colors">
                       Editar
                     </button>
                     <button onClick={() => toggleActivo(u)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                      className="text-xs px-3 py-1.5 rounded-control font-semibold border border-borde text-tinta-3 hover:bg-primario-suave transition-colors">
                       {u.activo ? "Desactivar" : "Activar"}
                     </button>
                   </div>

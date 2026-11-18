@@ -72,7 +72,7 @@ function VariationDot(props: Record<string, unknown>) {
   const cx = props.cx as number | undefined;
   const cy = props.cy as number | undefined;
   if (cx == null || cy == null) return null;
-  return <circle cx={cx} cy={cy} r={4} fill={NAVY} stroke="#fff" strokeWidth={1.5} />;
+  return <circle cx={cx} cy={cy} r={4} fill={NAVY} stroke={COLORES.superficie} strokeWidth={1.5} />;
 }
 
 function CustomXTick(props: Record<string, unknown>) {
@@ -162,16 +162,16 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="h-80 bg-gray-50 rounded-xl animate-pulse" />
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
+        <div className="h-80 bg-superficie-2 rounded-control animate-pulse" />
       </div>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
-        <p className="text-sm text-gray-400">Sin datos para mostrar tendencia</p>
+      <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 text-center">
+        <p className="text-sm text-tinta-3">Sin datos para mostrar tendencia</p>
       </div>
     );
   }
@@ -180,19 +180,19 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
   const absVar = tendenciaVar !== null ? Math.abs(tendenciaVar) : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4 animate-fade-slide-up">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+          <h2 className="font-titulo text-[15px] font-bold text-tinta">
             Tendencia mensual
-          </p>
-          <p className="text-[11px] text-gray-300 mt-0.5">vs. periodo anterior</p>
+          </h2>
+          <p className="text-xs text-tinta-3 mt-0.5">vs. periodo anterior</p>
         </div>
         {tendenciaVar !== null && (
           <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold ${
-              isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm font-semibold ${
+              isPositive ? "bg-bien-suave text-bien" : "bg-critico-suave text-critico"
             }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -272,7 +272,7 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
               strokeWidth={2.5}
               fill="url(#gradActual)"
               dot={<VariationDot />}
-              activeDot={{ r: 6, fill: NAVY, stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: NAVY, stroke: COLORES.superficie, strokeWidth: 2 }}
               isAnimationActive={true}
               animationDuration={900}
               animationEasing="ease-out"

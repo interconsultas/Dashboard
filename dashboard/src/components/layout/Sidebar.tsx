@@ -228,7 +228,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     <aside className="w-60 md:w-60 h-screen sticky top-0 flex flex-col flex-shrink-0 bg-menu-fondo">
       {/* Marca: el logo real en una tarjeta blanca */}
       <div className="px-3 pt-4 pb-2 flex items-center gap-2">
-        <div className="bg-white rounded-control shadow-logo px-2.5 py-3 flex items-center justify-center flex-1">
+        <div className="bg-superficie rounded-control shadow-logo px-2.5 py-3 flex items-center justify-center flex-1">
           <Image
             src="/logo.png"
             alt="IPS Manizales — Interconsultas"
@@ -244,7 +244,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             type="button"
             onClick={onNavigate}
             aria-label="Cerrar menú"
-            className="md:hidden p-1.5 rounded-lg text-menu-tinta hover:bg-white/10 hover:text-white transition-colors"
+            className="md:hidden p-1.5 rounded-control text-menu-tinta hover:bg-white/10 hover:text-white transition-colors"
           >
             <IconClose className="w-5 h-5" />
           </button>

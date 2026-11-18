@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { COLORES, PARES_TEXTO, contraste, hexToken, type Token } from "@/lib/tema/tokens";
+import { COLORES, ESCALA_SECUENCIAL, PARES_TEXTO, PASO_TINTA_CLARA, contraste, hexToken, type Token } from "@/lib/tema/tokens";
 import config from "../../../tailwind.config";
 
 const AA_TEXTO = 4.5;
@@ -22,6 +22,22 @@ describe("tokens de diseño — contraste WCAG AA", () => {
   it("el acento no se usa como texto: sobre blanco no llega a AA (documentado)", () => {
     expect(contraste(COLORES.acento, "#FFFFFF")).toBeLessThan(AA_TEXTO);
   });
+});
+
+describe("tokens de diseño — escala secuencial", () => {
+  it("parte del azul del logo y va de claro a oscuro (luminosidad estrictamente decreciente)", () => {
+    expect(ESCALA_SECUENCIAL).toContain(COLORES.primario);
+    const lum = ESCALA_SECUENCIAL.map((c) => contraste(c, "#000000"));
+    for (let i = 1; i < lum.length; i++) expect(lum[i]).toBeLessThan(lum[i - 1]);
+  });
+
+  it.each(ESCALA_SECUENCIAL.map((c, i) => [i, c] as const))(
+    "el texto sobre el paso %i (%s) cumple AA con la tinta que le toca",
+    (i, c) => {
+      const tinta = i >= PASO_TINTA_CLARA ? "#FFFFFF" : COLORES.tinta;
+      expect(contraste(tinta, c)).toBeGreaterThanOrEqual(AA_TEXTO);
+    }
+  );
 });
 
 describe("tokens de diseño — sincronía con globals.css", () => {

@@ -289,13 +289,13 @@ function VistaMapa() {
     mapa = (
       <Alerta>
         <p>{vecindarioR.error instanceof Error ? vecindarioR.error.message : "Error al consultar los datos"}</p>
-        <button type="button" onClick={() => centrar(null)} className="mt-3 text-sm font-semibold text-brand-navy underline">
+        <button type="button" onClick={() => centrar(null)} className="mt-3 text-sm font-semibold text-primario underline">
           Ver el modelo
         </button>
       </Alerta>
     );
   } else if (!subgrafo || !vecindario) {
-    mapa = <div data-testid="mapa-cargando" className="skeleton h-[460px] sm:h-[560px] rounded-xl" />;
+    mapa = <div data-testid="mapa-cargando" className="skeleton h-[460px] sm:h-[560px] rounded-control" />;
   } else {
     mapa = (
       <MapaInstancias
@@ -341,14 +341,14 @@ function VistaMapa() {
                 <button
                   type="button"
                   onClick={() => centrar(anterior)}
-                  className="text-xs font-semibold text-brand-navy border border-borde rounded-lg px-2 py-1 hover:bg-superficie-2"
+                  className="text-xs font-semibold text-primario border border-borde rounded-control px-2 py-1 hover:bg-superficie-2"
                 >
                   Volver
                 </button>
                 <nav aria-label="Recorrido" className="flex-1 min-w-0">
                   <ol className="flex flex-wrap items-center gap-1 text-xs text-tinta-3">
                     <li>
-                      <button type="button" onClick={() => centrar(null)} className="hover:text-brand-navy hover:underline">
+                      <button type="button" onClick={() => centrar(null)} className="hover:text-primario hover:underline">
                         Modelo
                       </button>
                     </li>
@@ -356,11 +356,11 @@ function VistaMapa() {
                       <li key={id} className="flex items-center gap-1 min-w-0">
                         <span aria-hidden>›</span>
                         {id === nodo ? (
-                          <span aria-current="page" className="font-semibold text-brand-navy truncate max-w-[180px]">
+                          <span aria-current="page" className="font-semibold text-primario truncate max-w-[180px]">
                             {etiquetas[id] ?? parseIdNodo(id)?.clave}
                           </span>
                         ) : (
-                          <button type="button" onClick={() => centrar(id)} className="truncate max-w-[180px] hover:text-brand-navy hover:underline">
+                          <button type="button" onClick={() => centrar(id)} className="truncate max-w-[180px] hover:text-primario hover:underline">
                             {etiquetas[id] ?? parseIdNodo(id)?.clave}
                           </button>
                         )}

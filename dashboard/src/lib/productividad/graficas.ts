@@ -17,6 +17,7 @@ import {
   fmtNumero,
   fmtPct,
 } from "./presentacion";
+import { COLORES, PASO_TINTA_CLARA } from "@/lib/tema/tokens";
 import { umbralesDispersion, TOP_PARETO, type FilaPareto } from "./profesionales";
 import type { Embudo, NodoArea, NodoServicio, PuntoSerie, ResumenProfesional, RespuestaProductividad } from "./tipos";
 
@@ -68,7 +69,7 @@ export function opcionesSparkline(valores: (number | null)[], etiquetas: string[
         markPoint: {
           symbol: "circle",
           symbolSize: 7,
-          itemStyle: { color: AZUL_SERIE, borderColor: "#fff", borderWidth: 2 },
+          itemStyle: { color: AZUL_SERIE, borderColor: COLORES.superficie, borderWidth: 2 },
           label: { show: false },
           data: ultimo >= 0 && valores[ultimo] !== null ? [{ coord: [ultimo, valores[ultimo]] }] : [],
         },
@@ -112,7 +113,7 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
         symbol: "circle",
         symbolSize: (_v: unknown, p: any) => (p.dataIndex === idx ? 10 : 7),
         lineStyle: { width: 2, color: AZUL_SERIE },
-        itemStyle: { color: AZUL_SERIE, borderColor: "#fff", borderWidth: 2 },
+        itemStyle: { color: AZUL_SERIE, borderColor: COLORES.superficie, borderWidth: 2 },
         areaStyle: { color: degradado(AZUL_SERIE, "2e") },
         label: {
           show: true,
@@ -124,13 +125,13 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
         markLine: {
           symbol: "none",
           silent: true,
-          lineStyle: { type: "dashed", color: "#9AA7B8", width: 2 },
+          lineStyle: { type: "dashed", color: COLORES.referencia, width: 2 },
           label: { formatter: `Meta ${META_PCT} %`, color: TINTA_3, position: "insideEndTop" },
           data: [{ yAxis: META_PCT }],
         },
         markArea:
           idx >= 0
-            ? { silent: true, itemStyle: { color: "rgba(42,82,153,.07)" }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
+            ? { silent: true, itemStyle: { color: `${COLORES.primario}12` }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
             : undefined,
       },
     ],
@@ -145,7 +146,7 @@ export function opcionesEmbudo(e: Embudo) {
     ["Asignadas", e.asignadas],
     ["Atendidas", e.atendidas],
   ];
-  const colores = ["#86b6ef", "#3987e5", "#1c5cab"];
+  const colores = [ESCALA_SECUENCIAL[2], ESCALA_SECUENCIAL[4], ESCALA_SECUENCIAL[5]];
   const pctDe = (v: number, base: number) => (base > 0 ? v / base : null);
   return {
     tooltip: {
@@ -163,8 +164,9 @@ export function opcionesEmbudo(e: Embudo) {
         gap: 3,
         minSize: "38%",
         label: { position: "inside", color: "#fff", fontWeight: 600, formatter: (p: any) => `${p.name}\n${fmtNumero(p.value)}` },
-        itemStyle: { borderColor: "#fff", borderWidth: 2 },
-        data: pasos.map(([name, value], i) => ({ name, value, itemStyle: { color: colores[i] } })),
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2 },
+        // El primer paso es claro: su etiqueta va en tinta oscura (contraste AA)
+        data: pasos.map(([name, value], i) => ({ name, value, itemStyle: { color: colores[i] }, label: i === 0 ? { color: TINTA } : undefined })),
       },
     ],
     graphic: [
@@ -248,13 +250,13 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
     series: [
       {
         type: "heatmap",
-        data: filas.map((d) => ({ value: d, label: { color: d[2] > lo + (hi - lo) * 0.55 ? "#fff" : TINTA } })),
+        data: filas.map((d) => ({ value: d, label: { color: d[2] > lo + ((hi - lo) * PASO_TINTA_CLARA) / (ESCALA_SECUENCIAL.length - 1) ? "#fff" : TINTA } })),
         label: {
           show: true,
           fontSize: 10.5,
           formatter: (p: any) => p.value[2].toLocaleString("es-CO", { maximumFractionDigits: 0 }),
         },
-        itemStyle: { borderColor: "#fff", borderWidth: 2, borderRadius: 3 },
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2, borderRadius: 3 },
         emphasis: { itemStyle: { borderColor: TINTA, borderWidth: 2 } },
       },
     ],
@@ -328,7 +330,7 @@ export function opcionesArbol(
         breadcrumb: { show: false },
         label: { show: true, formatter: etiquetaBloque, fontSize: 12, lineHeight: 15, color: "#fff", fontWeight: 600, overflow: "truncate" },
         upperLabel: { show: true, height: 22, color: "#fff", fontWeight: 600 },
-        itemStyle: { borderColor: "#fff", borderWidth: 2, gapWidth: 2, borderRadius: 4 },
+        itemStyle: { borderColor: COLORES.superficie, borderWidth: 2, gapWidth: 2, borderRadius: 4 },
         levels: [
           { itemStyle: { borderWidth: 0, gapWidth: 3 } },
           { colorSaturation: [0.35, 0.6], itemStyle: { gapWidth: 2, borderColorSaturation: 0.7 } },
@@ -380,13 +382,13 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
           documento: p.documento,
           symbolSize: 8 + 26 * Math.sqrt(p.disponibles / maxDisponibles),
         })),
-        itemStyle: { color: "rgba(42,82,153,.55)", borderColor: "#fff", borderWidth: 1 },
-        emphasis: { itemStyle: { color: "#1c5cab", borderColor: TINTA, borderWidth: 2 } },
+        itemStyle: { color: `${COLORES.primario}8c`, borderColor: COLORES.superficie, borderWidth: 1 },
+        emphasis: { itemStyle: { color: ESCALA_SECUENCIAL[5], borderColor: TINTA, borderWidth: 2 } },
         cursor: "pointer",
         markLine: {
           symbol: "none",
           silent: true,
-          lineStyle: { type: "dashed", color: "#9AA7B8" },
+          lineStyle: { type: "dashed", color: COLORES.referencia },
           label: { color: TINTA_3, fontSize: 11 },
           data: [
             ...(promedioPts === null
@@ -403,11 +405,11 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
               ? []
               : [
                   [
-                    { name: "Alto volumen, baja inasistencia", xAxis: desde, yAxis: 0, itemStyle: { color: "rgba(12,163,12,.05)" }, label: { position: "insideBottomRight" } },
+                    { name: "Alto volumen, baja inasistencia", xAxis: desde, yAxis: 0, itemStyle: { color: `${COLORES.bien}0d` }, label: { position: "insideBottomRight" } },
                     { xAxis: maxEje, yAxis: promedioPts },
                   ],
                   [
-                    { name: "Alto volumen, alta inasistencia", xAxis: desde, yAxis: promedioPts, itemStyle: { color: "rgba(208,59,59,.05)" }, label: { position: "insideTopRight" } },
+                    { name: "Alto volumen, alta inasistencia", xAxis: desde, yAxis: promedioPts, itemStyle: { color: `${COLORES.critico}0d` }, label: { position: "insideTopRight" } },
                     { xAxis: maxEje, yAxis: "max" },
                   ],
                 ],
@@ -450,8 +452,9 @@ export function opcionesPareto(filas: FilaPareto[]) {
         stack: "perdidas",
         barWidth: 13,
         cursor: "pointer",
-        itemStyle: { color: "#1c5cab" },
-        data: top.map((p) => ({ value: p.inasistidas, itemStyle: { color: p.dentro_corte ? "#1c5cab" : "#9ec5f4" } })),
+        itemStyle: { color: ESCALA_SECUENCIAL[5] },
+        // Fuera del corte del Pareto: tonos claros de la misma escala (cada barra lleva etiqueta)
+        data: top.map((p) => ({ value: p.inasistidas, itemStyle: { color: p.dentro_corte ? ESCALA_SECUENCIAL[5] : ESCALA_SECUENCIAL[2] } })),
       },
       {
         name: "Disponibles",
@@ -459,10 +462,10 @@ export function opcionesPareto(filas: FilaPareto[]) {
         stack: "perdidas",
         barWidth: 13,
         cursor: "pointer",
-        itemStyle: { color: "#86b6ef" },
+        itemStyle: { color: ESCALA_SECUENCIAL[3] },
         data: top.map((p) => ({
           value: p.disponibles,
-          itemStyle: { color: p.dentro_corte ? "#86b6ef" : "#cde2fb", borderRadius: [0, 4, 4, 0] },
+          itemStyle: { color: p.dentro_corte ? ESCALA_SECUENCIAL[3] : ESCALA_SECUENCIAL[1], borderRadius: [0, 4, 4, 0] },
         })),
         label: {
           show: true,
@@ -499,13 +502,13 @@ export function opcionesServiciosFicha(servicios: NodoServicio[]) {
       axisLabel: { color: TINTA, fontSize: 11 },
     },
     series: [
-      { name: "Atendidas", type: "bar", stack: "asignadas", barWidth: 14, itemStyle: { color: "#3987e5" }, data: servicios.map((s) => s.atendidas) },
+      { name: "Atendidas", type: "bar", stack: "asignadas", barWidth: 14, itemStyle: { color: ESCALA_SECUENCIAL[4] }, data: servicios.map((s) => s.atendidas) },
       {
         name: "Inasistidas",
         type: "bar",
         stack: "asignadas",
         barWidth: 14,
-        itemStyle: { color: "#e34948", borderRadius: [0, 4, 4, 0] },
+        itemStyle: { color: ROJO_MALO, borderRadius: [0, 4, 4, 0] },
         data: servicios.map((s) => s.inasistidas),
         label: {
           show: true,

@@ -41,7 +41,7 @@ export function PanelExplorar({
           value={texto}
           onChange={(e) => onTexto(e.target.value)}
           placeholder="Nombre, documento o código…"
-          className="w-full rounded-lg border border-borde px-3 py-2 text-sm text-brand-navy placeholder:text-tinta-3"
+          className="w-full rounded-control border border-borde px-3 py-2 text-sm text-primario placeholder:text-tinta-3"
         />
       </div>
 
@@ -57,8 +57,8 @@ export function PanelExplorar({
                   aria-pressed={activo}
                   onClick={() => onTipo(activo ? null : t.clave)}
                   title={t.descripcion}
-                  className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-left transition-colors ${
-                    activo ? "bg-brand-navy/5 text-brand-navy font-semibold" : "text-tinta-2 hover:bg-superficie-2"
+                  className={`w-full flex items-center gap-2 rounded-control px-2 py-1.5 text-sm text-left transition-colors ${
+                    activo ? "bg-primario-suave text-primario font-semibold" : "text-tinta-2 hover:bg-superficie-2"
                   }`}
                 >
                   <span aria-hidden className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
@@ -86,7 +86,7 @@ export function PanelExplorar({
                   <button
                     type="button"
                     onClick={() => onElegir(r.id)}
-                    className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-tinta-2 hover:bg-superficie-2"
+                    className="w-full flex items-center gap-2 rounded-control px-2 py-1.5 text-left text-sm text-tinta-2 hover:bg-superficie-2"
                   >
                     <span aria-hidden className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: colorTipo(r.tipo) }} />
                     <span className="flex-1 min-w-0">

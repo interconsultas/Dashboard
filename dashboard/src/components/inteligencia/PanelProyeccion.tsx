@@ -9,7 +9,7 @@ import { colorArea, fmtNumero, fmtPct } from "@/lib/productividad/presentacion";
 
 const DIRECCION: Record<Direccion, { flecha: string; texto: string; clase: string }> = {
   sube: { flecha: "▲", texto: "Sube", clase: "text-critico" },
-  baja: { flecha: "▼", texto: "Baja", clase: "text-emerald-700" },
+  baja: { flecha: "▼", texto: "Baja", clase: "text-bien" },
   estable: { flecha: "▬", texto: "Estable", clase: "text-tinta-3" },
 };
 
@@ -34,7 +34,7 @@ function EstadoMeta({ sobre }: { sobre: boolean }) {
       Sobre la meta
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+    <span className="inline-flex items-center gap-1 text-bien font-medium">
       <svg data-testid="icono-meta-bajo" aria-hidden viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="8" cy="8" r="6.3" strokeWidth="1.4" />
         <path d="M5.3 8.2l1.9 1.9 3.6-3.8" />
@@ -55,17 +55,17 @@ function Tabla({ titulo, filas, meta, conArea }: { titulo: string; filas: readon
   if (filas.length === 0) return null;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="tabla tabla-compacta">
         <caption className="sr-only">{titulo}</caption>
         <thead>
-          <tr className="text-left text-[11px] uppercase tracking-wide text-tinta-3 border-b border-borde">
-            <th scope="col" className="py-2 pr-3 font-semibold">{conArea ? "Servicio" : "Área"}</th>
-            <th scope="col" className="py-2 pr-3 font-semibold text-right">Último</th>
-            <th scope="col" className="py-2 pr-3 font-semibold text-right">Proyección</th>
-            <th scope="col" className="py-2 pr-3 font-semibold">Rango</th>
-            <th scope="col" className="py-2 pr-3 font-semibold">Tendencia</th>
-            <th scope="col" className="py-2 pr-3 font-semibold">Frente a la meta</th>
-            <th scope="col" className="py-2 font-semibold text-right">Asignadas proy.</th>
+          <tr>
+            <th scope="col">{conArea ? "Servicio" : "Área"}</th>
+            <th scope="col" className="text-right">Último</th>
+            <th scope="col" className="text-right">Proyección</th>
+            <th scope="col" className="text-left">Rango</th>
+            <th scope="col" className="text-left">Tendencia</th>
+            <th scope="col" className="text-left">Frente a la meta</th>
+            <th scope="col" className="text-right">Asignadas proy.</th>
           </tr>
         </thead>
         <tbody>
@@ -73,24 +73,24 @@ function Tabla({ titulo, filas, meta, conArea }: { titulo: string; filas: readon
             const p = s.inasistencia;
             const ultimo = s.historia[s.historia.length - 1]?.valor ?? null;
             return (
-              <tr key={s.id} className="border-b border-gray-50 last:border-0">
-                <th scope="row" className="py-2 pr-3 font-medium text-brand-navy text-left">
+              <tr key={s.id}>
+                <th scope="row" className="text-left font-medium text-tinta">
                   {s.nombre}
                   {conArea && s.area && <span className="block text-[11px] font-normal text-tinta-3">{s.area}</span>}
                 </th>
-                <td className="py-2 pr-3 text-right tabular-nums text-tinta-2">{fmtPct(ultimo)}</td>
+                <td className="text-right tabular-nums text-tinta-2">{fmtPct(ultimo)}</td>
                 {p ? (
                   <>
-                    <td className="py-2 pr-3 text-right tabular-nums font-semibold text-brand-navy">{fmtPct(p.valor)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-tinta-3 whitespace-nowrap">{`${fmtPct(p.min)}–${fmtPct(p.max)}`}</td>
-                    <td className="py-2 pr-3"><CeldaDireccion d={p.direccion} /></td>
-                    <td className="py-2 pr-3">
+                    <td className="text-right tabular-nums font-semibold text-primario">{fmtPct(p.valor)}</td>
+                    <td className="text-left tabular-nums text-tinta-3 whitespace-nowrap">{`${fmtPct(p.min)}–${fmtPct(p.max)}`}</td>
+                    <td className="text-left"><CeldaDireccion d={p.direccion} /></td>
+                    <td className="text-left">
                       <EstadoMeta sobre={p.valor > meta} />
                     </td>
-                    <td className="py-2 text-right tabular-nums text-tinta-2">{s.asignadas ? fmtNumero(s.asignadas.valor) : "—"}</td>
+                    <td className="text-right tabular-nums text-tinta-2">{s.asignadas ? fmtNumero(s.asignadas.valor) : "—"}</td>
                   </>
                 ) : (
-                  <td colSpan={5} className="py-2 text-tinta-3 italic">Sin datos suficientes</td>
+                  <td colSpan={5} className="text-left text-tinta-3 italic">Sin datos suficientes</td>
                 )}
               </tr>
             );
@@ -127,7 +127,7 @@ export function PanelProyeccion({
   return (
     <section aria-labelledby="titulo-proyeccion" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4 space-y-4">
       <div>
-        <h2 id="titulo-proyeccion" className="text-base font-semibold text-brand-navy">
+        <h2 id="titulo-proyeccion" className="font-titulo text-[15px] font-bold text-tinta">
           Proyección para {siguiente?.etiqueta_larga ?? "el siguiente periodo"}
         </h2>
         <p className="text-xs text-tinta-3 mt-0.5">
@@ -135,7 +135,7 @@ export function PanelProyeccion({
           error medio que tuvo el mismo método al pronosticar periodos ya conocidos. Meta {fmtPct(meta, 0)}.
         </p>
         {periodosCargados < minPeriodos && (
-          <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2">
+          <p className="text-xs text-atencion bg-atencion-suave rounded-control px-3 py-2 mt-2">
             Hay {periodosCargados} periodos cargados; la proyección necesita al menos {minPeriodos}.
           </p>
         )}
@@ -149,7 +149,7 @@ export function PanelProyeccion({
           aria-expanded={expandida}
           aria-controls="proyeccion-detalle"
           onClick={() => setExpandida((v) => !v)}
-          className="text-xs font-semibold text-brand-navy underline"
+          className="text-xs font-semibold text-primario underline"
         >
           {expandida ? "Ocultar gráficas y servicios" : "Ver gráficas y servicios"}
         </button>
@@ -161,7 +161,7 @@ export function PanelProyeccion({
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               {conProyeccion.map((a) => (
                 <figure key={a.id} className="rounded-control border border-borde p-2">
-                  <figcaption className="text-xs font-semibold text-brand-navy px-1">{a.nombre}</figcaption>
+                  <figcaption className="text-xs font-semibold text-primario px-1">{a.nombre}</figcaption>
                   <Grafico
                     etiqueta={`Proyección de inasistencia: ${a.nombre}`}
                     opcion={opcionesProyeccion(a, siguiente, meta, colorArea(a.id, nombresAreas))}
@@ -174,7 +174,7 @@ export function PanelProyeccion({
 
           {servicios.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-brand-navy mb-1">Servicios con más citas asignadas</h3>
+              <h3 className="font-titulo text-sm font-bold text-tinta mb-1">Servicios con más citas asignadas</h3>
               <Tabla titulo="Proyección por servicio" filas={servicios} meta={meta} conArea />
             </div>
           )}

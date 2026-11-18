@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { CLASES_CAMPO, cx } from "./clases";
 
 interface Option {
   value: string;
@@ -110,43 +111,43 @@ export default function CheckDropdown({
       <button
         type="button"
         onClick={() => { setOpen(!open); if (open) setSearch(""); }}
-        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 bg-white text-left focus:outline-none focus:border-brand-navy/30 focus:ring-2 focus:ring-brand-navy/10 transition-all flex items-center justify-between gap-2"
+        className={cx(CLASES_CAMPO, "w-full text-left transition-all flex items-center justify-between gap-2")}
       >
         <span className="truncate">{summary}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {loading && (
-            <svg className="animate-spin h-3.5 w-3.5 text-brand-navy/40" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-3.5 w-3.5 text-primario/40" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           )}
-          <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className={`w-4 h-4 text-tinta-3 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </span>
       </button>
 
       {open && (
-        <div className="filter-dropdown absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg py-1">
+        <div className="filter-dropdown absolute z-50 mt-1 w-full bg-superficie border border-borde rounded-control shadow-tarjeta py-1">
           {/* Toggle all */}
           <button
             type="button"
             onClick={handleToggleAll}
-            className="w-full text-left px-3 py-1.5 text-xs font-semibold text-brand-navy hover:bg-gray-50 border-b border-gray-100"
+            className="w-full text-left px-3 py-1.5 text-xs font-semibold text-primario hover:bg-primario-suave border-b border-borde"
           >
             {effectiveAll ? "Quitar todos" : "Seleccionar todos"}
           </button>
 
           {/* Search */}
           {showSearch && (
-            <div className="px-2 py-1.5 border-b border-gray-100">
+            <div className="px-2 py-1.5 border-b border-borde">
               <input
                 ref={inputRef}
                 type="text"
                 placeholder="Buscar..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-brand-navy/30 focus:ring-1 focus:ring-brand-navy/10"
+                className="w-full rounded-control border border-borde px-2.5 py-1.5 text-sm text-tinta-2 placeholder:text-tinta-3 focus:outline-none focus:border-primario focus:ring-1 focus:ring-primario/30"
               />
             </div>
           )}
@@ -156,7 +157,7 @@ export default function CheckDropdown({
             <button
               type="button"
               onClick={handleSelectFiltered}
-              className="w-full text-left px-3 py-1 text-[11px] text-brand-green hover:bg-gray-50 border-b border-gray-100"
+              className="w-full text-left px-3 py-1 text-[11px] font-semibold text-primario hover:bg-primario-suave border-b border-borde"
             >
               Seleccionar {filtered.length} filtrados
             </button>
@@ -165,26 +166,26 @@ export default function CheckDropdown({
           {/* Options */}
           <div className="max-h-60 overflow-y-auto dropdown-scroll">
             {visible.length === 0 ? (
-              <p className="px-3 py-2 text-sm text-gray-400">Sin resultados</p>
+              <p className="px-3 py-2 text-sm text-tinta-3">Sin resultados</p>
             ) : (
               visible.map((o) => (
                 <label
                   key={o.value}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-tinta-2 hover:bg-primario-suave cursor-pointer select-none"
                 >
                   <input
                     type="checkbox"
                     checked={selectedSet.has(o.value)}
                     onChange={() => onChange(o.value)}
-                    className="rounded border-gray-300 focus:ring-brand-green/20"
-                    style={{ accentColor: "var(--brand-green)" }}
+                    className="rounded border-borde focus:ring-primario/30"
+                    style={{ accentColor: "var(--primario)" }}
                   />
                   {o.label}
                 </label>
               ))
             )}
             {remaining > 0 && (
-              <p className="px-3 py-2 text-[11px] text-gray-400 border-t border-gray-100">
+              <p className="px-3 py-2 text-[11px] text-tinta-3 border-t border-borde">
                 {remaining} más — refina tu búsqueda
               </p>
             )}

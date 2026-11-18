@@ -94,6 +94,28 @@ export const PALETA_CATEGORICA = [
   "#D64545",
 ] as const;
 
+/**
+ * Escala secuencial de un solo tono (formato condicional, embudo, Pareto):
+ * sale del azul del logo (#2A5299, paso 5) interpolando en OKLCH con el mismo
+ * tono, de claro a oscuro. Luminosidad estrictamente decreciente (lo verifica
+ * __tests__/lib/tema-tokens.test.ts) y validada con el validador ordinal de la
+ * skill dataviz desde el paso 2 (el primero que se usa como barra suelta:
+ * 2,02:1 contra blanco). Los pasos 0 y 1 solo van de fondo de celdas que
+ * imprimen su valor o en barras con etiqueta visible.
+ */
+export const ESCALA_SECUENCIAL = [
+  "#DEEAFF",
+  "#BDD4FB",
+  "#94B5EE",
+  "#719AE1",
+  "#4874C2",
+  "#2A5299",
+  "#153368",
+] as const;
+
+/** Desde este paso de ESCALA_SECUENCIAL el texto encima va blanco (AA en todos los pasos). */
+export const PASO_TINTA_CLARA = 4;
+
 /** Pares texto/fondo que la app usa como texto y deben cumplir AA (4,5:1). */
 export const PARES_TEXTO: readonly [Token | "blanco", Token | "blanco"][] = [
   ["tinta", "fondo"],
@@ -111,6 +133,8 @@ export const PARES_TEXTO: readonly [Token | "blanco", Token | "blanco"][] = [
   ["primario-oscuro", "superficie"],
   ["blanco", "primario"],
   ["blanco", "primario-oscuro"],
+  ["blanco", "critico"],
+  ["menu-activo-tinta", "acento-lima"],
   ["menu-tinta", "menu-fondo"],
   ["menu-activo-tinta", "menu-activo"],
   ["bien", "bien-suave"],

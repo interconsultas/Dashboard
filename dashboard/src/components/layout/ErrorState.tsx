@@ -1,5 +1,7 @@
 "use client";
 
+import { Boton, clasesBoton } from "@/components/ui/Boton";
+
 interface Props {
   error: Error & { digest?: string };
   reset: () => void;
@@ -13,30 +15,22 @@ interface Props {
  */
 export function ErrorState({ error, reset, titulo = "Algo salió mal" }: Props) {
   return (
-    <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-8 max-w-xl mx-auto">
+    <div role="alert" className="bg-superficie rounded-tarjeta border border-critico/30 shadow-tarjeta p-8 max-w-xl mx-auto">
       <div className="flex items-start gap-3">
-        <span className="text-2xl">⚠️</span>
+        <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-critico-suave text-lg font-bold text-critico">!</span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-gray-900">{titulo}</h2>
-          <p className="text-sm text-gray-500 mt-1 break-words">
+          <h2 className="font-titulo text-lg font-bold text-tinta">{titulo}</h2>
+          <p className="text-sm text-tinta-2 mt-1 break-words">
             {error.message || "Error desconocido"}
           </p>
           {error.digest && (
-            <p className="text-xs text-gray-400 mt-2 font-mono">
+            <p className="text-xs text-tinta-3 mt-2 font-mono">
               Ref: {error.digest}
             </p>
           )}
           <div className="flex items-center gap-2 mt-4">
-            <button
-              onClick={reset}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark transition-colors"
-            >
-              Reintentar
-            </button>
-            <a
-              href="/"
-              className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-            >
+            <Boton onClick={reset}>Reintentar</Boton>
+            <a href="/" className={clasesBoton({ variante: "secundario" })}>
               Ir al inicio
             </a>
           </div>

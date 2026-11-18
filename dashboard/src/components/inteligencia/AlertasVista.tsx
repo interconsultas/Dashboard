@@ -131,7 +131,7 @@ export function AlertasVista() {
             aria-expanded={verTodas}
             aria-controls="todas-las-alertas"
             onClick={() => setVerTodas((v) => !v)}
-            className="w-full flex items-center justify-between gap-2 bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-4 py-3 text-sm font-semibold text-brand-navy"
+            className="w-full flex items-center justify-between gap-2 bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-4 py-3 text-sm font-semibold text-primario"
           >
             <span>{`${verTodas ? "Ocultar" : "Ver"} todas las alertas (${data.total})`}</span>
             <span aria-hidden className={`transition-transform ${verTodas ? "rotate-180" : ""}`}>▾</span>

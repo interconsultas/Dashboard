@@ -3,7 +3,7 @@
  * el cliente). La paleta categórica pasa el validador de daltonismo; las
  * etiquetas visibles y la matriz cubren el contraste de los tonos claros.
  */
-import { COLORES, FUENTE_TEXTO, PALETA_CATEGORICA } from "@/lib/tema/tokens";
+import { COLORES, ESCALA_SECUENCIAL, FUENTE_TEXTO, PALETA_CATEGORICA, PASO_TINTA_CLARA } from "@/lib/tema/tokens";
 
 /* ── Colores (salen de los tokens de diseño: lib/tema/tokens) ── */
 
@@ -19,10 +19,8 @@ export const ROJO_MALO = COLORES.critico;
 export const COLORES_AREA: readonly string[] = PALETA_CATEGORICA;
 const GRIS_NEUTRO = COLORES.referencia;
 
-/** Escala secuencial de un solo tono, de claro a oscuro. */
-export const ESCALA_SECUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
-/** Desde este paso de la escala la tinta del texto es blanca. */
-const PASO_TINTA_CLARA = 4;
+/** Escala secuencial de un solo tono, de claro a oscuro (sale del azul del logo). */
+export { ESCALA_SECUENCIAL };
 
 export const FUENTE = FUENTE_TEXTO;
 

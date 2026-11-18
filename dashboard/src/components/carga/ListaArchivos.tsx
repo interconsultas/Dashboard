@@ -50,59 +50,57 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado, puedeEliminar
 
   if (cargas.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400 text-sm bg-white rounded-xl border border-gray-200">
+      <div className="text-center py-12 text-tinta-3 text-sm bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
         No hay cargas registradas aún.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-      <table className="min-w-full text-sm">
-        <thead className="bg-brand-navy">
+    <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+      <table className="tabla tabla-texto">
+        <thead>
           <tr>
             {["Archivo","Período","Filas arch.","Insertadas","Estado","Fecha carga","Usuario",""].map(h => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">
+              <th key={h}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
-          {cargas.map((c, idx) => {
+        <tbody>
+          {cargas.map((c) => {
             // filas_en_archivo puede ser 0 si el job fue creado por el API antes de leer
             const filasArch = c.filas_en_archivo > 0 ? c.filas_en_archivo : (c.filas_insertadas ?? 0);
             return (
-              <tr key={c.job_id}
-                className={`${idx % 2 === 0 ? "bg-white" : "bg-surface-alt"} hover:bg-brand-blue-soft-2 transition-colors`}
-              >
-                <td className="px-4 py-3 max-w-[420px]">
-                  <span className="block truncate font-medium text-gray-800 text-sm" title={c.nombre_archivo}>
+              <tr key={c.job_id}>
+                <td className="max-w-[420px]">
+                  <span className="block truncate font-medium text-tinta text-sm" title={c.nombre_archivo}>
                     {c.nombre_archivo}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                <td className="text-tinta-2 whitespace-nowrap">
                   {fmtPeriodos(c.periodos_detectados, c.periodo_detectado)}
                 </td>
-                <td className="px-4 py-3 text-right text-gray-500 tabular-nums">
+                <td className="text-right text-tinta-3 tabular-nums">
                   {filasArch > 0 ? filasArch.toLocaleString("es-CO") : "—"}
                 </td>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums text-brand-green">
+                <td className="text-right font-semibold tabular-nums text-bien">
                   {c.filas_insertadas > 0 ? c.filas_insertadas.toLocaleString("es-CO") : "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <BadgeEstado estado={c.estado} />
                 </td>
-                <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
+                <td className="text-tinta-3 whitespace-nowrap text-xs">
                   {fmtFecha(c.cargado_en)}
                 </td>
-                <td className="px-4 py-3 text-gray-400 text-xs">
+                <td className="text-tinta-3 text-xs">
                   {c.cargado_por ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                <td className="text-right space-x-2 whitespace-nowrap">
                   <button
                     onClick={() => onVerInforme(c.job_id)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap text-brand-navy bg-brand-blue-soft hover:bg-brand-navy hover:text-white transition-colors"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-control whitespace-nowrap text-primario bg-primario-suave hover:bg-primario hover:text-white transition-colors"
                   >
                     Ver informe
                   </button>
@@ -112,7 +110,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado, puedeEliminar
                         setErrorEliminar(null);
                         setJobAEliminar(c);
                       }}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap text-red-700 bg-red-50 hover:bg-red-600 hover:text-white transition-colors"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-control whitespace-nowrap text-critico bg-critico-suave hover:bg-critico/90 hover:text-white transition-colors"
                     >
                       Eliminar
                     </button>
@@ -132,7 +130,7 @@ export function ListaArchivos({ cargas, onVerInforme, onEliminado, puedeEliminar
             Esta acción eliminará todas las filas cargadas de{" "}
             <strong>{jobAEliminar?.nombre_archivo}</strong>
             {" "}({fmtPeriodos(jobAEliminar?.periodos_detectados, jobAEliminar?.periodo_detectado ?? null)}) y no se puede deshacer.
-            {errorEliminar && <p className="mt-2 text-red-600">{errorEliminar}</p>}
+            {errorEliminar && <p className="mt-2 text-critico">{errorEliminar}</p>}
           </>
         }
         confirmLabel="Eliminar"

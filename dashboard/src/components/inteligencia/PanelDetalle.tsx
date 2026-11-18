@@ -47,7 +47,7 @@ function DetalleModelo({ esquema }: { esquema: Esquema | null }) {
   return (
     <Contenedor>
       <div>
-        <h2 className="text-[15px] font-semibold text-brand-navy">Modelo de la IPS</h2>
+        <h2 className="font-titulo text-[15px] font-bold text-tinta">Modelo de la IPS</h2>
         <p className="text-xs text-tinta-3 mt-1">
           Cada círculo es un tipo de objeto y cada flecha un tipo de relación. Elija un tipo o busque un
           profesional, servicio o programa para ver sus relaciones en el periodo.
@@ -117,7 +117,7 @@ export function PanelDetalle({
           <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: colorTipo(nodo.tipo) }} />
           {def.etiqueta}
         </p>
-        <h2 className="text-[15px] font-semibold text-brand-navy mt-0.5 break-words">{nodo.etiqueta}</h2>
+        <h2 className="font-titulo text-[15px] font-bold text-tinta mt-0.5 break-words">{nodo.etiqueta}</h2>
       </div>
 
       {nodo.propiedades.length > 0 && (
@@ -137,7 +137,7 @@ export function PanelDetalle({
             <Link
               key={l.texto}
               href={l.href}
-              className="text-xs font-semibold text-brand-navy border border-brand-navy/20 rounded-lg px-2.5 py-1.5 hover:bg-brand-navy/5"
+              className="text-xs font-semibold text-primario border border-primario/20 rounded-control px-2.5 py-1.5 hover:bg-primario-suave"
             >
               {l.texto}
             </Link>
@@ -168,7 +168,7 @@ export function PanelDetalle({
                       <button
                         type="button"
                         onClick={() => onCentrar(v.id)}
-                        className="flex-1 min-w-0 truncate text-left text-xs text-tinta-2 hover:text-brand-navy hover:underline py-0.5"
+                        className="flex-1 min-w-0 truncate text-left text-xs text-tinta-2 hover:text-primario hover:underline py-0.5"
                       >
                         {v.etiqueta}
                       </button>
@@ -178,7 +178,7 @@ export function PanelDetalle({
                         disabled={expandidos.has(v.id)}
                         aria-label={`Expandir ${v.etiqueta}`}
                         title="Agregar sus relaciones al mapa"
-                        className="text-[11px] text-tinta-3 hover:text-brand-navy disabled:opacity-30 px-1"
+                        className="text-[11px] text-tinta-3 hover:text-primario disabled:opacity-30 px-1"
                       >
                         +
                       </button>
