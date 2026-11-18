@@ -13,13 +13,15 @@ import {
   LabelList,
 } from "recharts";
 import { puntosGrafica, techoEje, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
+import { COLORES, SOMBRAS } from "@/lib/tema/tokens";
 
 export { techoEje };
 
 // Misma paleta que TendenciaMensual
-const NAVY = "#1e3a5f";
-const GREEN = "#4EA234";
-const GRAY = "#6b7280";
+// Colores de los tokens de diseño (lib/tema/tokens)
+const NAVY = COLORES.primario;
+const GREEN = COLORES.acento;
+const GRAY = COLORES["tinta-3"];
 
 /** Con más barras que estas, las etiquetas sobre cada barra se pisan: quedan en el tooltip y la tabla. */
 const MAX_BARRAS_CON_ETIQUETA = 12;
@@ -96,7 +98,7 @@ export function GraficaGlobalMensual({
           <div className="h-72" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={puntos} margin={{ top: 20, right: 20, left: 0, bottom: 4 }}>
-                <CartesianGrid stroke="#f3f4f6" vertical={false} />
+                <CartesianGrid stroke={COLORES.borde} vertical={false} />
                 <XAxis
                   dataKey="etiqueta"
                   tick={{ fontSize: 11, fill: GRAY }}
@@ -112,12 +114,12 @@ export function GraficaGlobalMensual({
                   width={50}
                 />
                 <Tooltip
-                  cursor={{ fill: "#f3f4f6" }}
+                  cursor={{ fill: COLORES["primario-suave"] }}
                   contentStyle={{
                     borderRadius: 12,
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${COLORES.borde}`,
                     fontSize: 13,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    boxShadow: SOMBRAS.tarjeta,
                   }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(_value: any, _name: any, item: any) => [

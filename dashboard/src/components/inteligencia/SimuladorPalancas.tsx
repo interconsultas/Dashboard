@@ -103,7 +103,7 @@ function Palanca({
   };
 
   return (
-    <div className="py-3 border-b border-gray-100 last:border-b-0">
+    <div className="py-3 border-b border-borde last:border-b-0">
       <div className="flex items-baseline justify-between gap-2">
         <label htmlFor={`${id}-rango`} className="text-sm font-semibold text-brand-navy">
           {def.etiqueta}
@@ -118,7 +118,7 @@ function Palanca({
           Restablecer
         </button>
       </div>
-      <p className="text-[11px] text-gray-400">{def.ayuda}</p>
+      <p className="text-[11px] text-tinta-3">{def.ayuda}</p>
       <div className="flex items-center gap-3 mt-2">
         <div className="relative flex-1">
           <input
@@ -151,12 +151,12 @@ function Palanca({
           disabled={fijo}
           aria-label={`${def.etiqueta} (valor)`}
           onChange={(e) => cambiar(e.target.value)}
-          className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-right text-brand-navy tabular-nums"
+          className="w-20 rounded-lg border border-borde bg-superficie px-2 py-1 text-sm text-right text-brand-navy tabular-nums"
         />
-        <span className="w-4 text-xs text-gray-400">{def.porcentaje ? "%" : ""}</span>
+        <span className="w-4 text-xs text-tinta-3">{def.porcentaje ? "%" : ""}</span>
       </div>
       {/* El valor elegido ya está en el campo: debajo solo va la referencia real */}
-      <p className="text-[11px] text-gray-500 mt-1.5">{textoReal}</p>
+      <p className="text-[11px] text-tinta-3 mt-1.5">{textoReal}</p>
     </div>
   );
 }
@@ -178,14 +178,14 @@ export function SimuladorPalancas({ palancas, real, limites, profesionalesBase, 
   const enMeta = palancas.pctInasistencia < META_INASISTENCIA;
 
   return (
-    <section aria-label="Palancas del escenario" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <section aria-label="Palancas del escenario" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-brand-navy">Palancas</h2>
         <button
           type="button"
           onClick={() => onRestablecer(null)}
           disabled={palancasIguales(palancas, real)}
-          className="text-xs font-semibold text-brand-navy border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50 disabled:opacity-40"
+          className="text-xs font-semibold text-brand-navy border border-borde rounded-lg px-2 py-1 hover:bg-superficie-2 disabled:opacity-40"
         >
           Restablecer todo
         </button>

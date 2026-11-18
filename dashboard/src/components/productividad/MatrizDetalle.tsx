@@ -132,7 +132,7 @@ export function MatrizDetalle({ matriz, areas, area, etiquetaPeriodo, onServicio
                     <th
                       key={c.clave}
                       aria-sort={activa ? (orden.dir === -1 ? "descending" : "ascending") : "none"}
-                      className={`px-2.5 py-2 border-b border-gray-200 text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap ${i === 0 ? "text-left" : "text-right"}`}
+                      className={`px-2.5 py-2 border-b border-borde text-[11px] font-semibold text-tinta-3 uppercase tracking-wide whitespace-nowrap ${i === 0 ? "text-left" : "text-right"}`}
                     >
                       <button type="button" onClick={() => ordenarPor(c.clave)} className="uppercase tracking-wide hover:text-brand-navy">
                         {c.titulo}
@@ -165,11 +165,11 @@ export function MatrizDetalle({ matriz, areas, area, etiquetaPeriodo, onServicio
                             }}
                             className="inline-flex items-center font-semibold"
                           >
-                            <span className="inline-block w-4 text-gray-400" aria-hidden="true">{abierta ? "▾" : "▸"}</span>
+                            <span className="inline-block w-4 text-tinta-3" aria-hidden="true">{abierta ? "▾" : "▸"}</span>
                             <span className="inline-block w-2.5 h-2.5 rounded-[3px] mr-2" style={{ background: colorArea(g.area, areas) }} aria-hidden="true" />
                             {g.area}
                           </button>{" "}
-                          <span className="font-normal text-gray-400">
+                          <span className="font-normal text-tinta-3">
                             · {g.servicios.length} {g.servicios.length === 1 ? "servicio" : "servicios"}
                           </span>
                         </td>
@@ -186,7 +186,7 @@ export function MatrizDetalle({ matriz, areas, area, etiquetaPeriodo, onServicio
                               onClick={() => onServicio(s.codigo)}
                               title="Filtrar por este servicio"
                             >
-                              <td className="pl-[34px] pr-2.5 py-1.5 text-left text-gray-600 whitespace-nowrap">
+                              <td className="pl-[34px] pr-2.5 py-1.5 text-left text-tinta-2 whitespace-nowrap">
                                 {s.codigo} · {s.nombre}
                               </td>
                               <Celdas f={s} rInas={rInas} rDisp={rDisp} />
@@ -196,7 +196,7 @@ export function MatrizDetalle({ matriz, areas, area, etiquetaPeriodo, onServicio
                   );
                 })}
               {matriz.total && (
-                <tr className="font-bold bg-surface-alt border-t-2 border-gray-200">
+                <tr className="font-bold bg-surface-alt border-t-2 border-borde">
                   <td className="px-2.5 py-1.5 text-left whitespace-nowrap">Total {etiquetaPeriodo}</td>
                   <Celdas f={matriz.total} rInas={rInas} rDisp={rDisp} />
                 </tr>

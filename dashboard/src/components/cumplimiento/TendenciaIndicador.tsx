@@ -14,10 +14,12 @@ import {
 import { puntosGrafica, techoEje, type PuntoGrafica, type ValorPeriodo } from "@/lib/cumplimiento/presentacion";
 import { PorcentajeMeta } from "./PorcentajeMeta";
 import { TablaEquivalente } from "./GraficaGlobalMensual";
+import { COLORES, SOMBRAS } from "@/lib/tema/tokens";
 
-const NAVY = "#1e3a5f";
-const GREEN = "#4EA234";
-const GRAY = "#6b7280";
+// Colores de los tokens de diseño (lib/tema/tokens)
+const NAVY = COLORES.primario;
+const GREEN = COLORES.acento;
+const GRAY = COLORES["tinta-3"];
 
 interface Props {
   etiqueta: string;
@@ -67,7 +69,7 @@ export function TendenciaIndicador({ etiqueta, serie }: Props) {
           <div className="h-32" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={puntos} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#f3f4f6" vertical={false} />
+                <CartesianGrid stroke={COLORES.borde} vertical={false} />
                 <XAxis
                   dataKey="etiqueta"
                   tick={{ fontSize: 10, fill: GRAY }}
@@ -88,9 +90,9 @@ export function TendenciaIndicador({ etiqueta, serie }: Props) {
                 <Tooltip
                   contentStyle={{
                     borderRadius: 12,
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${COLORES.borde}`,
                     fontSize: 12,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    boxShadow: SOMBRAS.tarjeta,
                   }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(_value: any, _name: any, item: any) => [

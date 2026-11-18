@@ -10,6 +10,7 @@ import type { RespuestaAlertas } from "@/lib/inteligencia/tipos";
 import { GRANULARIDADES, type Granularidad } from "@/lib/productividad/periodos";
 import { usePuedeEditar, usePuedeVer } from "@/components/layout/RolContext";
 import { Spinner } from "@/components/ui/Spinner";
+import { Segmentado } from "@/components/ui/Segmentado";
 import { ListaAlertas } from "./ListaAlertas";
 import { PanelPrioridades } from "./PanelPrioridades";
 import { PanelProyeccion } from "./PanelProyeccion";
@@ -78,48 +79,36 @@ export function AlertasVista() {
 
   const encabezado = (
     <EncabezadoInteligencia pestana="alertas" onPestana={onPestana}>
-      {isValidating && !isLoading && <Spinner className="h-4 w-4 text-brand-navy/40" />}
-      {data?.periodo && <p className="text-xs text-gray-500">Último periodo: {data.periodo.etiqueta_larga}</p>}
-      <div role="group" aria-label="Granularidad" className="inline-flex rounded-lg bg-gray-100 p-0.5">
-        {GRANULARIDADES.map((g) => {
-          const activo = g === estado.granularidad;
-          return (
-            <button
-              key={g}
-              type="button"
-              aria-pressed={activo}
-              onClick={() => !activo && onGranularidad(g)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                activo ? "bg-white text-brand-navy shadow-sm" : "text-gray-500 hover:text-brand-navy"
-              }`}
-            >
-              {ETIQUETA_GRANULARIDAD[g]}
-            </button>
-          );
-        })}
-      </div>
+      {isValidating && !isLoading && <Spinner className="h-4 w-4 text-primario/50" />}
+      {data?.periodo && <p className="text-xs text-tinta-3">Último periodo: {data.periodo.etiqueta_larga}</p>}
+      <Segmentado
+        etiqueta="Granularidad"
+        valor={estado.granularidad}
+        onCambiar={onGranularidad}
+        opciones={GRANULARIDADES.map((g) => ({ valor: g, etiqueta: ETIQUETA_GRANULARIDAD[g] }))}
+      />
     </EncabezadoInteligencia>
   );
 
   let cuerpo: React.ReactNode;
   if (error && !data) {
     cuerpo = (
-      <div role="alert" className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 text-sm text-red-700">
+      <div role="alert" className="bg-critico-suave rounded-tarjeta border border-critico/20 p-6 text-sm text-critico">
         {error instanceof Error ? error.message : "Error al consultar los datos"}
       </div>
     );
   } else if (!data) {
     cuerpo = (
       <div data-testid="alertas-cargando" className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7 skeleton h-[360px] rounded-2xl" />
-        <div className="lg:col-span-5 skeleton h-[360px] rounded-2xl" />
+        <div className="lg:col-span-7 skeleton h-[360px] rounded-tarjeta" />
+        <div className="lg:col-span-5 skeleton h-[360px] rounded-tarjeta" />
       </div>
     );
   } else {
     cuerpo = (
       <div className="space-y-3">
         {data.periodo === null && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm text-gray-500">
+          <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 text-center text-sm text-tinta-3">
             No hay cargas de citas {estado.granularidad === "mensual" ? "mensuales" : "semanales"}: no hay nada que evaluar.
           </div>
         )}
@@ -142,7 +131,7 @@ export function AlertasVista() {
             aria-expanded={verTodas}
             aria-controls="todas-las-alertas"
             onClick={() => setVerTodas((v) => !v)}
-            className="w-full flex items-center justify-between gap-2 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-sm font-semibold text-brand-navy"
+            className="w-full flex items-center justify-between gap-2 bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-4 py-3 text-sm font-semibold text-brand-navy"
           >
             <span>{`${verTodas ? "Ocultar" : "Ver"} todas las alertas (${data.total})`}</span>
             <span aria-hidden className={`transition-transform ${verTodas ? "rotate-180" : ""}`}>▾</span>

@@ -13,12 +13,14 @@ import {
   Legend,
   LabelList,
 } from "recharts";
+import { COLORES, SOMBRAS } from "@/lib/tema/tokens";
 
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const NAVY = "#1e3a5f";
-const GREEN = "#4EA234";
-const GRAY = "#9ca3af";
-const RED = "#ef4444";
+// Colores de los tokens de diseño (lib/tema/tokens)
+const NAVY = COLORES.primario;
+const GREEN = COLORES.acento;
+const GRAY = COLORES["tinta-3"];
+const RED = COLORES.critico;
 
 function periodoFull(p: number): string {
   return `${MESES[(p % 100) - 1]} ${Math.floor(p / 100)}`;
@@ -215,7 +217,7 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
                 <stop offset="100%" stopColor={NAVY} stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORES.borde} vertical={false} />
             <XAxis
               dataKey="label"
               tick={<CustomXTick chartData={chartData} />}
@@ -233,9 +235,9 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
             <Tooltip
               contentStyle={{
                 borderRadius: 12,
-                border: "1px solid #e5e7eb",
+                border: `1px solid ${COLORES.borde}`,
                 fontSize: 13,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                boxShadow: SOMBRAS.tarjeta,
               }}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any, name: any) => [
@@ -299,7 +301,7 @@ export default function TendenciaMensual({ serieActual, serieAnterior, loading }
             <Line
               type="monotone"
               dataKey="tendencia"
-              stroke={GRAY}
+              stroke={COLORES.referencia}
               strokeWidth={1.5}
               strokeDasharray="4 4"
               dot={false}

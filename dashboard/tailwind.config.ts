@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { COLORES, DEGRADADO_CABECERA, FUENTES, RADIOS, SOMBRAS } from "./src/lib/tema/tokens";
 
 const config: Config = {
   content: [
@@ -11,20 +12,38 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        // Tokens de la dirección visual C (bg-superficie, text-tinta-2, bg-menu-fondo…)
+        ...COLORES,
+        // Claves heredadas, apuntadas a la paleta nueva para que las páginas
+        // que aún no adoptan los componentes nuevos ya cambien de identidad
         brand: {
-          navy:       "#1A3F72",   // azul marino del logo
-          "navy-dark":"#15335C",   // hover de botones primarios
-          green:      "#4EA234",   // verde del logo
-          "green-dark":"#3D8229",  // hover de botones de éxito
-          "blue-soft":"#E8EFF8",   // fondo suave azul (badges, hover de botones secundarios)
-          "blue-soft-2":"#EEF3FB", // hover de filas
-          "green-soft":"#EDF7E8",  // fondo suave verde
+          navy:       COLORES["primario-oscuro"],
+          "navy-dark":COLORES["menu-fondo"],     // hover de botones primarios
+          green:      COLORES.acento,
+          "green-dark":"#5E8F2A",                // hover de botones de éxito
+          "blue-soft":COLORES["primario-suave"], // badges, hover de botones secundarios
+          "blue-soft-2":COLORES["primario-suave"], // hover de filas
+          "green-soft":COLORES["acento-suave"],
         },
-        // Superficies neutras del shell de la app
         surface: {
-          app:    "#F0F4F9",       // fondo del shell
-          alt:    "#F8FAFD",       // fila alternada (tablas zebra)
+          app:    COLORES.fondo,
+          alt:    COLORES["superficie-2"],       // fila alternada (tablas zebra)
         },
+      },
+      fontFamily: {
+        sans: [...FUENTES.texto],
+        titulo: [...FUENTES.titulo],
+      },
+      borderRadius: {
+        tarjeta: RADIOS.tarjeta,
+        control: RADIOS.control,
+      },
+      boxShadow: {
+        tarjeta: SOMBRAS.tarjeta,
+        logo: SOMBRAS.logo,
+      },
+      backgroundImage: {
+        cabecera: DEGRADADO_CABECERA,
       },
       keyframes: {
         "fade-in": {

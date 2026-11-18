@@ -19,10 +19,10 @@ interface Props {
 
 function Indicador({ titulo, valor, detalle }: { titulo: string; valor: string; detalle: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white px-3 py-2.5">
-      <p className="text-[11px] uppercase tracking-wide text-gray-400">{titulo}</p>
+    <div className="rounded-control border border-borde bg-superficie px-3 py-2.5">
+      <p className="text-[11px] uppercase tracking-wide text-tinta-3">{titulo}</p>
       <p className="text-xl font-bold text-brand-navy tabular-nums mt-0.5">{valor}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{detalle}</p>
+      <p className="text-xs text-tinta-3 mt-0.5">{detalle}</p>
     </div>
   );
 }
@@ -82,7 +82,7 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
             <h2 id={tituloId} className="text-xl font-bold text-brand-navy">
               {data?.nombre ?? "Ficha del profesional"}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-tinta-3 mt-0.5">
               CC {documento}
               {data?.area_principal ? ` · ${data.area_principal}` : ""}
               {data?.etiqueta_periodo ? ` · ${data.etiqueta_periodo}` : ""}
@@ -98,13 +98,13 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
         </div>
 
         {error ? (
-          <div role="alert" className="mt-4 rounded-xl border border-red-100 bg-white p-4 text-sm text-red-700">
+          <div role="alert" className="mt-4 rounded-xl border border-critico/20 bg-critico-suave p-4 text-sm text-critico">
             {error instanceof Error ? error.message : "Error al consultar la ficha"}
           </div>
         ) : isLoading || !data ? (
-          <p className="mt-6 text-sm text-gray-400">Cargando ficha…</p>
+          <p className="mt-6 text-sm text-tinta-3">Cargando ficha…</p>
         ) : !a ? (
-          <p className="mt-6 text-sm text-gray-500">El profesional no tiene agenda en el periodo con los filtros activos.</p>
+          <p className="mt-6 text-sm text-tinta-3">El profesional no tiene agenda en el periodo con los filtros activos.</p>
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
@@ -136,9 +136,9 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
               <Indicador titulo="Canceladas" valor={fmtNumero(a.canceladas)} detalle={`${fmtNumero(a.bloqueadas)} bloqueadas`} />
             </div>
 
-            <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-4">
+            <section className="mt-4 rounded-tarjeta border border-borde bg-superficie p-4">
               <h3 className="text-[15px] font-semibold text-brand-navy">Servicios que atiende</h3>
-              <p className="text-xs text-gray-400 mb-2">Atendidas e inasistidas por servicio</p>
+              <p className="text-xs text-tinta-3 mb-2">Atendidas e inasistidas por servicio</p>
               {opcionServicios && (
                 <div style={{ height: Math.max(160, data.servicios.length * 38 + 50) }}>
                   <Grafico opcion={opcionServicios} etiqueta="Servicios del profesional" className="h-full" />
@@ -146,9 +146,9 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
               )}
             </section>
 
-            <section className="mt-3 rounded-2xl border border-gray-100 bg-white p-4">
+            <section className="mt-3 rounded-tarjeta border border-borde bg-superficie p-4">
               <h3 className="text-[15px] font-semibold text-brand-navy">Inasistencia en el tiempo</h3>
-              <p className="text-xs text-gray-400 mb-2">% de inasistencia del profesional en cada periodo cargado, contra la meta</p>
+              <p className="text-xs text-tinta-3 mb-2">% de inasistencia del profesional en cada periodo cargado, contra la meta</p>
               {opcionTendencia && (
                 <Grafico opcion={opcionTendencia} etiqueta="Tendencia de inasistencia del profesional" className="h-[220px]" />
               )}

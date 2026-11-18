@@ -51,7 +51,7 @@ export function ArbolPerdidas({ arbol, areas, area, servicio = null, onArea, onS
             ← Todas las áreas
           </button>
           <span className="text-gray-300">/</span>
-          <span className="font-semibold text-gray-700">{area}</span>
+          <span className="font-semibold text-tinta-2">{area}</span>
         </div>
       )}
       {arbol.length === 0 ? (

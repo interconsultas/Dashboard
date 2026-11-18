@@ -22,7 +22,7 @@ export function InsigniaAlertas() {
       <span
         aria-hidden
         title={titulo}
-        className="min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-brand-navy text-[11px] font-bold leading-5 text-center"
+        className="min-w-[20px] h-5 px-1.5 rounded-full bg-atencion-suave text-atencion text-[11px] font-bold leading-5 text-center tabular-nums"
       >
         {total > 99 ? "99+" : total}
       </span>

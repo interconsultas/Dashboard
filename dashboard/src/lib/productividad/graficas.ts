@@ -9,7 +9,6 @@ import {
   ESCALA_SECUENCIAL,
   FUENTE,
   NAVY,
-  REJILLA,
   ROJO_MALO,
   TINTA,
   TINTA_2,
@@ -25,14 +24,8 @@ import type { Embudo, NodoArea, NodoServicio, PuntoSerie, ResumenProfesional, Re
 
 const META_PCT = META_INASISTENCIA * 100;
 
-const textoBase = { fontFamily: FUENTE, color: TINTA_2 };
-
-const cajaTooltip = {
-  backgroundColor: TINTA,
-  borderWidth: 0,
-  textStyle: { color: "#fff", fontSize: 12.5 },
-  extraCssText: "border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);",
-};
+// Tipografía, tintas, ejes, rejilla y caja del tooltip vienen del tema único
+// (lib/tema/graficas). Aquí solo van colores con significado.
 
 function degradado(color: string, alfaArriba: string) {
   return {
@@ -62,7 +55,6 @@ export function opcionesSparkline(valores: (number | null)[], etiquetas: string[
     yAxis: { type: "value", show: false, scale: true },
     tooltip: {
       trigger: "axis",
-      ...cajaTooltip,
       formatter: (p: any) => `${p[0].name}: <b>${p[0].value === null || p[0].value === undefined ? "—" : fmt(p[0].value)}</b>`,
       axisPointer: { type: "line", lineStyle: { color: TINTA_3 } },
     },
@@ -91,12 +83,10 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
   const idx = serie.findIndex((p) => p.clave === seleccionado);
   const etiquetas = serie.map((p) => p.etiqueta);
   return {
-    textStyle: textoBase,
     animationDuration: 400,
     grid: { left: 46, right: 24, top: 24, bottom: 58 },
     tooltip: {
       trigger: "axis",
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = serie[p[0].dataIndex];
         return `<b>${d.etiqueta}</b><br>% inasistencia: <b>${fmtPct(d.pct_inasistencia)}</b><br>${fmtNumero(d.inasistidas)} inasistidas de ${fmtNumero(d.asignadas)} asignadas`;
@@ -105,18 +95,14 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
     xAxis: {
       type: "category",
       data: etiquetas,
-      axisLine: { lineStyle: { color: REJILLA } },
-      axisTick: { show: false },
-      axisLabel: { color: TINTA_3 },
     },
     yAxis: {
       type: "value",
       min: 0,
-      axisLabel: { color: TINTA_3, formatter: (v: number) => `${v} %` },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => `${v} %` },
     },
     dataZoom: [
-      { type: "slider", height: 18, bottom: 6, borderColor: REJILLA, fillerColor: "rgba(42,120,214,.12)", handleSize: 14, textStyle: { color: TINTA_3 } },
+      { type: "slider", height: 18, bottom: 6, handleSize: 14 },
       { type: "inside" },
     ],
     series: [
@@ -144,7 +130,7 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
         },
         markArea:
           idx >= 0
-            ? { silent: true, itemStyle: { color: "rgba(42,120,214,.07)" }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
+            ? { silent: true, itemStyle: { color: "rgba(42,82,153,.07)" }, data: [[{ xAxis: etiquetas[idx] }, { xAxis: etiquetas[idx] }]] }
             : undefined,
       },
     ],
@@ -162,10 +148,8 @@ export function opcionesEmbudo(e: Embudo) {
   const colores = ["#86b6ef", "#3987e5", "#1c5cab"];
   const pctDe = (v: number, base: number) => (base > 0 ? v / base : null);
   return {
-    textStyle: textoBase,
     tooltip: {
       trigger: "item",
-      ...cajaTooltip,
       formatter: (p: any) => `<b>${p.name}</b>: ${fmtNumero(p.value)}<br>${fmtPct(pctDe(p.value, e.ofertadas))} de lo ofertado`,
     },
     series: [
@@ -225,10 +209,8 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
   const lo = valores.length ? Math.min(...valores) : 0;
   const hi = valores.length ? Math.max(...valores) : 0;
   return {
-    textStyle: textoBase,
     grid: { left: 150, right: 20, top: 8, bottom: 78 },
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) =>
         `<b>${areas[p.value[1]]}</b> · ${mapa.periodos[p.value[0]].etiqueta}<br>% inasistencia: <b>${fmtPuntos(p.value[2])}</b><br>${fmtNumero(p.value[3])} de ${fmtNumero(p.value[4])} asignadas`,
     },
@@ -236,15 +218,12 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
       type: "category",
       data: mapa.periodos.map((p) => p.etiqueta),
       splitArea: { show: false },
-      axisTick: { show: false },
       axisLine: { show: false },
-      axisLabel: { color: TINTA_3 },
     },
     yAxis: {
       type: "category",
       data: areas,
       inverse: true,
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: {
         color: TINTA,
@@ -264,7 +243,6 @@ export function opcionesCalor(mapa: RespuestaProductividad["mapa_calor"], areaSe
       itemHeight: 160,
       itemWidth: 10,
       inRange: { color: ESCALA_SECUENCIAL },
-      textStyle: { color: TINTA_3 },
       formatter: (v: number) => `${Math.round(v)} %`,
     },
     series: [
@@ -326,9 +304,7 @@ export function opcionesArbol(
     return "";
   };
   return {
-    textStyle: textoBase,
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = p.data ?? {};
         if (d.codigo) {
@@ -372,12 +348,9 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
   const maxDisponibles = Math.max(1, ...puntos.map((p) => p.disponibles));
   const promedioPts = promedio === null ? null : Number((promedio * 100).toFixed(1));
   const desde = medianaVolumen === null ? null : Math.max(medianaVolumen, 1);
-  const etiquetaEje = { color: TINTA_3 };
   return {
-    textStyle: textoBase,
     grid: { left: 54, right: 24, top: 24, bottom: 44 },
     tooltip: {
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = puntos[p.dataIndex];
         if (!d) return "";
@@ -389,19 +362,15 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
       name: "Citas asignadas en el periodo (escala logarítmica)",
       nameLocation: "middle",
       nameGap: 28,
-      nameTextStyle: etiquetaEje,
-      axisLabel: { ...etiquetaEje, formatter: (v: number) => fmtNumero(v) },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => fmtNumero(v) },
       min: 10,
       max: maxEje,
     },
     yAxis: {
       type: "value",
       name: "% inasistencia",
-      nameTextStyle: etiquetaEje,
       min: 0,
-      axisLabel: { ...etiquetaEje, formatter: (v: number) => `${v} %` },
-      splitLine: { lineStyle: { color: REJILLA } },
+      axisLabel: { formatter: (v: number) => `${v} %` },
     },
     series: [
       {
@@ -411,7 +380,7 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
           documento: p.documento,
           symbolSize: 8 + 26 * Math.sqrt(p.disponibles / maxDisponibles),
         })),
-        itemStyle: { color: "rgba(42,120,214,.55)", borderColor: "#fff", borderWidth: 1 },
+        itemStyle: { color: "rgba(42,82,153,.55)", borderColor: "#fff", borderWidth: 1 },
         emphasis: { itemStyle: { color: "#1c5cab", borderColor: TINTA, borderWidth: 2 } },
         cursor: "pointer",
         markLine: {
@@ -450,30 +419,27 @@ export function opcionesDispersion(puntos: ResumenProfesional[]) {
 
 /* ── Pareto de citas perdidas ───────────────── */
 
-const leyendaBarras = { top: 0, left: 0, itemWidth: 12, itemHeight: 10, textStyle: { color: TINTA_2 } };
+const leyendaBarras = { top: 0, left: 0, itemWidth: 12, itemHeight: 10 };
 
 /** Filas: pareto(...).filas; se dibujan los 15 primeros. */
 export function opcionesPareto(filas: FilaPareto[]) {
   const top = filas.slice(0, TOP_PARETO);
   return {
-    textStyle: textoBase,
     grid: { left: 170, right: 76, top: 26, bottom: 20 },
     legend: { ...leyendaBarras, data: ["Inasistidas", "Disponibles"] },
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = top[p[0].dataIndex];
         return `<b>${d.nombre}</b><br>Inasistidas ${fmtNumero(d.inasistidas)} · Disponibles ${fmtNumero(d.disponibles)}<br>Acumulado: ${fmtPct(d.acumulado, 0)} del total<br><span style="opacity:.7">Clic para ver la ficha</span>`;
       },
     },
-    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    xAxis: { type: "value" },
     yAxis: {
       type: "category",
       inverse: true,
       data: top.map((p) => recortar(p.nombre, 24)),
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: { color: TINTA, fontSize: 11.5 },
     },
@@ -514,24 +480,21 @@ export function opcionesPareto(filas: FilaPareto[]) {
 
 export function opcionesServiciosFicha(servicios: NodoServicio[]) {
   return {
-    textStyle: textoBase,
     grid: { left: 190, right: 48, top: 24, bottom: 10 },
     legend: leyendaBarras,
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      ...cajaTooltip,
       formatter: (p: any) => {
         const d = servicios[p[0].dataIndex];
         return `<b>${d.nombre}</b><br>Asignadas ${fmtNumero(d.asignadas)} · Inasistidas ${fmtNumero(d.inasistidas)} (${fmtPct(d.pct_inasistencia)})`;
       },
     },
-    xAxis: { type: "value", axisLabel: { color: TINTA_3 }, splitLine: { lineStyle: { color: REJILLA } } },
+    xAxis: { type: "value" },
     yAxis: {
       type: "category",
       inverse: true,
       data: servicios.map((s) => recortar(s.nombre, 30)),
-      axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: { color: TINTA, fontSize: 11 },
     },

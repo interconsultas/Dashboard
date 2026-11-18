@@ -3,27 +3,28 @@
  * el cliente). La paleta categórica pasa el validador de daltonismo; las
  * etiquetas visibles y la matriz cubren el contraste de los tonos claros.
  */
+import { COLORES, FUENTE_TEXTO, PALETA_CATEGORICA } from "@/lib/tema/tokens";
 
-/* ── Colores ────────────────────────────────── */
+/* ── Colores (salen de los tokens de diseño: lib/tema/tokens) ── */
 
-export const TINTA = "#0F2A4A";
-export const TINTA_2 = "#4A5B73";
-export const TINTA_3 = "#7B8BA1";
-export const REJILLA = "#E7ECF3";
-export const AZUL_SERIE = "#2a78d6";
-export const NAVY = "#1A3F72";
-export const ROJO_MALO = "#B42318";
+export const TINTA = COLORES.tinta;
+export const TINTA_2 = COLORES["tinta-2"];
+export const TINTA_3 = COLORES["tinta-3"];
+export const REJILLA = COLORES.borde;
+export const AZUL_SERIE = COLORES.primario;
+export const NAVY = COLORES["primario-oscuro"];
+export const ROJO_MALO = COLORES.critico;
 
 /** Orden fijo: el color sigue al área (su posición en areas_servicio.orden). */
-export const COLORES_AREA = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
-const GRIS_NEUTRO = "#9AA7B8";
+export const COLORES_AREA: readonly string[] = PALETA_CATEGORICA;
+const GRIS_NEUTRO = COLORES.referencia;
 
 /** Escala secuencial de un solo tono, de claro a oscuro. */
 export const ESCALA_SECUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
 /** Desde este paso de la escala la tinta del texto es blanca. */
 const PASO_TINTA_CLARA = 4;
 
-export const FUENTE = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+export const FUENTE = FUENTE_TEXTO;
 
 export function colorArea(area: string, areas: readonly string[]): string {
   const i = areas.indexOf(area);

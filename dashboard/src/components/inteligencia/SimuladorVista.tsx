@@ -34,6 +34,7 @@ import { EncabezadoInteligencia } from "./PestanasInteligencia";
 import { SelectorPeriodo } from "./SelectorPeriodo";
 import { SimuladorPalancas } from "./SimuladorPalancas";
 import { SimuladorResultados } from "./SimuladorResultados";
+import { CLASES_CAMPO, CLASES_ETIQUETA_CAMPO } from "@/components/ui/clases";
 
 const API = "/api/productividad";
 const RUTA_CITAS = "/admin/citas";
@@ -46,15 +47,15 @@ const opcionesSWR = { keepPreviousData: true, revalidateOnFocus: false };
 function Esqueleto() {
   return (
     <div data-testid="simulador-cargando" className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-      <div className="lg:col-span-4 skeleton h-[480px] rounded-2xl" />
-      <div className="lg:col-span-8 skeleton h-[480px] rounded-2xl" />
+      <div className="lg:col-span-4 skeleton h-[480px] rounded-tarjeta" />
+      <div className="lg:col-span-8 skeleton h-[480px] rounded-tarjeta" />
     </div>
   );
 }
 
 function Aviso({ titulo, children }: { titulo: string; children?: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-10 text-center">
       <p className="text-base font-semibold text-brand-navy">{titulo}</p>
       {children}
     </div>
@@ -77,14 +78,14 @@ function Filtro({
   const id = useId();
   return (
     <div className="flex flex-col">
-      <label htmlFor={id} className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+      <label htmlFor={id} className={CLASES_ETIQUETA_CAMPO}>
         {etiqueta}
       </label>
       <select
         id={id}
         value={valor ?? ""}
         onChange={(e) => onCambiar(e.target.value || null)}
-        className="mt-0.5 max-w-[220px] rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-brand-navy"
+        className={`${CLASES_CAMPO} max-w-[220px]`}
       >
         <option value="">{todos}</option>
         {opciones.map((o) => (
@@ -192,7 +193,7 @@ export function SimuladorVista() {
 
   const encabezado = (
     <EncabezadoInteligencia pestana="simulador" onPestana={onPestana}>
-      {isValidating && !isLoading && <Spinner className="h-4 w-4 text-brand-navy/40" />}
+      {isValidating && !isLoading && <Spinner className="h-4 w-4 text-primario/50" />}
       {data && (
         <>
           <SelectorPeriodo
@@ -224,7 +225,7 @@ export function SimuladorVista() {
   let cuerpo: React.ReactNode;
   if (error && !data) {
     cuerpo = (
-      <div role="alert" className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 text-sm text-red-700">
+      <div role="alert" className="bg-critico-suave rounded-tarjeta border border-critico/20 p-6 text-sm text-critico">
         {mensajeError(error)}
       </div>
     );
@@ -233,7 +234,7 @@ export function SimuladorVista() {
   } else if (data.periodo === null) {
     cuerpo = (
       <Aviso titulo="Aún no hay informes de citas cargados">
-        <p className="text-sm text-gray-500 mt-1">El simulador parte de las cargas de citas de cada periodo.</p>
+        <p className="text-sm text-tinta-3 mt-1">El simulador parte de las cargas de citas de cada periodo.</p>
         {veCitas && (
           <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
             Ir a Citas
@@ -244,7 +245,7 @@ export function SimuladorVista() {
   } else if (!base || !modelo || base.ofertadas === 0) {
     cuerpo = (
       <Aviso titulo="No hay citas ofertadas con este filtro en el periodo">
-        <p className="text-sm text-gray-500 mt-1">Elija otra área, otro servicio u otro periodo.</p>
+        <p className="text-sm text-tinta-3 mt-1">Elija otra área, otro servicio u otro periodo.</p>
       </Aviso>
     );
   } else {
