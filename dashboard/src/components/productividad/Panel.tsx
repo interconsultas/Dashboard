@@ -11,7 +11,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 sm:px-5 min-w-0 ${className}`}>
+    <section className={`h-full flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 sm:px-5 min-w-0 ${className}`}>
       <h2 className="text-[15px] font-semibold text-brand-navy">{titulo}</h2>
       {ayuda && <p className="text-xs text-gray-400 mt-0.5 mb-2">{ayuda}</p>}
       {children}

@@ -47,7 +47,7 @@ export function ParetoPerdidas({ lista, onFicha }: Props) {
       {resultado.total === 0 ? (
         <SinDatos className="h-[380px]">No hay citas perdidas con los filtros elegidos.</SinDatos>
       ) : (
-        <Grafico opcion={opcion} etiqueta="Pareto de citas perdidas" eventos={eventos} className="h-[380px]" />
+        <Grafico opcion={opcion} etiqueta="Pareto de citas perdidas" eventos={eventos} className="flex-1 min-h-[380px]" />
       )}
     </Panel>
   );

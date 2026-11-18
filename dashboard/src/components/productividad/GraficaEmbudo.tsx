@@ -14,7 +14,7 @@ export function GraficaEmbudo({ embudo }: { embudo: Embudo | null }) {
       {!opcion || !embudo || embudo.ofertadas === 0 ? (
         <SinDatos>No hay citas ofertadas con los filtros actuales.</SinDatos>
       ) : (
-        <Grafico opcion={opcion} etiqueta="Embudo de la agenda" className="h-[300px]" />
+        <Grafico opcion={opcion} etiqueta="Embudo de la agenda" className="flex-1 min-h-[300px]" />
       )}
     </Panel>
   );

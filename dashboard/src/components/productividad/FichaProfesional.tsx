@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { aQueryString, type FiltrosProductividad } from "@/lib/productividad/filtros";
@@ -63,8 +64,10 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
 
   const a = data?.actual;
 
-  return (
-    <div className="fixed inset-0 z-40">
+  // Portal a <body>: dentro del layout, un contenedor con scroll desplazaba el panel
+  // y dejaba una franja sin cubrir arriba.
+  return createPortal(
+    <div className="fixed inset-0 z-50">
       <div data-testid="ficha-fondo" className="absolute inset-0 bg-brand-navy/30" onClick={onCerrar} />
       <div
         ref={panel}
@@ -153,6 +156,7 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

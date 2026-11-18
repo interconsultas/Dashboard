@@ -56,7 +56,7 @@ export function GraficaTendencia({ serie, seleccionado, onPeriodo }: Props) {
           etiqueta="Tendencia del % de inasistencia"
           eventos={eventos}
           onListo={onListo}
-          className="h-[300px]"
+          className="flex-1 min-h-[300px]"
         />
       )}
     </Panel>

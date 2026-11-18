@@ -41,7 +41,7 @@ export function DispersionProfesionales({ lista, onFicha }: Props) {
           Ningún profesional tiene {MIN_ASIGNADAS_DISPERSION} o más citas asignadas con los filtros elegidos.
         </SinDatos>
       ) : (
-        <Grafico opcion={opcion} etiqueta="Dispersión de profesionales" eventos={eventos} className="h-[380px]" />
+        <Grafico opcion={opcion} etiqueta="Dispersión de profesionales" eventos={eventos} className="flex-1 min-h-[380px]" />
       )}
     </Panel>
   );

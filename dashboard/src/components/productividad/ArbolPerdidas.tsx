@@ -61,7 +61,7 @@ export function ArbolPerdidas({ arbol, areas, area, servicio = null, onArea, onS
           opcion={opcion}
           etiqueta="Citas perdidas por área y servicio"
           eventos={eventos}
-          className={area ? "h-[272px]" : "h-[300px]"}
+          className="flex-1 min-h-[272px]"
         />
       )}
     </Panel>
