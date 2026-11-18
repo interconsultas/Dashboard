@@ -20,6 +20,7 @@ export type Seccion =
   | "dashboard"
   | "cumplimiento"
   | "productividad"
+  | "inteligencia"
   | "carga"
   | "profesionales"
   | "metas"
@@ -67,6 +68,14 @@ export const SECCIONES: readonly DefSeccion[] = [
     etiqueta: "Productividad",
     descripcion: "Tablero de citas y ficha de cada profesional.",
     ruta: "/dashboard/productividad",
+    admiteEdicion: false,
+    configurable: true,
+  },
+  {
+    clave: "inteligencia",
+    etiqueta: "Inteligencia",
+    descripcion: "Mapa de relaciones entre servicios, profesionales, programas y autorizaciones.",
+    ruta: "/dashboard/inteligencia",
     admiteEdicion: false,
     configurable: true,
   },
@@ -138,6 +147,7 @@ export const PERMISOS_POR_DEFECTO: Readonly<Record<Rol, Permisos>> = {
     dashboard: "ver",
     cumplimiento: "ver",
     productividad: "ver",
+    inteligencia: "ver",
     metas: "ver",
   },
   coordinador: { ...todas("ninguno"), dashboard: "ver" },
@@ -187,6 +197,7 @@ const RUTAS_PAGINA: ReadonlyArray<{ prefijo: string; seccion: Seccion }> = [
   { prefijo: "/dashboard", seccion: "dashboard" }, // incluye /dashboard/tipo/*
   { prefijo: "/dashboard/cumplimiento", seccion: "cumplimiento" },
   { prefijo: "/dashboard/productividad", seccion: "productividad" },
+  { prefijo: "/dashboard/inteligencia", seccion: "inteligencia" },
   // Cualquier otra página de administración es solo de admin (como 'usuarios')
   { prefijo: "/admin", seccion: "usuarios" },
   { prefijo: "/admin/carga", seccion: "carga" },
@@ -257,6 +268,7 @@ export const PERMISOS_API = {
   "/api/cumplimiento": { POST: ver("cumplimiento") },
   "/api/productividad": { GET: ver("productividad") },
   "/api/productividad/profesional": { GET: ver("productividad") },
+  "/api/inteligencia/grafo": { GET: ver("inteligencia") },
   "/api/admin/metas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/metas/programas": { GET: ver("metas"), PUT: editar("metas") },
   "/api/admin/medicos": { GET: ver("profesionales", "cumplimiento"), POST: editar("profesionales") },

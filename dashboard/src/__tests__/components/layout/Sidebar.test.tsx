@@ -105,6 +105,39 @@ describe("Sidebar — entrada Productividad", () => {
   });
 });
 
+describe("Sidebar — entrada Inteligencia", () => {
+  it("enlaza a /dashboard/inteligencia justo debajo de Productividad", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar();
+
+    expect(enlace("Inteligencia")).toHaveAttribute("href", "/dashboard/inteligencia");
+    const nombres = screen.getAllByRole("link").map((l) => l.textContent?.trim());
+    expect(nombres.indexOf("Inteligencia")).toBe(nombres.indexOf("Productividad") + 1);
+  });
+
+  it("en /dashboard/inteligencia resalta Inteligencia y no Dashboard ni Productividad", () => {
+    mockUsePathname.mockReturnValue("/dashboard/inteligencia");
+    renderSidebar();
+
+    expect(enlace("Inteligencia")).toHaveClass("bg-brand-green");
+    expect(enlace("Dashboard")).not.toHaveClass("bg-brand-green");
+    expect(enlace("Dashboard")).not.toHaveClass("bg-white/10");
+    expect(enlace("Productividad")).not.toHaveClass("bg-brand-green");
+  });
+
+  it("coordinador no la ve con los permisos por defecto", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("coordinador");
+    expect(screen.queryByRole("link", { name: "Inteligencia" })).not.toBeInTheDocument();
+  });
+
+  it("direccion_medica la ve con los permisos por defecto", () => {
+    mockUsePathname.mockReturnValue("/dashboard");
+    renderSidebar("direccion_medica");
+    expect(enlace("Inteligencia")).toBeInTheDocument();
+  });
+});
+
 describe("Sidebar — enlaces según el rol", () => {
   const SUBITEMS = ["Laboratorios", "RX", "Asesorias"];
 
