@@ -271,6 +271,8 @@ export const PERMISOS_API = {
   "/api/productividad/profesional": { GET: ver("productividad") },
   // El informe mensual agrega prioridades solo si además se ve Inteligencia
   "/api/informes/excel": { GET: ver("productividad") },
+  // Modelo del informe en JSON para el PDF que se arma en el navegador
+  "/api/informes/datos": { GET: ver("productividad") },
   "/api/inteligencia/grafo": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas/conteo": { GET: ver("inteligencia") },

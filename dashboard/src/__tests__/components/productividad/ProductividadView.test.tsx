@@ -119,7 +119,7 @@ describe("ProductividadView", () => {
     render(<ProductividadView />);
     fireEvent.click(screen.getByRole("button", { name: /Exportar/ }));
     expect(screen.getByRole("menuitem", { name: /Excel — esta vista/ })).toBeEnabled();
-    expect(screen.getByRole("menuitem", { name: /PDF — esta vista/ })).toBeDisabled();
+    expect(screen.getByRole("menuitem", { name: /PDF — esta vista/ })).toBeEnabled();
   });
 
   it("sin cargas no ofrece Exportar", () => {

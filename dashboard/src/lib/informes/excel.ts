@@ -14,6 +14,7 @@
 import ExcelJS from "exceljs";
 import { COLORES } from "@/lib/tema/tokens";
 import { META_INASISTENCIA } from "@/lib/productividad/metricas";
+import { BANDAS_INASISTENCIA, umbralInasistencia } from "./semaforo";
 import type { ColumnaInforme, KpiInforme, ModeloInforme, TablaInforme, TipoColumna, ValorCelda } from "./modelo";
 
 /* ── Estilos ──────────────────────────────────── */
@@ -39,23 +40,13 @@ const FORMATO_PUNTOS = '+0.0" pp";-0.0" pp";0.0" pp"';
 const relleno = (color: string): ExcelJS.FillPattern => ({ type: "pattern", pattern: "solid", fgColor: { argb: color } });
 const fuente = (extra: Partial<ExcelJS.Font> = {}): Partial<ExcelJS.Font> => ({ name: FUENTE, size: 11, color: { argb: TINTA }, ...extra });
 
-/** Bandas del semáforo de inasistencia: verde bajo la meta y rojo cada vez más intenso por encima. */
-const BANDAS_INASISTENCIA: { desde: number | null; hasta: number | null; fondo: string; tinta: string }[] = [
-  { desde: null, hasta: 1, fondo: COLORES["bien-suave"], tinta: COLORES.bien },
-  { desde: 1, hasta: 1.5, fondo: COLORES["critico-suave"], tinta: COLORES.critico },
-  { desde: 1.5, hasta: 2, fondo: "#F4B4AB", tinta: COLORES.tinta },
-  { desde: 2, hasta: null, fondo: COLORES.critico, tinta: "#FFFFFF" },
-];
-
-const redondear = (v: number) => Number(v.toFixed(4));
-
 function semaforo(ws: ExcelJS.Worksheet, ref: string, celda: string) {
   ws.addConditionalFormatting({
     ref,
     rules: BANDAS_INASISTENCIA.map((b, i) => {
       const condiciones = [`ISNUMBER(${celda})`];
-      if (b.desde !== null) condiciones.push(`${celda}>=${redondear(META_INASISTENCIA * b.desde)}`);
-      if (b.hasta !== null) condiciones.push(`${celda}<${redondear(META_INASISTENCIA * b.hasta)}`);
+      if (b.desde !== null) condiciones.push(`${celda}>=${umbralInasistencia(b.desde)}`);
+      if (b.hasta !== null) condiciones.push(`${celda}<${umbralInasistencia(b.hasta)}`);
       return {
         type: "expression",
         priority: i + 1,

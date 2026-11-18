@@ -5,7 +5,10 @@
 import { aQueryString, type FiltrosProductividad } from "@/lib/productividad/filtros";
 import type { TipoInforme } from "./modelo";
 
-export type FormatoInforme = "excel";
+export type FormatoInforme = "excel" | "pdf";
+
+/** El Excel lo arma el servidor; el PDF, el navegador a partir del modelo en JSON. */
+const RUTAS: Record<FormatoInforme, string> = { excel: "/api/informes/excel", pdf: "/api/informes/datos" };
 
 /**
  * URL del informe. El mensual no lleva filtros de área, servicio ni
@@ -24,7 +27,7 @@ export function urlInforme(
     new URLSearchParams(aQueryString(filtros)).forEach((v, k) => params.set(k, v));
     if (tipo === "ficha" && documento) params.set("documento", documento);
   }
-  return `/api/informes/${formato}?${params.toString()}`;
+  return `${RUTAS[formato]}?${params.toString()}`;
 }
 
 /** Nombre del archivo en Content-Disposition (filename="…"), o el de reserva. */
@@ -33,23 +36,35 @@ export function nombreDeDisposicion(disposicion: string | null, reserva: string)
   return m ? m[1] : reserva;
 }
 
-type Fetch = (url: string) => Promise<Pick<Response, "ok" | "status" | "headers" | "json" | "blob">>;
+export type Fetch = (url: string) => Promise<Pick<Response, "ok" | "status" | "headers" | "json" | "blob">>;
 
-/** Descarga la URL como archivo; devuelve el nombre guardado o lanza el error del servidor. */
-export async function descargarArchivo(url: string, ejecutar: Fetch = fetch): Promise<string> {
+/** Pide la URL; si el servidor responde con error, lanza su mensaje. */
+export async function pedir(url: string, ejecutar: Fetch = fetch) {
   const res = await ejecutar(url);
   if (!res.ok) {
     const cuerpo = (await res.json().catch(() => null)) as { error?: unknown } | null;
     throw new Error(typeof cuerpo?.error === "string" ? cuerpo.error : "No se pudo generar el informe");
   }
-  const nombre = nombreDeDisposicion(res.headers.get("Content-Disposition"), "informe.xlsx");
-  const enlace = URL.createObjectURL(await res.blob());
+  return res;
+}
+
+/** Guarda el blob como archivo descargado. */
+export function guardarBlob(blob: Blob, nombre: string): void {
+  const enlace = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = enlace;
   a.download = nombre;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(enlace);
+  // Margen para que el navegador empiece la descarga antes de liberar el blob
+  setTimeout(() => URL.revokeObjectURL(enlace), 1000);
+}
+
+/** Descarga la URL como archivo; devuelve el nombre guardado o lanza el error del servidor. */
+export async function descargarArchivo(url: string, ejecutar: Fetch = fetch): Promise<string> {
+  const res = await pedir(url, ejecutar);
+  const nombre = nombreDeDisposicion(res.headers.get("Content-Disposition"), "informe.xlsx");
+  guardarBlob(await res.blob(), nombre);
   return nombre;
 }

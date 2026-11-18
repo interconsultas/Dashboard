@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { echarts, NOMBRE_TEMA, type EChartsType } from "@/lib/echarts";
+import { registrarGrafica } from "@/lib/informes/registroGraficas";
 
 export interface PropsGrafico {
   /** Opción de ECharts (lib/productividad/graficas). */
@@ -20,6 +21,7 @@ export interface PropsGrafico {
 export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, className }: PropsGrafico) {
   const contenedor = useRef<HTMLDivElement>(null);
   const instancia = useRef<EChartsType | null>(null);
+  const quitarDelRegistro = useRef<(() => void) | null>(null);
 
   // echarts-for-react solo se redimensiona con la ventana; la tarjeta cambia de
   // ancho al cargar la grilla o al plegar el menú, así que se observa el contenedor.
@@ -31,8 +33,13 @@ export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, cla
     return () => observador.disconnect();
   }, []);
 
+  // Al desmontar, el PDF ya no puede capturar esta gráfica
+  useEffect(() => () => quitarDelRegistro.current?.(), []);
+
   const alEstarListo = (chart: EChartsType) => {
     instancia.current = chart;
+    quitarDelRegistro.current?.();
+    quitarDelRegistro.current = registrarGrafica(etiqueta, chart);
     onListo?.(chart);
   };
 

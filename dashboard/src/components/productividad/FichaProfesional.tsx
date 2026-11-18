@@ -14,6 +14,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useDescarga } from "@/components/informes/useDescarga";
 import { Grafico } from "./Grafico";
 
+const BOTONES_DESCARGA = [
+  { formato: "excel", etiqueta: "Descargar Excel" },
+  { formato: "pdf", etiqueta: "Descargar PDF" },
+] as const;
+
 interface Props {
   documento: string;
   /** Filtros activos del tablero: la ficha se calcula con los mismos. */
@@ -113,24 +118,24 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Boton
-                variante="secundario"
-                tamano="sm"
-                aria-busy={descargando !== null}
-                disabled={descargando !== null}
-                onClick={() => void descargar("excel", urlInforme("excel", "ficha", filtros, documento))}
-              >
-                {descargando ? (
-                  <>
-                    <Spinner className="h-3.5 w-3.5" /> Generando…
-                  </>
-                ) : (
-                  "Descargar Excel"
-                )}
-              </Boton>
-              <Boton variante="fantasma" tamano="sm" disabled title="Próximamente">
-                PDF · Próximamente
-              </Boton>
+              {BOTONES_DESCARGA.map((b) => (
+                <Boton
+                  key={b.formato}
+                  variante="secundario"
+                  tamano="sm"
+                  aria-busy={descargando === b.formato}
+                  disabled={descargando !== null}
+                  onClick={() => void descargar(b.formato, urlInforme(b.formato, "ficha", filtros, documento), b.formato)}
+                >
+                  {descargando === b.formato ? (
+                    <>
+                      <Spinner className="h-3.5 w-3.5" /> Generando…
+                    </>
+                  ) : (
+                    b.etiqueta
+                  )}
+                </Boton>
+              ))}
               {errorDescarga && (
                 <p role="alert" className="text-xs text-critico">
                   {errorDescarga}

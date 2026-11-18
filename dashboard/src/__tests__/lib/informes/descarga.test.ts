@@ -14,6 +14,12 @@ describe("urlInforme", () => {
   it("la ficha agrega el documento", () => {
     expect(urlInforme("excel", "ficha", FILTROS_VACIOS, "1053")).toBe("/api/informes/excel?tipo=ficha&documento=1053");
   });
+
+  it("el PDF pide el modelo en JSON a /api/informes/datos con los mismos parámetros", () => {
+    expect(urlInforme("pdf", "mensual", { ...FILTROS_VACIOS, periodo: "202610", area: "Salud oral" })).toBe(
+      "/api/informes/datos?tipo=mensual&periodo=202610"
+    );
+  });
 });
 
 describe("nombreDeDisposicion", () => {
@@ -32,7 +38,8 @@ describe("descargarArchivo", () => {
     Object.assign(URL, { createObjectURL: crear, revokeObjectURL: revocar });
   });
 
-  it("descarga el blob con el nombre del servidor", async () => {
+  it("descarga el blob con el nombre del servidor y libera la URL después", async () => {
+    jest.useFakeTimers();
     const clic = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const respuesta = {
       ok: true,
@@ -43,7 +50,10 @@ describe("descargarArchivo", () => {
     await expect(descargarArchivo("/api/informes/excel?tipo=vista", fetchMock)).resolves.toBe("Ficha_1053.xlsx");
     expect(fetchMock).toHaveBeenCalledWith("/api/informes/excel?tipo=vista");
     expect(clic).toHaveBeenCalled();
+    expect(revocar).not.toHaveBeenCalled();
+    jest.runAllTimers();
     expect(revocar).toHaveBeenCalledWith("blob:1");
+    jest.useRealTimers();
   });
 
   it("propaga el mensaje de error del servidor", async () => {

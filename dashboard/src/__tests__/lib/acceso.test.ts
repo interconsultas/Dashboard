@@ -274,6 +274,7 @@ describe("PERMISOS_API", () => {
       ["/api/productividad", "GET", ["admin", "direccion_medica"]],
       ["/api/productividad/profesional", "GET", ["admin", "direccion_medica"]],
       ["/api/informes/excel", "GET", ["admin", "direccion_medica"]],
+      ["/api/informes/datos", "GET", ["admin", "direccion_medica"]],
       ["/api/inteligencia/grafo", "GET", ["admin", "direccion_medica"]],
       ["/api/inteligencia/alertas", "GET", ["admin", "direccion_medica"]],
       ["/api/inteligencia/alertas/conteo", "GET", ["admin", "direccion_medica"]],

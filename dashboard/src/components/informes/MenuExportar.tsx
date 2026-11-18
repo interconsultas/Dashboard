@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Boton } from "@/components/ui/Boton";
 import { Spinner } from "@/components/ui/Spinner";
-import { urlInforme } from "@/lib/informes/descarga";
+import { urlInforme, type FormatoInforme } from "@/lib/informes/descarga";
 import type { TipoInforme } from "@/lib/informes/modelo";
 import type { FiltrosProductividad } from "@/lib/productividad/filtros";
 import { useDescarga } from "./useDescarga";
@@ -12,15 +12,14 @@ interface Opcion {
   id: string;
   etiqueta: string;
   tipo: TipoInforme;
-  /** PDF: se habilita en la parte 2 del informe. */
-  proximamente?: boolean;
+  formato: FormatoInforme;
 }
 
 const OPCIONES: Opcion[] = [
-  { id: "excel-vista", etiqueta: "Excel — esta vista", tipo: "vista" },
-  { id: "excel-mensual", etiqueta: "Excel — informe mensual", tipo: "mensual" },
-  { id: "pdf-vista", etiqueta: "PDF — esta vista", tipo: "vista", proximamente: true },
-  { id: "pdf-mensual", etiqueta: "PDF — informe mensual", tipo: "mensual", proximamente: true },
+  { id: "excel-vista", etiqueta: "Excel — esta vista", tipo: "vista", formato: "excel" },
+  { id: "excel-mensual", etiqueta: "Excel — informe mensual", tipo: "mensual", formato: "excel" },
+  { id: "pdf-vista", etiqueta: "PDF — esta vista", tipo: "vista", formato: "pdf" },
+  { id: "pdf-mensual", etiqueta: "PDF — informe mensual", tipo: "mensual", formato: "pdf" },
 ];
 
 /** Botón "Exportar" de la cabecera de Productividad: descarga la vista filtrada o el informe mensual. */
@@ -47,7 +46,7 @@ export function MenuExportar({ filtros }: { filtros: FiltrosProductividad }) {
 
   function elegir(o: Opcion) {
     setAbierto(false);
-    void descargar(o.id, urlInforme("excel", o.tipo, filtros));
+    void descargar(o.id, urlInforme(o.formato, o.tipo, filtros), o.formato);
   }
 
   return (
@@ -83,14 +82,10 @@ export function MenuExportar({ filtros }: { filtros: FiltrosProductividad }) {
               key={o.id}
               type="button"
               role="menuitem"
-              disabled={o.proximamente}
               onClick={() => elegir(o)}
-              className="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm text-tinta hover:bg-primario-suave disabled:cursor-not-allowed disabled:text-tinta-3 disabled:hover:bg-transparent"
+              className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-tinta hover:bg-primario-suave"
             >
-              <span>{o.etiqueta}</span>
-              {o.proximamente && (
-                <span className="rounded-full bg-superficie-2 px-2 py-0.5 text-[11px] text-tinta-3">Próximamente</span>
-              )}
+              {o.etiqueta}
             </button>
           ))}
         </div>

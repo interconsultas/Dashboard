@@ -14,6 +14,7 @@ jest.mock("echarts-for-react/lib/core", () => ({
 }));
 
 import GraficoCliente from "@/components/productividad/GraficoCliente";
+import { capturarGrafica } from "@/lib/informes/registroGraficas";
 
 describe("GraficoCliente", () => {
   beforeEach(() => mockReactECharts.mockClear());
@@ -62,5 +63,14 @@ describe("GraficoCliente", () => {
     unmount();
     expect(disconnect).toHaveBeenCalled();
     global.ResizeObserver = original;
+  });
+
+  it("registra la gráfica por su etiqueta para el PDF y la quita al desmontar", () => {
+    const { unmount } = render(<GraficoCliente opcion={{}} etiqueta="Embudo de la agenda" />);
+    const chart = { resize: jest.fn(), getDataURL: jest.fn(() => "data:image/png;base64,EMB") };
+    act(() => (mockReactECharts.mock.calls[0][0].onChartReady as (c: unknown) => void)(chart));
+    expect(capturarGrafica("Embudo de la agenda")).toBe("data:image/png;base64,EMB");
+    unmount();
+    expect(capturarGrafica("Embudo de la agenda")).toBeNull();
   });
 });

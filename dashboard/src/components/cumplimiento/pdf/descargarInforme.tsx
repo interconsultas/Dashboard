@@ -5,6 +5,7 @@
  */
 import { pdf } from "@react-pdf/renderer";
 import { construirInforme, type EntradaInforme } from "@/lib/cumplimiento/informe";
+import { RUTA_FUENTES, registrarFuentesPdf } from "@/components/informes/pdf/fuentes";
 import { DocumentoCumplimiento } from "./DocumentoCumplimiento";
 
 const RUTA_LOGO = "/logo.png";
@@ -15,6 +16,7 @@ const LIBERAR_URL_MS = 1000;
 export async function descargarInforme(entrada: EntradaInforme): Promise<void> {
   const informe = construirInforme(entrada);
   const logo = new URL(RUTA_LOGO, window.location.origin).href;
+  registrarFuentesPdf(new URL(RUTA_FUENTES, window.location.origin).href);
   const blob = await pdf(<DocumentoCumplimiento informe={informe} logo={logo} />).toBlob();
 
   const url = URL.createObjectURL(blob);
