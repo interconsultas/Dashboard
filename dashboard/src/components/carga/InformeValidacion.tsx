@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { LogCarga } from "@/types/carga";
 import { BadgeEstado } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
+import { clasesBoton } from "@/components/ui/Boton";
+import { cx } from "@/components/ui/clases";
 import { fmtPeriodos } from "@/lib/periodo";
 
 interface PreviewData {
@@ -120,7 +122,7 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-sm text-red-700">
+      <div className="bg-critico-suave border border-critico/30 rounded-control p-6 text-sm text-critico">
         <p className="font-semibold mb-1">Error</p>
         <p>{error}</p>
         <button onClick={onReset} className="mt-4 underline text-sm">Volver</button>
@@ -130,16 +132,16 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
   if (!informe || EN_PROGRESO.includes(informe.estado)) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-10 flex flex-col items-center gap-4">
-        <Spinner className="h-8 w-8 text-[#1F497D]" />
+      <div className="bg-superficie border border-borde rounded-control p-10 flex flex-col items-center gap-4">
+        <Spinner className="h-8 w-8 text-primario" />
         <div className="text-center">
-          <p className="text-sm font-semibold text-gray-700">Procesando archivo...</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm font-semibold text-tinta-2">Procesando archivo...</p>
+          <p className="text-xs text-tinta-3 mt-1">
             {informe
               ? `Estado: ${informe.estado}`
               : "Normalizando y cargando en área temporal"}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-tinta-3 mt-0.5">
             Este proceso puede tomar 3-5 minutos para archivos grandes
           </p>
         </div>
@@ -155,11 +157,11 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
   // ── Si está confirmando (cargando → exitoso) ─────────────────────────────
   if (esCargando || confirming) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-10 flex flex-col items-center gap-4">
-        <Spinner className="h-8 w-8 text-[#1F497D]" />
+      <div className="bg-superficie border border-borde rounded-control p-10 flex flex-col items-center gap-4">
+        <Spinner className="h-8 w-8 text-primario" />
         <div className="text-center">
-          <p className="text-sm font-semibold text-gray-700">Guardando datos en la base de datos...</p>
-          <p className="text-xs text-gray-400 mt-1">Un momento, por favor</p>
+          <p className="text-sm font-semibold text-tinta-2">Guardando datos en la base de datos...</p>
+          <p className="text-xs text-tinta-3 mt-1">Un momento, por favor</p>
         </div>
       </div>
     );
@@ -170,38 +172,38 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
     <div className="space-y-5">
 
       {/* ── Encabezado ───────────────────────────────────────────────────── */}
-      <div className={`border rounded-xl p-5 ${
-        esFatal  ? "bg-red-50 border-red-200" :
-        esEspera ? "bg-yellow-50 border-yellow-200" :
-        esExito  ? "bg-green-50 border-green-200" :
-                   "bg-gray-50 border-gray-200"
+      <div className={`border rounded-control p-5 ${
+        esFatal  ? "bg-critico-suave border-critico/30" :
+        esEspera ? "bg-atencion-suave border-atencion/30" :
+        esExito  ? "bg-bien-suave border-bien/30" :
+                   "bg-superficie-2 border-borde"
       }`}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <BadgeEstado estado={informe.estado} />
               {(preview?.periodo_detectado || informe.periodo_detectado) && (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-tinta-2">
                   Período: <strong>{fmtPeriodos(preview?.periodos_detectados ?? informe.periodos_detectados, preview?.periodo_detectado ?? informe.periodo_detectado)}</strong>
                 </span>
               )}
             </div>
-            <p className="text-sm font-semibold text-gray-800 mt-1">
+            <p className="text-sm font-semibold text-tinta mt-1">
               {informe.nombre_archivo}
             </p>
             {informe.tiempo_segundos != null && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-tinta-3 mt-0.5">
                 Procesado en {informe.tiempo_segundos}s
               </p>
             )}
           </div>
-          <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-600">
+          <button onClick={onReset} className="text-xs text-tinta-3 hover:text-tinta">
             ✕ Cerrar
           </button>
         </div>
 
         {esFatal && informe.error_mensaje && (
-          <div className="mt-3 text-sm text-red-700 bg-red-100 rounded-lg p-3">
+          <div className="mt-3 text-sm text-critico bg-critico-suave rounded-control p-3">
             <p className="font-semibold mb-1">No se cargaron datos</p>
             <p className="font-mono text-xs">{informe.error_mensaje}</p>
           </div>
@@ -213,34 +215,34 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
         <>
           {loadingPreview ? (
             <div className="flex justify-center py-6">
-              <Spinner className="h-6 w-6 text-[#1F497D]" />
+              <Spinner className="h-6 w-6 text-primario" />
             </div>
           ) : preview ? (
             <>
               {/* TOTALES */}
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+              <div className="bg-superficie border border-borde rounded-control p-5">
+                <h3 className="font-titulo text-[15px] font-bold text-tinta mb-4">
                   Totales
                 </h3>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Filas en el archivo</span>
+                  <div className="flex justify-between border-b border-borde pb-2">
+                    <span className="text-tinta-3">Filas en el archivo</span>
                     <span className="font-semibold tabular-nums">{fmtNum(preview.total_filas)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Filas válidas para cargar</span>
-                    <span className="font-semibold text-green-700 tabular-nums">{fmtNum(preview.filas_validas)}</span>
+                  <div className="flex justify-between border-b border-borde pb-2">
+                    <span className="text-tinta-3">Filas válidas para cargar</span>
+                    <span className="font-semibold text-bien tabular-nums">{fmtNum(preview.filas_validas)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Fechas inválidas (se omiten)</span>
-                    <span className={`font-semibold tabular-nums ${preview.fechas_invalidas > 0 ? "text-orange-600" : "text-gray-900"}`}>
+                  <div className="flex justify-between border-b border-borde pb-2">
+                    <span className="text-tinta-3">Fechas inválidas (se omiten)</span>
+                    <span className={`font-semibold tabular-nums ${preview.fechas_invalidas > 0 ? "text-atencion" : "text-tinta"}`}>
                       {fmtNum(preview.fechas_invalidas)}
                     </span>
                   </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Médicos no encontrados</span>
+                  <div className="flex justify-between border-b border-borde pb-2">
+                    <span className="text-tinta-3">Médicos no encontrados</span>
                     <button
-                      className="font-semibold text-orange-600 underline tabular-nums"
+                      className="font-semibold text-atencion underline tabular-nums"
                       onClick={() => setMostrarCedulas(v => !v)}
                     >
                       {fmtNum(preview.medicos_no_encontrados?.total)} {mostrarCedulas ? "▲" : "▼"}
@@ -252,10 +254,10 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
                 {mostrarCedulas && ((preview.medicos_no_encontrados?.nombres ?? preview.medicos_no_encontrados?.cedulas)?.length ?? 0) > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {(preview.medicos_no_encontrados.nombres ?? preview.medicos_no_encontrados.cedulas)!.slice(0, 30).map(c => (
-                      <span key={c} className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">{c}</span>
+                      <span key={c} className="text-xs bg-atencion-suave text-atencion px-2 py-0.5 rounded">{c}</span>
                     ))}
                     {(preview.medicos_no_encontrados.nombres ?? preview.medicos_no_encontrados.cedulas)!.length > 30 && (
-                      <span className="text-xs text-orange-500">+{(preview.medicos_no_encontrados.nombres ?? preview.medicos_no_encontrados.cedulas)!.length - 30} más</span>
+                      <span className="text-xs text-atencion">+{(preview.medicos_no_encontrados.nombres ?? preview.medicos_no_encontrados.cedulas)!.length - 30} más</span>
                     )}
                   </div>
                 )}
@@ -263,22 +265,22 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
               {/* DISTRIBUCIÓN */}
               {preview.distribucion.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+                <div className="bg-superficie border border-borde rounded-control p-5">
+                  <h3 className="font-titulo text-[15px] font-bold text-tinta mb-4">
                     Distribución por estado de autorización
                   </h3>
                   <div className="space-y-3">
                     {preview.distribucion.map(({ estado, conteo, pct }) => (
                       <div key={estado} className="flex items-center gap-3">
-                        <span className="text-xs font-medium text-gray-800 w-52 truncate flex-shrink-0">{estado}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                        <span className="text-xs font-medium text-tinta w-52 truncate flex-shrink-0">{estado}</span>
+                        <div className="flex-1 bg-fondo rounded-full h-3 overflow-hidden">
                           <div
-                            className="bg-brand-navy h-3 rounded-full transition-all"
+                            className="bg-primario h-3 rounded-full transition-all"
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-gray-700 w-36 text-right tabular-nums flex-shrink-0">
-                          {fmtNum(conteo)} <span className="text-brand-green font-bold">({pct}%)</span>
+                        <span className="text-xs font-medium text-tinta-2 w-36 text-right tabular-nums flex-shrink-0">
+                          {fmtNum(conteo)} <span className="text-bien font-bold">({pct}%)</span>
                         </span>
                       </div>
                     ))}
@@ -288,18 +290,18 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
               {/* VALORES */}
               {(preview.suma_valor_autorizado || preview.promedio_valor) && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+                <div className="bg-superficie border border-borde rounded-control p-5">
+                  <h3 className="font-titulo text-[15px] font-bold text-tinta mb-4">
                     Valores
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-brand-blue-soft rounded-lg p-4">
-                      <p className="text-xs text-gray-500 mb-1">Suma valor autorizado</p>
-                      <p className="text-lg font-bold text-brand-navy tabular-nums">{fmtCOP(preview.suma_valor_autorizado)}</p>
+                    <div className="bg-primario-suave rounded-control p-4">
+                      <p className="text-xs text-tinta-3 mb-1">Suma valor autorizado</p>
+                      <p className="text-lg font-bold text-primario tabular-nums">{fmtCOP(preview.suma_valor_autorizado)}</p>
                     </div>
-                    <div className="bg-brand-green-soft rounded-lg p-4">
-                      <p className="text-xs text-gray-500 mb-1">Valor promedio por fila</p>
-                      <p className="text-lg font-bold text-brand-green tabular-nums">{fmtCOP(preview.promedio_valor)}</p>
+                    <div className="bg-acento-suave rounded-control p-4">
+                      <p className="text-xs text-tinta-3 mb-1">Valor promedio por fila</p>
+                      <p className="text-lg font-bold text-bien tabular-nums">{fmtCOP(preview.promedio_valor)}</p>
                     </div>
                   </div>
                 </div>
@@ -307,59 +309,59 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
               {/* MUESTRA */}
               {preview.muestra_filas?.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="bg-superficie border border-borde rounded-control p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                    <h3 className="font-titulo text-[15px] font-bold text-tinta">
                       Muestra — primeras {preview.muestra_filas.length} filas normalizadas
                     </h3>
                     <button
-                      className="text-xs text-[#1F497D] underline"
+                      className="text-xs text-primario underline"
                       onClick={() => setMostrarMuestra(v => !v)}
                     >
                       {mostrarMuestra ? "Ocultar" : "Ver filas"}
                     </button>
                   </div>
                   {mostrarMuestra && (
-                    <div className="overflow-x-auto rounded-lg border border-gray-200">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-brand-navy text-white text-xs uppercase tracking-wide">
+                    <div className="overflow-x-auto bg-superficie rounded-control border border-borde">
+                      <table className="tabla tabla-texto">
+                        <thead>
                           <tr>
                             {["Médico / Usuario","Documento","Tipo prestación","Diagnóstico","Estado","Cant.","Valor"].map(h => (
-                              <th key={h} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{h}</th>
+                              <th key={h}>{h}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
+                        <tbody>
                           {preview.muestra_filas.map((row, i) => (
-                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                              <td className="px-4 py-3">
-                                <div className="font-medium text-gray-900 truncate max-w-[160px]" title={String(row.nombre_medico || "")}>
+                            <tr key={i}>
+                              <td>
+                                <div className="font-medium text-tinta truncate max-w-[160px]" title={String(row.nombre_medico || "")}>
                                   {String(row.nombre_medico || row.usuario_txt || "—")}
                                 </div>
                                 {row.programa_especialidad != null && (
-                                  <div className="text-xs text-gray-400 truncate max-w-[160px]">{String(row.programa_especialidad)}</div>
+                                  <div className="text-xs text-tinta-3 truncate max-w-[160px]">{String(row.programa_especialidad)}</div>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-gray-700 tabular-nums whitespace-nowrap">
+                              <td className="text-tinta-2 tabular-nums whitespace-nowrap">
                                 {String(row.numero_documento ?? "—")}
                               </td>
-                              <td className="px-4 py-3">
-                                <span className="inline-block bg-brand-blue-soft text-brand-navy text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
+                              <td>
+                                <span className="inline-block bg-primario-suave text-primario text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
                                   {String(row.tipo_prestacion_desc || "—")}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 font-mono text-sm font-semibold text-gray-800">
+                              <td className="font-mono text-sm font-semibold text-tinta">
                                 {String(row.codigo_diagnostico ?? "—")}
                               </td>
-                              <td className="px-4 py-3">
-                                <span className="text-xs text-gray-700 whitespace-nowrap">
+                              <td>
+                                <span className="text-xs text-tinta-2 whitespace-nowrap">
                                   {String(row.estado_autorizacion_desc ?? "—")}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-center font-semibold text-gray-800 tabular-nums">
+                              <td className="text-center font-semibold text-tinta tabular-nums">
                                 {String(row.cantidad_autorizada ?? "—")}
                               </td>
-                              <td className="px-4 py-3 text-right font-semibold text-brand-navy tabular-nums whitespace-nowrap">
+                              <td className="text-right font-semibold text-primario tabular-nums whitespace-nowrap">
                                 {row.valor_autorizado_prestacion
                                   ? fmtCOP(Number(row.valor_autorizado_prestacion))
                                   : "—"}
@@ -377,18 +379,18 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
 
           {/* ── Botones de acción ─────────────────────────────────────────── */}
           {puedeConfirmar && (
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+          <div className="flex items-center justify-between pt-2 border-t border-borde mt-2">
             <button
               onClick={handleCancelar}
               disabled={cancelling}
-              className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className={cx(clasesBoton({ variante: "secundario" }), "px-5 py-2.5")}
             >
               {cancelling ? "Cancelando..." : "Cancelar"}
             </button>
             <button
               onClick={handleConfirmar}
               disabled={confirming || loadingPreview}
-              className="px-7 py-2.5 bg-brand-green hover:bg-brand-green-dark text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+              className={cx(clasesBoton(), "px-6 py-2.5")}
             >
               {confirming
                 ? <><Spinner className="h-4 w-4" /> Confirmando...</>
@@ -405,13 +407,13 @@ export function InformeValidacion({ jobId, onReset, puedeConfirmar = true }: Pro
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "Filas en archivo",    value: fmtNum(informe.filas_en_archivo || informe.filas_insertadas) },
-            { label: "Filas insertadas",    value: fmtNum(informe.filas_insertadas),  color: "text-green-700" },
-            { label: "Duplicadas / omitidas", value: fmtNum(informe.filas_duplicadas), color: "text-yellow-700" },
+            { label: "Filas insertadas",    value: fmtNum(informe.filas_insertadas),  color: "text-bien" },
+            { label: "Duplicadas / omitidas", value: fmtNum(informe.filas_duplicadas), color: "text-atencion" },
             { label: "Tiempo total",        value: informe.tiempo_segundos ? `${informe.tiempo_segundos}s` : "—" },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs text-gray-500 mb-1">{label}</p>
-              <p className={`text-2xl font-bold ${color ?? "text-gray-900"}`}>{value}</p>
+            <div key={label} className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-tinta-3 mb-1">{label}</p>
+              <p className={`font-titulo text-2xl font-extrabold tabular-nums `}>{value}</p>
             </div>
           ))}
         </div>

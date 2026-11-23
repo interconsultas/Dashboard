@@ -5,7 +5,7 @@ import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-jest.mock("@/lib/echarts", () => ({ echarts: { marcador: "echarts-modular" } }));
+jest.mock("@/lib/echarts", () => ({ echarts: { marcador: "echarts-modular" }, NOMBRE_TEMA: "interconsultas" }));
 
 const mockReactECharts = jest.fn((_props: Record<string, unknown>) => <canvas />);
 jest.mock("echarts-for-react/lib/core", () => ({
@@ -17,6 +17,11 @@ import GraficoCliente from "@/components/productividad/GraficoCliente";
 
 describe("GraficoCliente", () => {
   beforeEach(() => mockReactECharts.mockClear());
+
+  it("aplica el tema único de la app", () => {
+    render(<GraficoCliente opcion={{}} etiqueta="Tema" />);
+    expect(mockReactECharts.mock.calls[0][0]).toMatchObject({ theme: "interconsultas" });
+  });
 
   it("usa el ECharts modular y pasa opción, eventos y onListo sin fusionar opciones", () => {
     const click = jest.fn();

@@ -147,6 +147,40 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
+interface Entrada {
+  href: string;
+  etiqueta: string;
+  Icono: (p: { className?: string }) => JSX.Element;
+}
+
+/** Grupo Administración, en el orden del menú. */
+const ADMINISTRACION: readonly Entrada[] = [
+  { href: "/admin/carga", etiqueta: "Carga de archivos", Icono: IconUpload },
+  { href: "/admin/citas", etiqueta: "Citas", Icono: IconCitas },
+  { href: "/admin/metas", etiqueta: "Metas", Icono: IconMetas },
+  { href: "/admin/medicos", etiqueta: "Profesionales", Icono: IconMedicos },
+  { href: "/admin/usuarios", etiqueta: "Usuarios", Icono: IconUsers },
+];
+
+/* ── Estilos del menú (dirección C) ── */
+
+const BASE_ENTRADA = "flex items-center gap-2.5 px-3 py-2.5 rounded-control text-sm transition-colors";
+/** Entrada activa: píldora lima con tinta oscura. */
+const ACTIVA = "bg-menu-activo text-menu-activo-tinta font-bold";
+/** Contenedor de la página activa (Dashboard cuando se ve un tipo de prestación). */
+const CONTIENE_ACTIVA = "bg-white/10 text-white font-medium";
+const INACTIVA = "text-menu-tinta font-medium hover:bg-white/10 hover:text-white";
+
+function clasesEntrada(activa: boolean, contiene = false) {
+  return `${BASE_ENTRADA} ${activa ? ACTIVA : contiene ? CONTIENE_ACTIVA : INACTIVA}`;
+}
+
+function TituloGrupo({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 pt-4 pb-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-menu-tinta/70">{children}</p>
+  );
+}
+
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
   // Cumplimiento vive bajo /dashboard pero es una entrada propia del menú
@@ -161,31 +195,56 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const permisos = usePermisos();
   const ver = (href: string) => puedeVer(permisos, href);
   const tiposVisibles = TIPOS_PRESTACION.filter((t) => ver(`/dashboard/tipo/${t.slug}`));
+  const analisisVisibles = [
+    "/dashboard",
+    "/dashboard/cumplimiento",
+    "/dashboard/productividad",
+    "/dashboard/inteligencia",
+  ].some(ver);
+  const adminVisibles = ADMINISTRACION.filter((e) => ver(e.href));
 
   function handleNav() {
     onNavigate?.();
   }
 
+  /** Entrada simple del menú (sin subentradas). */
+  function enlace(href: string, etiqueta: string, Icono: Entrada["Icono"], activa: boolean, extra?: React.ReactNode) {
+    return (
+      <Link
+        key={href}
+        href={href}
+        onClick={handleNav}
+        aria-current={activa ? "page" : undefined}
+        className={clasesEntrada(activa)}
+      >
+        <Icono className="w-[18px] h-[18px] flex-shrink-0" />
+        {etiqueta}
+        {extra}
+      </Link>
+    );
+  }
+
   return (
-    <aside className="w-60 md:w-60 h-screen sticky top-0 flex flex-col shadow-xl flex-shrink-0 bg-brand-navy">
-      {/* Marca */}
-      <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
-        <div className="bg-white rounded-xl px-3 py-2.5 flex items-center justify-center flex-1">
+    <aside className="w-60 md:w-60 h-screen sticky top-0 flex flex-col flex-shrink-0 bg-menu-fondo">
+      {/* Marca: el logo real en una tarjeta blanca */}
+      <div className="px-3 pt-4 pb-2 flex items-center gap-2">
+        <div className="bg-superficie rounded-control shadow-logo px-2.5 py-3 flex items-center justify-center flex-1">
           <Image
             src="/logo.png"
             alt="IPS Manizales — Interconsultas"
-            width={170}
+            width={172}
             height={46}
             priority
             style={{ objectFit: "contain" }}
           />
         </div>
-        {/* Boton cerrar — solo mobile */}
+        {/* Botón cerrar — solo mobile */}
         {onNavigate && (
           <button
             type="button"
             onClick={onNavigate}
-            className="md:hidden ml-2 p-1.5 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Cerrar menú"
+            className="md:hidden p-1.5 rounded-control text-menu-tinta hover:bg-white/10 hover:text-white transition-colors"
           >
             <IconClose className="w-5 h-5" />
           </button>
@@ -193,22 +252,18 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+      <nav aria-label="Menú principal" className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto sidebar-scroll">
+        {analisisVisibles && <TituloGrupo>Análisis</TituloGrupo>}
 
         {/* Dashboard — con sub-items */}
         {ver("/dashboard") && (
           <div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-0.5">
               <Link
                 href="/dashboard"
                 onClick={handleNav}
-                className={`flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-all ${
-                  pathname === "/dashboard"
-                    ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                    : isDashboard
-                      ? "bg-white/10 text-white"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
+                aria-current={pathname === "/dashboard" ? "page" : undefined}
+                className={`flex-1 ${clasesEntrada(pathname === "/dashboard", isDashboard)}`}
               >
                 <IconDashboard className="w-[18px] h-[18px] flex-shrink-0" />
                 Dashboard
@@ -216,7 +271,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               <button
                 type="button"
                 onClick={() => setSubOpen((o) => !o)}
-                className="px-2.5 py-2.5 rounded-r-lg text-white/40 hover:bg-white/10 hover:text-white/70 transition-all"
+                aria-expanded={subOpen}
+                aria-label={subOpen ? "Ocultar tipos de prestación" : "Ver tipos de prestación"}
+                className="px-2 py-2.5 rounded-control text-menu-tinta/70 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <IconChevron open={subOpen} className="w-4 h-4" />
               </button>
@@ -236,15 +293,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                       key={t.slug}
                       href={href}
                       onClick={handleNav}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        active
-                          ? "bg-brand-green/90 text-white shadow-sm"
-                          : "text-white/50 hover:bg-white/8 hover:text-white/90"
+                      aria-current={active ? "page" : undefined}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-[10px] text-xs transition-colors ${
+                        active ? ACTIVA : "text-menu-tinta font-medium hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${
-                          active ? "bg-white" : "bg-white/25"
+                          active ? "bg-menu-activo-tinta" : "bg-menu-tinta/40"
                         }`}
                       />
                       {t.label}
@@ -256,144 +312,26 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           </div>
         )}
 
-        {/* Cumplimiento */}
-        {ver("/dashboard/cumplimiento") && (
-          <Link
-            href="/dashboard/cumplimiento"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              isCumplimiento
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconCumplimiento className="w-[18px] h-[18px] flex-shrink-0" />
-            Cumplimiento
-          </Link>
-        )}
+        {ver("/dashboard/cumplimiento") &&
+          enlace("/dashboard/cumplimiento", "Cumplimiento", IconCumplimiento, isCumplimiento)}
+        {ver("/dashboard/productividad") &&
+          enlace("/dashboard/productividad", "Productividad", IconProductividad, isProductividad)}
+        {ver("/dashboard/inteligencia") &&
+          enlace("/dashboard/inteligencia", "Inteligencia", IconInteligencia, isInteligencia, <InsigniaAlertas />)}
 
-        {/* Productividad */}
-        {ver("/dashboard/productividad") && (
-          <Link
-            href="/dashboard/productividad"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              isProductividad
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconProductividad className="w-[18px] h-[18px] flex-shrink-0" />
-            Productividad
-          </Link>
-        )}
-
-        {/* Inteligencia */}
-        {ver("/dashboard/inteligencia") && (
-          <Link
-            href="/dashboard/inteligencia"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              isInteligencia
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconInteligencia className="w-[18px] h-[18px] flex-shrink-0" />
-            Inteligencia
-            <InsigniaAlertas />
-          </Link>
-        )}
-
-        {/* Carga de archivos */}
-        {ver("/admin/carga") && (
-          <Link
-            href="/admin/carga"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith("/admin/carga")
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconUpload className="w-[18px] h-[18px] flex-shrink-0" />
-            Carga de archivos
-          </Link>
-        )}
-
-        {/* Profesionales */}
-        {ver("/admin/medicos") && (
-          <Link
-            href="/admin/medicos"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith("/admin/medicos")
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconMedicos className="w-[18px] h-[18px] flex-shrink-0" />
-            Profesionales
-          </Link>
-        )}
-
-        {/* Metas */}
-        {ver("/admin/metas") && (
-          <Link
-            href="/admin/metas"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith("/admin/metas")
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconMetas className="w-[18px] h-[18px] flex-shrink-0" />
-            Metas
-          </Link>
-        )}
-
-        {/* Citas */}
-        {ver("/admin/citas") && (
-          <Link
-            href="/admin/citas"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith("/admin/citas")
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconCitas className="w-[18px] h-[18px] flex-shrink-0" />
-            Citas
-          </Link>
-        )}
-
-        {/* Usuarios */}
-        {ver("/admin/usuarios") && (
-          <Link
-            href="/admin/usuarios"
-            onClick={handleNav}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith("/admin/usuarios")
-                ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <IconUsers className="w-[18px] h-[18px] flex-shrink-0" />
-            Usuarios
-          </Link>
-        )}
+        {adminVisibles.length > 0 && <TituloGrupo>Administración</TituloGrupo>}
+        {adminVisibles.map((e) => enlace(e.href, e.etiqueta, e.Icono, pathname.startsWith(e.href)))}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-3 border-t border-white/10">
         <button
+          type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-white/50 hover:bg-white/10 hover:text-white/80"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-control text-sm font-medium transition-colors text-menu-tinta hover:bg-white/10 hover:text-white"
         >
           <IconLogout className="w-[18px] h-[18px] flex-shrink-0" />
-          Cerrar sesion
+          Cerrar sesión
         </button>
       </div>
     </aside>

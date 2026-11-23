@@ -8,6 +8,8 @@ import { PROGRAMAS_META, etiquetaPrograma } from "@/lib/cumplimiento/categorias"
 import { SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ErrorState } from "@/components/layout/ErrorState";
 import { usePuedeEditar } from "@/components/layout/RolContext";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
 
 interface FilaMapeo {
   programa_especialidad: string;
@@ -91,33 +93,30 @@ export default function ProgramasPorEspecialidadPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-navy">Programas por especialidad</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
+      <EncabezadoPagina
+        migas={[{ etiqueta: "Administración" }, { etiqueta: "Metas", href: "/admin/metas" }, { etiqueta: "Programas por especialidad" }]}
+        titulo="Programas por especialidad"
+        subtitulo={
+          <>
             Programa de metas que se aplica a cada programa / especialidad de los profesionales
-          </p>
-          <Link
-            href="/admin/metas"
-            className="inline-block mt-1 text-xs font-semibold text-brand-navy underline"
-          >
-            Volver a Metas
-          </Link>
-          {!editable && (
-            <p className="inline-block mt-1 ml-3 text-xs text-gray-400">Solo lectura</p>
-          )}
-        </div>
-        {editable && (
-          <button
-            type="button"
-            onClick={handleGuardar}
-            disabled={saving || !hayCambios}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navy-dark disabled:opacity-60 transition-colors"
-          >
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
-        )}
-      </div>
+            {!editable && <span className="ml-2 rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold">Solo lectura</span>}
+          </>
+        }
+        acciones={
+          <>
+            {editable && (
+              <button
+                type="button"
+                onClick={handleGuardar}
+                disabled={saving || !hayCambios}
+                className={clasesBoton({ variante: "secundario" })}
+              >
+                {saving ? "Guardando…" : "Guardar"}
+              </button>
+            )}
+          </>
+        }
+      />
 
       {errorCarga && !data ? (
         <ErrorState
@@ -130,53 +129,49 @@ export default function ProgramasPorEspecialidadPage() {
       ) : (
         <>
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-critico bg-critico-suave border border-critico/30 rounded-control px-3 py-2">
               {error}
             </p>
           )}
           {exito && (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-bien bg-bien-suave border border-bien/30 rounded-control px-3 py-2">
               {exito}
             </p>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="min-w-full text-sm">
-              <thead className="bg-brand-navy">
+          <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+            <table className="tabla tabla-texto">
+              <thead>
                 <tr>
                   {["Programa / Especialidad", "Profesionales", "Programa de metas"].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody>
                 {data.mapeo.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center py-10 text-gray-400">
+                    <td colSpan={3} className="text-center !py-10 text-tinta-3">
                       No hay especialidades registradas
                     </td>
                   </tr>
                 )}
-                {data.mapeo.map((f, idx) => {
+                {data.mapeo.map((f) => {
                   const valor = seleccion[f.programa_especialidad] ?? "";
                   return (
-                    <tr
-                      key={f.programa_especialidad}
-                      className={idx % 2 === 0 ? "bg-white" : "bg-surface-alt"}
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-800">
+                    <tr key={f.programa_especialidad}>
+                      <td className="font-medium text-tinta">
                         {f.programa_especialidad}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">{f.profesionales}</td>
-                      <td className="px-4 py-2">
+                      <td className="text-tinta-3 tabular-nums">{f.profesionales}</td>
+                      <td>
                         <select
-                          className={`w-full max-w-md border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${
-                            valor ? "border-gray-200 text-gray-700" : "border-amber-200 text-amber-700"
+                          className={`w-full max-w-md border rounded-control px-3 py-1.5 text-sm focus:outline-none ${
+                            valor ? "border-borde text-tinta-2" : "border-atencion/30 text-atencion"
                           }`}
                           aria-label={`Programa de metas de ${f.programa_especialidad}`}
                           value={valor}
@@ -204,7 +199,7 @@ export default function ProgramasPorEspecialidadPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-tinta-3">
             Las mayúsculas y los espacios al inicio o al final no importan. «Sin meta»: los
             profesionales de esa especialidad no tienen porcentaje de cumplimiento y no afectan el
             ranking ni el global.

@@ -2,18 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Fuentes autoalojadas ──
+   Archivos variables (subconjunto latino, licencia OFL) en src/app/fonts.
+   El build los empaqueta en /_next/static/media: nada se descarga de Google
+   ni en el build (Docker) ni en el navegador. El nombre de familia es fijo
+   para que ECharts (canvas) también pueda usarlo. */
+@font-face {
+  font-family: "DM Sans";
+  src: url("./fonts/dm-sans-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sora";
+  src: url("./fonts/sora-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Tokens de diseño · dirección C "Moderna luminosa" ──
+   Espejo de src/lib/tema/tokens.ts (una prueba verifica que coincidan).
+   En Tailwind: bg-superficie, text-tinta-2, rounded-tarjeta, shadow-tarjeta… */
 :root {
-  --background: #F4F6FA;
-  --foreground: #1C2B3A;
-  --brand-navy: #1A3F72;
-  --brand-green: #4EA234;
+  --fondo: #F4F7FB;
+  --superficie: #FFFFFF;
+  --superficie-2: #F7FAFD;
+  --borde: #E3EAF3;
+  --tinta: #13233A;
+  --tinta-2: #4B5D75;
+  --tinta-3: #5F6F86;
+  --primario: #2A5299;
+  --primario-oscuro: #1B3A6E;
+  --primario-suave: #E6EEFA;
+  --acento: #7DB33F;
+  --acento-lima: #A2D06A;
+  --acento-suave: #E8F6E5;
+  --menu-fondo: #16294A;
+  --menu-tinta: #A9B7CB;
+  --menu-activo: #A2D06A;
+  --menu-activo-tinta: #16294A;
+  --bien: #447016;
+  --bien-suave: #EEF6E2;
+  --atencion: #9A5A00;
+  --atencion-suave: #FFF1DC;
+  --critico: #C0392B;
+  --critico-suave: #FDEAE7;
+  --referencia: #A5B3C6;
+  --radio-tarjeta: 20px;
+  --radio-control: 12px;
+  --sombra-tarjeta: 0 10px 30px -18px rgba(30,79,154,.45);
+
+  --fuente-texto: "DM Sans";
+  --fuente-titulo: "Sora";
+
+  /* Alias heredados */
+  --background: var(--fondo);
+  --foreground: var(--tinta);
+  --brand-navy: var(--primario-oscuro);
+  --brand-green: var(--acento);
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--fuente-texto), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Títulos en Sora */
+h1, h2, h3 {
+  font-family: var(--fuente-titulo), var(--fuente-texto), system-ui, sans-serif;
+}
+
+/* Cifras alineadas en tablas, campos y valores numéricos */
+table, input, select, .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Tabla base: <table className="tabla"> ──
+   Cabecera en mayúsculas pequeñas sobre superficie-2, filas sin cebra con
+   hover suave y cifras tabulares alineadas a la derecha (la primera columna,
+   el nombre, a la izquierda). Las celdas con text-left / text-center /
+   text-right respetan esa alineación; `tabla-texto` alinea todo a la
+   izquierda y `tabla-compacta` reduce el relleno (tablas anchas). */
+@layer components {
+  .tabla { width: 100%; border-collapse: collapse; font-size: 0.875rem; color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .tabla thead th {
+    text-align: right; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--tinta-3); padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--borde);
+    background: var(--superficie-2); white-space: nowrap;
+  }
+  .tabla td, .tabla tbody th { text-align: right; padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--borde); }
+  .tabla tbody th { font-weight: 600; }
+  .tabla th:first-child, .tabla td:first-child { text-align: left; }
+  /* tabla-texto: tablas de catálogo (nombres, correos…) alineadas a la izquierda */
+  .tabla.tabla-texto thead th, .tabla.tabla-texto td, .tabla.tabla-texto tbody th { text-align: left; }
+  /* Alineación explícita por celda (va al final: gana a las reglas anteriores) */
+  .tabla thead th.text-left, .tabla td.text-left, .tabla tbody th.text-left { text-align: left; }
+  .tabla thead th.text-center, .tabla td.text-center, .tabla tbody th.text-center { text-align: center; }
+  .tabla thead th.text-right, .tabla td.text-right, .tabla tbody th.text-right { text-align: right; }
+  .tabla.tabla-compacta thead th, .tabla.tabla-compacta td, .tabla.tabla-compacta tbody th { padding: 0.5rem 0.5rem; }
+  .tabla tbody tr { transition: background-color 150ms; }
+  .tabla tbody tr:hover { background: var(--primario-suave); }
+  .tabla tbody tr:last-child td, .tabla tbody tr:last-child th { border-bottom: 0; }
 }
 
 @layer utilities {
@@ -27,7 +120,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+  background: linear-gradient(90deg, var(--superficie-2) 25%, var(--borde) 37%, var(--superficie-2) 63%);
   background-size: 800px 100%;
   animation: shimmer 1.8s ease-in-out infinite;
   border-radius: 6px;
@@ -81,7 +174,7 @@ body {
   position: relative;
   overflow: hidden;
   height: 2px;
-  background: rgba(26, 63, 114, 0.08);
+  background: rgba(27, 58, 110, 0.08);
   border-radius: 2px;
 }
 .progress-bar-indeterminate::after {
@@ -89,7 +182,7 @@ body {
   position: absolute;
   inset: 0;
   width: 40%;
-  background: linear-gradient(90deg, transparent, var(--brand-navy), transparent);
+  background: linear-gradient(90deg, transparent, var(--primario), transparent);
   border-radius: 2px;
   animation: progressSlide 1.2s ease-in-out infinite;
 }

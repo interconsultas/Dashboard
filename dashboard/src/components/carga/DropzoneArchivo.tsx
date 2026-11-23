@@ -57,37 +57,37 @@ export function DropzoneArchivo({ onUpload }: Props) {
     <div className="space-y-3">
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
+        className={`border-2 border-dashed rounded-control p-10 text-center cursor-pointer transition-all ${
           isDragActive
-            ? "border-brand-green bg-brand-green-soft scale-[1.01]"
+            ? "border-acento bg-acento-suave scale-[1.01]"
             : uploading
-            ? "border-gray-200 bg-gray-50 cursor-not-allowed"
-            : "border-gray-300 hover:border-brand-navy hover:bg-brand-blue-soft"
+            ? "border-borde bg-superficie-2 cursor-not-allowed"
+            : "border-borde hover:border-primario hover:bg-primario-suave"
         }`}
       >
         <input {...getInputProps()} />
 
         {uploading ? (
-          <div className="flex flex-col items-center gap-3 text-[#1F497D]">
+          <div className="flex flex-col items-center gap-3 text-primario">
             <Spinner className="h-8 w-8" />
             <p className="text-sm font-medium">Subiendo archivo...</p>
           </div>
         ) : isDragActive ? (
-          <div className="flex flex-col items-center gap-2 text-[#1F497D]">
+          <div className="flex flex-col items-center gap-2 text-primario">
             <span className="text-4xl">📂</span>
             <p className="text-sm font-medium">Suelta el archivo aquí</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 text-gray-500">
+          <div className="flex flex-col items-center gap-3 text-tinta-3">
             <span className="text-5xl">📊</span>
             <div>
-              <p className="text-sm font-semibold text-gray-700">
+              <p className="text-sm font-semibold text-tinta-2">
                 Arrastra el archivo Excel aquí
               </p>
               <p className="text-xs mt-1">
                 o haz clic para seleccionarlo desde tu computador
               </p>
-              <p className="text-xs mt-2 text-gray-400">
+              <p className="text-xs mt-2 text-tinta-3">
                 Solo archivos .xlsx — DETALLADOS EPS
               </p>
             </div>
@@ -96,7 +96,7 @@ export function DropzoneArchivo({ onUpload }: Props) {
       </div>
 
       {errorMsg && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="flex items-start gap-2 bg-critico-suave border border-critico/30 rounded-control px-4 py-3 text-sm text-critico">
           <span className="mt-0.5">⚠</span>
           <span>{errorMsg}</span>
         </div>

@@ -13,12 +13,12 @@ interface Props {
 const ENCABEZADOS = ["Profesional", "Cédula", "Citas atendidas", "Programa"];
 
 const campoCls =
-  "border rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none";
+  "border rounded-control px-3 py-1.5 text-sm text-tinta-2 focus:outline-none";
 
 function EtiquetaEstado({ estado }: { estado: string | null }) {
   if (estado === "ACTIVO") return null;
   return (
-    <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500">
+    <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-md bg-fondo text-tinta-3">
       {estado === null ? "Fuera del catálogo" : "Inactivo"}
     </span>
   );
@@ -31,49 +31,43 @@ export function GrillaCitas({
   soloLectura = false,
 }: Props) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-      <table className="min-w-full text-sm">
-        <thead className="bg-brand-navy">
+    <div className="overflow-x-auto bg-superficie rounded-tarjeta border border-borde shadow-tarjeta">
+      <table className="tabla tabla-texto">
+        <thead>
           <tr>
             {ENCABEZADOS.map((h) => (
               <th
                 key={h}
-                className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap"
               >
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody>
           {filas.length === 0 && (
             <tr>
-              <td colSpan={ENCABEZADOS.length} className="text-center py-10 text-gray-500">
+              <td colSpan={ENCABEZADOS.length} className="text-center !py-10 text-tinta-3">
                 {mensajeVacio}
               </td>
             </tr>
           )}
-          {filas.map((f, idx) => {
+          {filas.map((f) => {
             const sinPrograma = f.citas.trim() !== "" && !f.citasInvalida && f.programa === "";
             return (
-              <tr
-                key={f.documento}
-                className={`${
-                  idx % 2 === 0 ? "bg-white" : "bg-surface-alt"
-                } hover:bg-brand-blue-soft-2 transition-colors`}
-              >
-                <td className="px-4 py-2 font-medium text-gray-800">
+              <tr key={f.documento}>
+                <td className="font-medium text-tinta">
                   {f.nombre}
                   <EtiquetaEstado estado={f.estado} />
                   {f.cambiada && (
-                    <span className="ml-2 text-xs text-amber-600">Sin guardar</span>
+                    <span className="ml-2 text-xs text-atencion">Sin guardar</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-gray-500">{f.documento}</td>
-                <td className="px-4 py-2">
+                <td className="text-tinta-3">{f.documento}</td>
+                <td>
                   <input
                     className={`${campoCls} w-28 text-right ${
-                      f.citasInvalida ? "border-red-400 bg-red-50" : "border-gray-200"
+                      f.citasInvalida ? "border-critico bg-critico-suave" : "border-borde"
                     }`}
                     inputMode="numeric"
                     aria-label={`Citas atendidas de ${f.nombre}`}
@@ -83,16 +77,16 @@ export function GrillaCitas({
                     onChange={(e) => onCambiarCitas(f.documento, e.target.value)}
                   />
                   {f.citasInvalida && (
-                    <p className="text-xs text-red-600 mt-1">Ingrese un número entero</p>
+                    <p className="text-xs text-critico mt-1">Ingrese un número entero</p>
                   )}
                 </td>
-                <td className="px-4 py-2">
+                <td>
                   {/* Solo lectura: el programa sale de la especialidad (Metas › Programas por especialidad) */}
-                  <span className={f.programa ? "text-gray-700" : "text-amber-700"}>
+                  <span className={f.programa ? "text-tinta-2" : "text-atencion"}>
                     {f.programa || "Sin asignar"}
                   </span>
                   {sinPrograma && (
-                    <p className="text-xs text-amber-700 mt-1">Sin programa no hay meta</p>
+                    <p className="text-xs text-atencion mt-1">Sin programa no hay meta</p>
                   )}
                 </td>
               </tr>

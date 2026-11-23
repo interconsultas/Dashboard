@@ -2,7 +2,9 @@
  * Opciones de ECharts del mapa de relaciones (serie `graph`). Funciones
  * puras: no importan echarts, así que se prueban sin canvas.
  */
-import { FUENTE, TINTA, TINTA_2, fmtNumero, fmtPct } from "@/lib/productividad/presentacion";
+import { TINTA, TINTA_2, fmtNumero, fmtPct } from "@/lib/productividad/presentacion";
+import { TOOLTIP_TEMA } from "@/lib/tema/graficas";
+import { COLORES } from "@/lib/tema/tokens";
 import { TIPOS_OBJETO, colorTipo, defRelacion, defTipo, type FormatoMetrica, type TipoObjeto } from "./ontologia";
 import type { Arista, Esquema, Nodo } from "./grafo";
 
@@ -13,11 +15,9 @@ export interface Subgrafo {
   aristas: Arista[];
 }
 
+// La caja del tooltip es la del tema; aquí solo se limita su ancho (textos largos)
 const cajaTooltip = {
-  backgroundColor: TINTA,
-  borderWidth: 0,
-  textStyle: { color: "#fff", fontSize: 12.5 },
-  extraCssText: "border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-width:320px;white-space:normal;",
+  extraCssText: `${TOOLTIP_TEMA.extraCssText}max-width:320px;white-space:normal;`,
 };
 
 const categorias = TIPOS_OBJETO.map((t) => ({ name: defTipo(t).etiqueta, itemStyle: { color: colorTipo(t) } }));
@@ -93,7 +93,6 @@ export function opcionesInstancias(sub: Subgrafo, centro: string | null) {
 
   return {
     animationDurationUpdate: 400,
-    textStyle: { fontFamily: FUENTE },
     tooltip: { ...cajaTooltip, formatter: tooltip },
     series: [
       {
@@ -140,7 +139,6 @@ export function opcionesEsquema(e: Esquema) {
   const max = Math.max(1, ...e.tipos.map((t) => t.cantidad));
   return {
     animationDurationUpdate: 400,
-    textStyle: { fontFamily: FUENTE },
     tooltip: {
       ...cajaTooltip,
       formatter: (p: any) =>
@@ -175,7 +173,7 @@ export function opcionesEsquema(e: Esquema) {
         })),
         edgeSymbol: ["none", "arrow"],
         edgeSymbolSize: 8,
-        lineStyle: { color: "#9AA7B8", width: 1.6, curveness: 0.18 },
+        lineStyle: { color: COLORES.referencia, width: 1.6, curveness: 0.18 },
         label: { show: true, position: "bottom", fontSize: 12, color: TINTA, formatter: (p: any) => `${p.name}\n${fmtNumero(p.value)}` },
         edgeLabel: { show: true, fontSize: 10.5, color: TINTA_2, formatter: (p: any) => p.data.etiqueta },
         emphasis: { focus: "adjacency", lineStyle: { width: 2.4 } },

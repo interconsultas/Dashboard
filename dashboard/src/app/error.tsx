@@ -14,7 +14,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-app p-6">
+    <div className="min-h-screen flex items-center justify-center bg-fondo p-6">
       <ErrorState error={error} reset={reset} />
     </div>
   );

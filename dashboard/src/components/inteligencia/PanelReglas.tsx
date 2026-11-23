@@ -80,7 +80,7 @@ function Campo({
   onCambiar: (v: string) => void;
 }) {
   return (
-    <label className="flex flex-col text-xs text-gray-500">
+    <label className="flex flex-col text-xs text-tinta-3">
       <span>{etiqueta}</span>
       <span className="flex items-center gap-1 mt-0.5">
         <input
@@ -91,13 +91,13 @@ function Campo({
           placeholder={placeholder}
           disabled={deshabilitado}
           onChange={(e) => onCambiar(e.target.value)}
-          className={`w-24 rounded-lg border px-2 py-1 text-sm text-brand-navy disabled:bg-gray-50 disabled:text-gray-500 ${
-            error ? "border-red-400" : "border-gray-200"
+          className={`w-24 rounded-control border px-2 py-1 text-sm text-primario disabled:bg-superficie-2 disabled:text-tinta-3 ${
+            error ? "border-critico" : "border-borde"
           }`}
         />
         {sufijo && <span aria-hidden>{sufijo}</span>}
       </span>
-      {error && <span className="text-[11px] text-red-700 mt-0.5">{error}</span>}
+      {error && <span className="text-[11px] text-critico mt-0.5">{error}</span>}
     </label>
   );
 }
@@ -143,11 +143,11 @@ export function PanelReglas({
   };
 
   return (
-    <section aria-labelledby="titulo-reglas" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <section aria-labelledby="titulo-reglas" className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-4">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
-          <h2 id="titulo-reglas" className="text-base font-semibold text-brand-navy">Reglas de alerta</h2>
-          {!editable && <p className="text-xs text-gray-500 mt-0.5">Solo consulta: su rol no puede cambiar las reglas.</p>}
+          <h2 id="titulo-reglas" className="font-titulo text-[15px] font-bold text-tinta">Reglas de alerta</h2>
+          {!editable && <p className="text-xs text-tinta-3 mt-0.5">Solo consulta: su rol no puede cambiar las reglas.</p>}
         </div>
         {editable && (
           <div className="flex gap-2">
@@ -158,7 +158,7 @@ export function PanelReglas({
                 setBorrador(inicial);
                 setError(null);
               }}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium rounded-control text-tinta-2 bg-fondo hover:bg-borde disabled:opacity-50"
             >
               Descartar
             </button>
@@ -166,7 +166,7 @@ export function PanelReglas({
               type="button"
               disabled={invalido || cambios.length === 0 || guardando}
               onClick={() => setConfirmar(true)}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-brand-navy text-white hover:bg-brand-navy/90 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium rounded-control bg-primario text-white hover:bg-primario-oscuro disabled:opacity-50"
             >
               Guardar
             </button>
@@ -175,12 +175,12 @@ export function PanelReglas({
       </div>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2">
+        <p role="alert" className="mb-3 text-sm text-critico bg-critico-suave rounded-control px-3 py-2">
           {error}
         </p>
       )}
 
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-borde">
         {evaluados.map(({ r, errores }) => {
           const b = borrador[r.clave] ?? borradorDe(r);
           const usa = PARAMETROS_REGLA[r.clave];
@@ -195,21 +195,21 @@ export function PanelReglas({
                   disabled={!editable}
                   onClick={() => fijar(r.clave, { activa: !b.activa })}
                   className={`mt-0.5 relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                    b.activa ? "bg-brand-green" : "bg-gray-300"
+                    b.activa ? "bg-acento" : "bg-referencia"
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${b.activa ? "translate-x-4" : "translate-x-0.5"}`} />
+                  <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-superficie shadow transition-transform ${b.activa ? "translate-x-4" : "translate-x-0.5"}`} />
                 </button>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-brand-navy">
+                  <p className="text-sm font-semibold text-primario">
                     {r.nombre}{" "}
-                    <span className="text-[11px] font-medium text-gray-400">
+                    <span className="text-[11px] font-medium text-tinta-3">
                       · {b.activa ? "Activa" : "Inactiva"} · gravedad {r.gravedad}
                     </span>
                   </p>
-                  <p className="text-xs text-gray-500">{r.descripcion}</p>
+                  <p className="text-xs text-tinta-3">{r.descripcion}</p>
                   {r.actualizado_por && (
-                    <p className="text-[11px] text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-tinta-3 mt-0.5">
                       Cambiada por {r.actualizado_por} el {fmtFecha(r.actualizado_en)}
                     </p>
                   )}

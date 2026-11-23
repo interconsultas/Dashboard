@@ -12,6 +12,7 @@ import {
 import { pareto } from "@/lib/productividad/profesionales";
 import { indicadores, metricasVacias } from "@/lib/productividad/metricas";
 import { COLORES_AREA } from "@/lib/productividad/presentacion";
+import { COLORES } from "@/lib/tema/tokens";
 import type { NodoArea, NodoServicio, PuntoSerie, ResumenProfesional } from "@/lib/productividad/tipos";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -190,10 +191,10 @@ describe("opcionesDispersion", () => {
     const [baja, alta] = o.series[0].markArea.data;
     expect(baja[0]).toMatchObject({ name: "Alto volumen, baja inasistencia", xAxis: 100, yAxis: 0 });
     expect(baja[1]).toMatchObject({ xAxis: 1000 });
-    expect(baja[0].itemStyle.color).toMatch(/^rgba\(12,163,12/);
+    expect(baja[0].itemStyle.color).toBe(`${COLORES.bien}0d`);
     expect(alta[0]).toMatchObject({ name: "Alto volumen, alta inasistencia", xAxis: 100 });
     expect(alta[1]).toMatchObject({ xAxis: 1000, yAxis: "max" });
-    expect(alta[0].itemStyle.color).toMatch(/^rgba\(208,59,59/);
+    expect(alta[0].itemStyle.color).toBe(`${COLORES.critico}0d`);
   });
 
   it("tooltip con nombre, área principal, asignadas, inasistidas, % y disponibles", () => {

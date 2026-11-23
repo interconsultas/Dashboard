@@ -17,15 +17,16 @@ interface Props {
 }
 
 const CHIP: Record<EstadoMeta, string> = {
-  sobre: "bg-red-50 text-red-600",
-  dentro: "bg-emerald-50 text-emerald-600",
-  sin_datos: "bg-gray-100 text-gray-500",
+  sobre: "bg-critico-suave text-critico",
+  dentro: "bg-bien-suave text-bien",
+  sin_datos: "bg-fondo text-tinta-3",
 };
 
 const CHIP_DESTACADO: Record<EstadoMeta, string> = {
-  sobre: "bg-red-500 text-white",
-  dentro: "bg-brand-green text-white",
-  sin_datos: "bg-white/15 text-white/70",
+  sobre: "bg-critico text-white",
+  // Lima solo como relleno: el texto encima va oscuro (nunca blanco)
+  dentro: "bg-acento-lima text-menu-activo-tinta",
+  sin_datos: "bg-white/15 text-white/85",
 };
 
 /** Indicador de cumplimiento: etiqueta, porcentaje y estado frente a la meta (ícono + texto). */
@@ -35,25 +36,25 @@ export function TileCumplimiento({ etiqueta, valor, destacado = false, nota, tes
   return (
     <div
       data-testid={testId}
-      className={`rounded-2xl border shadow-sm animate-fade-slide-up ${
+      className={`rounded-tarjeta border shadow-tarjeta animate-fade-slide-up ${
         destacado
-          ? "bg-brand-navy border-brand-navy text-white p-6 flex flex-col justify-center"
-          : "bg-white border-gray-100 p-4"
+          ? "bg-cabecera border-transparent text-white p-6 flex flex-col justify-center"
+          : "bg-superficie border-borde p-4"
       }`}
     >
       <p
-        className={`font-semibold uppercase tracking-wider ${
-          destacado ? "text-xs text-white/70 mb-2" : "text-[11px] text-gray-500 mb-1.5"
+        className={`font-bold uppercase tracking-[0.06em] ${
+          destacado ? "text-xs text-white/85 mb-2" : "text-[11px] text-tinta-3 mb-1.5"
         }`}
       >
         {etiqueta}
       </p>
       <p
         title={estado === "sin_datos" ? ETIQUETA_ESTADO.sin_datos : undefined}
-        className={`font-extrabold leading-none ${
+        className={`font-titulo font-extrabold tracking-tight tabular-nums leading-none ${
           destacado
             ? "text-5xl sm:text-6xl text-white"
-            : `text-2xl ${estado === "sin_datos" ? "text-gray-400" : "text-brand-navy"}`
+            : `text-2xl ${estado === "sin_datos" ? "text-tinta-3" : "text-primario"}`
         }`}
       >
         {fmtPct(valor)}
@@ -69,7 +70,7 @@ export function TileCumplimiento({ etiqueta, valor, destacado = false, nota, tes
           {ETIQUETA_ESTADO[estado]}
         </span>
         {nota && (
-          <span className={`text-xs ${destacado ? "text-white/70" : "text-gray-500"}`}>{nota}</span>
+          <span className={`text-xs ${destacado ? "text-white/85" : "text-tinta-3"}`}>{nota}</span>
         )}
       </div>
     </div>

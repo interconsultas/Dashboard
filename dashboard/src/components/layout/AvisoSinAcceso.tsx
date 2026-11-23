@@ -11,8 +11,9 @@ export function AvisoSinAcceso() {
   return (
     <div
       role="status"
-      className="mb-4 px-4 py-2.5 rounded-lg text-sm border border-amber-200 bg-amber-50 text-amber-800 print:hidden"
+      className="mb-4 flex items-center gap-2 px-4 py-2.5 rounded-control text-sm font-semibold border border-atencion/30 bg-atencion-suave text-atencion print:hidden"
     >
+      <span aria-hidden>▲</span>
       No tiene acceso a esa sección.
     </div>
   );

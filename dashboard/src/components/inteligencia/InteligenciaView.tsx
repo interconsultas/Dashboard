@@ -21,6 +21,8 @@ import type { RespuestaBusqueda, RespuestaEsquema, RespuestaVecindario } from "@
 import type { Granularidad } from "@/lib/productividad/periodos";
 import { usePuedeVer } from "@/components/layout/RolContext";
 import { Spinner } from "@/components/ui/Spinner";
+import { clasesBoton } from "@/components/ui/Boton";
+import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import { MapaInstancias, MapaModelo } from "./MapaRelaciones";
 import { PanelDetalle } from "./PanelDetalle";
 import { PanelExplorar } from "./PanelExplorar";
@@ -61,16 +63,16 @@ function urlVecindario(id: string, estado: EstadoInteligencia): string | null {
 function Esqueleto() {
   return (
     <div data-testid="inteligencia-cargando" className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-      <div className="lg:col-span-3 skeleton h-[420px] rounded-2xl" />
-      <div className="lg:col-span-6 skeleton h-[560px] rounded-2xl" />
-      <div className="lg:col-span-3 skeleton h-[420px] rounded-2xl" />
+      <div className="lg:col-span-3 skeleton h-[420px] rounded-tarjeta" />
+      <div className="lg:col-span-6 skeleton h-[560px] rounded-tarjeta" />
+      <div className="lg:col-span-3 skeleton h-[420px] rounded-tarjeta" />
     </div>
   );
 }
 
 function Alerta({ children }: { children: React.ReactNode }) {
   return (
-    <div role="alert" className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 text-sm text-red-700">
+    <div role="alert" className="bg-critico-suave rounded-tarjeta border border-critico/20 p-6 text-sm text-critico">
       {children}
     </div>
   );
@@ -226,7 +228,7 @@ function VistaMapa() {
 
   const encabezado = (
     <EncabezadoInteligencia pestana="mapa" onPestana={onPestana}>
-      {validando && <Spinner className="h-4 w-4 text-brand-navy/40" />}
+      {validando && <Spinner className="h-4 w-4 text-primario/50" />}
       {contexto && (
         <SelectorPeriodo
           granularidad={estado.granularidad}
@@ -261,15 +263,17 @@ function VistaMapa() {
     return (
       <div className="space-y-4">
         {encabezado}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-          <p className="text-base font-semibold text-brand-navy">Aún no hay informes de citas cargados</p>
-          <p className="text-sm text-gray-500 mt-1">El mapa se arma por periodo a partir de las cargas de citas.</p>
-          {veCitas && (
-            <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
-              Ir a Citas
-            </Link>
-          )}
-        </div>
+        <EstadoVacio
+          titulo="Aún no hay informes de citas cargados"
+          descripcion="El mapa se arma por periodo a partir de las cargas de citas."
+          accion={
+            veCitas && (
+              <Link href={RUTA_CITAS} className={clasesBoton({ variante: "secundario" })}>
+                Ir a Citas
+              </Link>
+            )
+          }
+        />
       </div>
     );
   }
@@ -285,13 +289,13 @@ function VistaMapa() {
     mapa = (
       <Alerta>
         <p>{vecindarioR.error instanceof Error ? vecindarioR.error.message : "Error al consultar los datos"}</p>
-        <button type="button" onClick={() => centrar(null)} className="mt-3 text-sm font-semibold text-brand-navy underline">
+        <button type="button" onClick={() => centrar(null)} className="mt-3 text-sm font-semibold text-primario underline">
           Ver el modelo
         </button>
       </Alerta>
     );
   } else if (!subgrafo || !vecindario) {
-    mapa = <div data-testid="mapa-cargando" className="skeleton h-[460px] sm:h-[560px] rounded-xl" />;
+    mapa = <div data-testid="mapa-cargando" className="skeleton h-[460px] sm:h-[560px] rounded-control" />;
   } else {
     mapa = (
       <MapaInstancias
@@ -330,21 +334,21 @@ function VistaMapa() {
           />
         </div>
 
-        <section aria-label="Mapa" className="lg:col-span-6 min-w-0 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-4">
+        <section aria-label="Mapa" className="lg:col-span-6 min-w-0 bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2 mb-2 min-h-[28px]">
             {nodo ? (
               <>
                 <button
                   type="button"
                   onClick={() => centrar(anterior)}
-                  className="text-xs font-semibold text-brand-navy border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50"
+                  className="text-xs font-semibold text-primario border border-borde rounded-control px-2 py-1 hover:bg-superficie-2"
                 >
                   Volver
                 </button>
                 <nav aria-label="Recorrido" className="flex-1 min-w-0">
-                  <ol className="flex flex-wrap items-center gap-1 text-xs text-gray-500">
+                  <ol className="flex flex-wrap items-center gap-1 text-xs text-tinta-3">
                     <li>
-                      <button type="button" onClick={() => centrar(null)} className="hover:text-brand-navy hover:underline">
+                      <button type="button" onClick={() => centrar(null)} className="hover:text-primario hover:underline">
                         Modelo
                       </button>
                     </li>
@@ -352,11 +356,11 @@ function VistaMapa() {
                       <li key={id} className="flex items-center gap-1 min-w-0">
                         <span aria-hidden>›</span>
                         {id === nodo ? (
-                          <span aria-current="page" className="font-semibold text-brand-navy truncate max-w-[180px]">
+                          <span aria-current="page" className="font-semibold text-primario truncate max-w-[180px]">
                             {etiquetas[id] ?? parseIdNodo(id)?.clave}
                           </span>
                         ) : (
-                          <button type="button" onClick={() => centrar(id)} className="truncate max-w-[180px] hover:text-brand-navy hover:underline">
+                          <button type="button" onClick={() => centrar(id)} className="truncate max-w-[180px] hover:text-primario hover:underline">
                             {etiquetas[id] ?? parseIdNodo(id)?.clave}
                           </button>
                         )}
@@ -366,19 +370,19 @@ function VistaMapa() {
                 </nav>
               </>
             ) : (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-tinta-3">
                 Modelo de la IPS en {esquemaR.data.periodo.etiqueta_larga}. Clic en un tipo para ver sus instancias.
               </p>
             )}
           </div>
           {mapa}
           {nodo && centro && (
-            <p className="text-[11px] text-gray-400 mt-2">
+            <p className="text-[11px] text-tinta-3 mt-2">
               Clic en un nodo para centrarlo; doble clic para agregar sus relaciones. Arrastre para mover y use la rueda para acercar.
             </p>
           )}
           {errorExpandir && (
-            <p role="status" className="text-xs text-red-600 mt-1">
+            <p role="status" className="text-xs text-critico mt-1">
               {errorExpandir}
             </p>
           )}

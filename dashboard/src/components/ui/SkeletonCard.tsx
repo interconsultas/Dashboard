@@ -6,9 +6,9 @@
 /** Skeleton para gráficas (tendencia, distribución, red interna) */
 export function SkeletonChart({ height = "h-72" }: { height?: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4">
       <div className="skeleton h-4 w-40" />
-      <div className={`${height} rounded-xl overflow-hidden relative`}>
+      <div className={`${height} rounded-control overflow-hidden relative`}>
         {/* Barras simuladas */}
         <div className="absolute inset-0 flex items-end gap-3 px-4 pb-2">
           {[65, 45, 80, 55, 70, 40, 90, 60, 50, 75, 85, 35].map((h, i) => (
@@ -23,11 +23,11 @@ export function SkeletonChart({ height = "h-72" }: { height?: string }) {
 /** Skeleton para tabla de ranking */
 export function SkeletonTable({ rows = 8 }: { rows?: number }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4">
       <div className="skeleton h-4 w-48" />
       <div className="space-y-3">
         {/* Header */}
-        <div className="flex gap-4 pb-2 border-b border-gray-100">
+        <div className="flex gap-4 pb-2 border-b border-borde">
           <div className="skeleton h-3 w-8" />
           <div className="skeleton h-3 w-32" />
           <div className="skeleton h-3 w-20 ml-auto" />
@@ -53,10 +53,10 @@ export function SkeletonTable({ rows = 8 }: { rows?: number }) {
 /** Skeleton para barras horizontales (top servicios) */
 export function SkeletonBars({ height = "h-96" }: { height?: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="skeleton h-4 w-36" />
-        <div className="skeleton h-8 w-28 rounded-lg" />
+        <div className="skeleton h-8 w-28 rounded-control" />
       </div>
       <div className={`${height} flex flex-col justify-center gap-3 px-4`}>
         {[90, 75, 65, 55, 48, 40, 35, 28, 22, 18].map((w, i) => (
@@ -73,7 +73,7 @@ export function SkeletonBars({ height = "h-96" }: { height?: string }) {
 /** Skeleton para red interna/externa (dona + lista) */
 export function SkeletonDonut() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-6">
       <div className="skeleton h-4 w-44 mb-4" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Dona */}

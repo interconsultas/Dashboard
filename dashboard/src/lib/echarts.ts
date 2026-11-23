@@ -25,6 +25,7 @@ import {
   VisualMapComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { NOMBRE_TEMA, TEMA_GRAFICAS } from "@/lib/tema/graficas";
 
 echarts.use([
   LineChart,
@@ -48,5 +49,8 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-export { echarts };
+// Tema único de la app (tokens de diseño): se registra una vez, al cargar el módulo
+echarts.registerTheme(NOMBRE_TEMA, TEMA_GRAFICAS);
+
+export { echarts, NOMBRE_TEMA };
 export type { EChartsType } from "echarts/core";

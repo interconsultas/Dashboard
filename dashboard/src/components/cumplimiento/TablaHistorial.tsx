@@ -10,46 +10,45 @@ interface Props {
   filas: FilaCumplimiento[];
 }
 
-const thGrupo = "px-2 pb-1 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-500 border-l border-gray-100 whitespace-nowrap";
-const thDetalle = "px-2 pb-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap";
-const tdNumero = "py-2 px-2 text-right text-gray-700 tabular-nums whitespace-nowrap";
+const thGrupo = "text-center border-l border-borde";
+const tdNumero = "text-tinta-2 whitespace-nowrap";
 /** Primera celda de cada categoría: lleva el borde que separa los grupos. */
-const CELDA_ORDENES = "border-l border-gray-100";
+const CELDA_ORDENES = "border-l border-borde";
 
 /** Historial mes a mes de un profesional: citas, programa, global y el detalle de cada categoría. */
 export function TablaHistorial({ filas }: Props) {
   const ordenadas = [...filas].sort((a, b) => a.periodo - b.periodo);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-fade-slide-up">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta p-5 space-y-4 animate-fade-slide-up">
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Historial mes a mes</p>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <h2 className="font-titulo text-[15px] font-bold text-tinta">Historial mes a mes</h2>
+        <p className="text-xs text-tinta-3 mt-0.5">
           Tasa: órdenes por cita en medicamentos y laboratorios; órdenes por cada 100 citas en las demás categorías.
         </p>
       </div>
 
       {ordenadas.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-8">Sin periodos para mostrar</p>
+        <p className="text-sm text-tinta-3 text-center py-8">Sin periodos para mostrar</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="tabla tabla-compacta">
             <thead>
               <tr>
                 <th
                   scope="col"
                   rowSpan={2}
-                  className="sticky left-0 bg-white pb-2 pr-3 text-left align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  className="sticky left-0 z-[1] text-left align-bottom"
                 >
                   Periodo
                 </th>
-                <th scope="col" rowSpan={2} className="px-2 pb-2 text-right align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" rowSpan={2} className="align-bottom">
                   Citas
                 </th>
-                <th scope="col" rowSpan={2} className="px-2 pb-2 text-left align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" rowSpan={2} className="text-left align-bottom">
                   Programa
                 </th>
-                <th scope="col" rowSpan={2} className="px-2 pb-2 text-right align-bottom text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" rowSpan={2} className="align-bottom">
                   Global
                 </th>
                 {CATEGORIAS.map((c) => (
@@ -58,41 +57,41 @@ export function TablaHistorial({ filas }: Props) {
                   </th>
                 ))}
               </tr>
-              <tr className="border-b border-gray-100">
+              <tr>
                 {CATEGORIAS.map((c) => (
                   <Fragment key={c.clave}>
-                    <th scope="col" className={`${thDetalle} ${CELDA_ORDENES}`}>
+                    <th scope="col" className={CELDA_ORDENES}>
                       Órdenes
                     </th>
-                    <th scope="col" className={thDetalle}>Tasa</th>
-                    <th scope="col" className={thDetalle}>Meta</th>
-                    <th scope="col" className={thDetalle}>%</th>
+                    <th scope="col">Tasa</th>
+                    <th scope="col">Meta</th>
+                    <th scope="col">%</th>
                   </Fragment>
                 ))}
               </tr>
             </thead>
             <tbody>
               {ordenadas.map((f) => (
-                <tr key={f.periodo} className="border-b border-gray-50 last:border-0">
+                <tr key={f.periodo}>
                   <th
                     scope="row"
-                    className="sticky left-0 bg-white py-2 pr-3 text-left font-medium text-gray-700 whitespace-nowrap"
+                    className="sticky left-0 bg-superficie text-left font-medium text-tinta-2 whitespace-nowrap"
                   >
                     {fmtPeriodo(f.periodo)}
                   </th>
                   <td className={tdNumero}>
                     {f.citas === null ? SIN_DATOS : f.citas.toLocaleString("es-CO")}
                   </td>
-                  <td className="py-2 px-2 whitespace-nowrap">
+                  <td className="text-left whitespace-nowrap">
                     {f.programa ? (
-                      <span className="text-gray-700">{f.programa}</span>
+                      <span className="text-tinta-2">{f.programa}</span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-atencion-suave text-atencion">
                         Sin programa
                       </span>
                     )}
                   </td>
-                  <td className="py-2 px-2 text-right font-semibold whitespace-nowrap">
+                  <td className="font-semibold whitespace-nowrap">
                     <PorcentajeMeta valor={f.global} />
                   </td>
                   {CATEGORIAS.map((c) => {
@@ -103,8 +102,8 @@ export function TablaHistorial({ filas }: Props) {
                           {d.ordenes.toLocaleString("es-CO")}
                         </td>
                         <td className={tdNumero}>{fmtTasa(d.tasa)}</td>
-                        <td className={`${tdNumero} text-gray-500`}>{fmtTasa(d.meta)}</td>
-                        <td className="py-2 px-2 text-right whitespace-nowrap">
+                        <td className={`${tdNumero} text-tinta-3`}>{fmtTasa(d.meta)}</td>
+                        <td className="whitespace-nowrap">
                           <PorcentajeMeta valor={d.pct} />
                         </td>
                       </Fragment>

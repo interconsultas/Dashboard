@@ -38,21 +38,21 @@ describe("BadgeEstado", () => {
     expect(span!.className).toContain("text-xs");
   });
 
-  it("estado exitoso tiene clase verde", () => {
+  it("estado exitoso tiene clase de estado bien", () => {
     const { container } = render(<BadgeEstado estado="exitoso" />);
     const span = container.querySelector("span");
-    expect(span!.className).toContain("bg-green-100");
+    expect(span!.className).toContain("bg-bien-suave");
   });
 
-  it("estado error_fatal tiene clase roja", () => {
+  it("estado error_fatal tiene clase de estado crítico", () => {
     const { container } = render(<BadgeEstado estado="error_fatal" />);
     const span = container.querySelector("span");
-    expect(span!.className).toContain("bg-red-100");
+    expect(span!.className).toContain("bg-critico-suave");
   });
 
-  it("estado esperando_confirmacion tiene clase amarilla", () => {
+  it("estado esperando_confirmacion tiene clase de estado atención", () => {
     const { container } = render(<BadgeEstado estado="esperando_confirmacion" />);
     const span = container.querySelector("span");
-    expect(span!.className).toContain("bg-yellow-100");
+    expect(span!.className).toContain("bg-atencion-suave");
   });
 });

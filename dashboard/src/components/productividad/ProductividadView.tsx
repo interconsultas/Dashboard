@@ -18,6 +18,9 @@ import {
 import type { Granularidad } from "@/lib/productividad/periodos";
 import type { RespuestaProductividad } from "@/lib/productividad/tipos";
 import { Spinner } from "@/components/ui/Spinner";
+import { EncabezadoPagina } from "@/components/layout/EncabezadoPagina";
+import { clasesBoton } from "@/components/ui/Boton";
+import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import { usePuedeVer } from "@/components/layout/RolContext";
 import { SkeletonChart, SkeletonTable } from "@/components/ui/SkeletonCard";
 import { ArbolPerdidas } from "./ArbolPerdidas";
@@ -32,16 +35,17 @@ import { Segmentadores } from "./Segmentadores";
 import { TarjetasKpi } from "./TarjetasKpi";
 
 const RUTA_CITAS = "/admin/citas";
+const MIGAS = [{ etiqueta: "Análisis" }, { etiqueta: "Productividad" }] as const;
 
 /* ── Subcomponents ───────────────────────────────── */
 
 function Esqueleto() {
   return (
     <div data-testid="productividad-cargando" className="space-y-3">
-      <div className="skeleton h-14 rounded-2xl" />
+      <div className="skeleton h-14 rounded-tarjeta" />
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="skeleton h-[118px] rounded-2xl" />
+          <div key={i} className="skeleton h-[140px] rounded-tarjeta" />
         ))}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
@@ -105,22 +109,19 @@ export default function ProductividadView() {
   /* ── Render ── */
 
   const encabezado = (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-brand-navy">Productividad</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Oferta, asignación, inasistencia y citas perdidas por área, servicio y profesional
-        </p>
-      </div>
-      {isValidating && !isLoading && <Spinner className="h-4 w-4 text-brand-navy/40" />}
-    </div>
+    <EncabezadoPagina
+      migas={MIGAS}
+      titulo="Productividad"
+      subtitulo="Oferta, asignación, inasistencia y citas perdidas por área, servicio y profesional"
+      acciones={isValidating && !isLoading ? <Spinner className="h-4 w-4 text-white/70" /> : undefined}
+    />
   );
 
   if (error && !data) {
     return (
       <div className="space-y-4">
         {encabezado}
-        <div role="alert" className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 text-sm text-red-700">
+        <div role="alert" className="bg-critico-suave rounded-tarjeta border border-critico/20 p-6 text-sm text-critico">
           {error instanceof Error ? error.message : "Error al consultar los datos"}
         </div>
       </div>
@@ -160,18 +161,19 @@ export default function ProductividadView() {
       />
 
       {sinCargas ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-          <p className="text-base font-semibold text-brand-navy">Aún no hay informes de citas cargados</p>
-          <p className="text-sm text-gray-500 mt-1">
-            El tablero se alimenta del informe detallado por profesional de Agenda Web
-            {data.granularidad === "semanal" ? " (cargas semanales)" : ""}.
-          </p>
-          {veCitas && (
-            <Link href={RUTA_CITAS} className="inline-block mt-4 text-sm font-semibold text-brand-navy underline">
-              Ir a Citas
-            </Link>
-          )}
-        </div>
+        <EstadoVacio
+          titulo="Aún no hay informes de citas cargados"
+          descripcion={`El tablero se alimenta del informe detallado por profesional de Agenda Web${
+            data.granularidad === "semanal" ? " (cargas semanales)" : ""
+          }.`}
+          accion={
+            veCitas && (
+              <Link href={RUTA_CITAS} className={clasesBoton({ variante: "secundario" })}>
+                Ir a Citas
+              </Link>
+            )
+          }
+        />
       ) : (
         <>
           <TarjetasKpi kpis={data.kpis} profesionales={data.profesionales} etiquetaAnterior={etiquetaAnterior} />

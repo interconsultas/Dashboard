@@ -1,21 +1,23 @@
-/** Tarjeta de un visual del tablero: título, ayuda y contenido. */
+import { Tarjeta } from "@/components/ui/Tarjeta";
+
+/** Tarjeta de un visual del tablero: título, ayuda y contenido (sobre la Tarjeta base). */
 export function Panel({
   titulo,
   ayuda,
+  acciones,
   children,
   className = "",
 }: {
   titulo: string;
   ayuda?: React.ReactNode;
+  acciones?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <section className={`h-full flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 sm:px-5 min-w-0 ${className}`}>
-      <h2 className="text-[15px] font-semibold text-brand-navy">{titulo}</h2>
-      {ayuda && <p className="text-xs text-gray-400 mt-0.5 mb-2">{ayuda}</p>}
+    <Tarjeta titulo={titulo} ayuda={ayuda} acciones={acciones} className={`h-full ${className}`}>
       {children}
-    </section>
+    </Tarjeta>
   );
 }
 
@@ -23,7 +25,7 @@ export function Panel({
 export function SinDatos({ children, className = "h-[300px]" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`flex items-center justify-center text-center text-sm text-gray-400 bg-surface-alt border border-dashed border-gray-200 rounded-xl p-5 ${className}`}
+      className={`flex items-center justify-center text-center text-sm text-tinta-3 bg-superficie-2 border border-dashed border-borde rounded-control p-5 ${className}`}
     >
       {children}
     </div>

@@ -5,12 +5,14 @@ import type { FiltrosProductividad } from "@/lib/productividad/filtros";
 import type { Granularidad } from "@/lib/productividad/periodos";
 import { buscarProfesional, etiquetaProfesional } from "@/lib/productividad/presentacion";
 import type { RespuestaProductividad } from "@/lib/productividad/tipos";
+import { Boton } from "@/components/ui/Boton";
+import { CLASES_CAMPO, CLASES_ETIQUETA_CAMPO } from "@/components/ui/clases";
+import { Segmentado } from "@/components/ui/Segmentado";
 
 /* ── Styles ──────────────────────────────────────── */
 
-const controlCls =
-  "rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-brand-navy/30 focus:ring-2 focus:ring-brand-navy/10 transition-all min-w-[140px] max-w-[260px]";
-const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1";
+const controlCls = `${CLASES_CAMPO} min-w-[140px] max-w-[260px]`;
+const labelCls = CLASES_ETIQUETA_CAMPO;
 
 /* ── Types ───────────────────────────────────────── */
 
@@ -93,30 +95,23 @@ export function Segmentadores({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex flex-wrap gap-3 items-end sticky top-0 md:top-4 z-10">
+    <div className="bg-superficie rounded-tarjeta border border-borde shadow-tarjeta px-4 py-3 flex flex-wrap gap-3 items-end sticky top-0 md:top-4 z-10">
       <div>
         <span className={labelCls}>Periodo</span>
-        <div className="inline-flex rounded-xl border border-gray-200 overflow-hidden" role="group" aria-label="Periodo">
-          {(["mensual", "semanal"] as const).map((g) => {
-            const activo = filtros.granularidad === g;
-            const deshabilitado = g === "semanal" && sinSemanas;
-            return (
-              <button
-                key={g}
-                type="button"
-                aria-pressed={activo}
-                disabled={deshabilitado}
-                title={deshabilitado ? "Disponible al cargar informes semanales" : undefined}
-                onClick={() => !activo && onGranularidad(g)}
-                className={`px-3 py-2 text-sm transition-colors ${
-                  activo ? "bg-brand-navy text-white" : "bg-white text-gray-600 hover:bg-brand-blue-soft"
-                } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white`}
-              >
-                {g === "mensual" ? "Mensual" : "Semanal"}
-              </button>
-            );
-          })}
-        </div>
+        <Segmentado
+          etiqueta="Periodo"
+          valor={filtros.granularidad}
+          onCambiar={onGranularidad}
+          opciones={[
+            { valor: "mensual", etiqueta: "Mensual" },
+            {
+              valor: "semanal",
+              etiqueta: "Semanal",
+              deshabilitada: sinSemanas,
+              titulo: sinSemanas ? "Disponible al cargar informes semanales" : undefined,
+            },
+          ]}
+        />
       </div>
 
       <div>
@@ -192,26 +187,22 @@ export function Segmentadores({
         </datalist>
       </div>
 
-      <button
-        type="button"
-        onClick={onLimpiar}
-        className="px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 text-brand-navy bg-white hover:bg-brand-blue-soft transition-colors"
-      >
+      <Boton variante="secundario" onClick={onLimpiar}>
         Limpiar filtros
-      </button>
+      </Boton>
 
       <ul aria-label="Filtros activos" className="flex flex-wrap gap-1.5 items-center xl:ml-auto">
         {chips.map((c) => (
           <li
             key={c.clave}
-            className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue-soft text-brand-navy px-2.5 py-1 text-xs font-semibold max-w-[260px]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primario-suave text-primario px-2.5 py-1 text-xs font-bold max-w-[260px]"
           >
             <span className="truncate">{c.texto}</span>
             {c.verFicha && (
               <button
                 type="button"
                 onClick={c.verFicha}
-                className="shrink-0 underline decoration-brand-navy/40 hover:decoration-brand-navy font-semibold"
+                className="shrink-0 underline decoration-primario/40 hover:decoration-primario font-bold"
               >
                 Ver ficha
               </button>
@@ -222,7 +213,7 @@ export function Segmentadores({
                 onClick={c.quitar}
                 aria-label={`Quitar ${c.texto}`}
                 title="Quitar"
-                className="text-brand-navy/70 hover:text-brand-navy text-[15px] leading-none"
+                className="text-primario/70 hover:text-primario text-[15px] leading-none"
               >
                 ×
               </button>
