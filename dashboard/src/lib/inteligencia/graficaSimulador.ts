@@ -34,7 +34,6 @@ export function opcionesComparacion(comparacion: Record<MetricaComparada, Difere
     label: { show: true, position: "right", color: TINTA_2, fontSize: 11, formatter: (p: any) => fmtNumero(p.value) },
   });
   return {
-    animationDuration: 300,
     grid: { left: 88, right: 56, top: 32, bottom: 8 },
     legend: { data: ["Actual", "Escenario"], top: 0, left: 0, itemWidth: 12, itemHeight: 8 },
     tooltip: {

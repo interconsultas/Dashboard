@@ -66,6 +66,15 @@ export function esDocumento(valor: string): boolean {
   return RE_DOCUMENTO.test(valor);
 }
 
+/** Valida el parámetro `documento` de la ficha (obligatorio, una sola vez, solo dígitos). */
+export function leerDocumento(params: URLSearchParams): { documento: string } | { error: string } {
+  const documentos = params.getAll("documento");
+  if (documentos.length > 1) return { error: "El parámetro documento está repetido" };
+  const documento = documentos[0]?.trim() ?? "";
+  if (!esDocumento(documento)) return { error: "El documento del profesional debe contener solo dígitos" };
+  return { documento };
+}
+
 /**
  * Documento del profesional cuya ficha está abierta (`ficha` en la URL).
  * No es un filtro: abrirla no vuelve a consultar el tablero.

@@ -22,7 +22,7 @@ jest.mock("@/components/layout/InsigniaAlertas", () => ({
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { RolProvider } from "@/components/layout/RolContext";
-import { PERMISOS_POR_DEFECTO, type Permisos, type Rol } from "@/lib/acceso";
+import { PERMISOS_POR_DEFECTO, type Permisos, type Rol, type Seccion } from "@/lib/acceso";
 
 /** Por defecto admin: ve todo el menú. Sin permisos explícitos usa los del rol por defecto. */
 function renderSidebar(rol: Rol | null = "admin", permisos?: Permisos | null) {
@@ -264,5 +264,49 @@ describe("Sidebar — permisos configurados", () => {
   it("sin permisos no muestra enlaces", () => {
     renderSidebar("coordinador", null);
     expect(screen.queryAllByRole("link")).toHaveLength(0);
+  });
+});
+
+describe("Sidebar — módulos en desarrollo", () => {
+  beforeEach(() => mockUsePathname.mockReturnValue("/dashboard"));
+
+  /** Dirección médica con Productividad e Inteligencia en desarrollo: sin acceso efectivo, pero las vería. */
+  const BLOQUEADOS: Permisos = { ...PERMISOS_POR_DEFECTO.direccion_medica, productividad: "ninguno", inteligencia: "ninguno" };
+  const EN_DESARROLLO: Seccion[] = ["productividad", "inteligencia"];
+
+  function renderEnDesarrollo(rol: Rol, permisos: Permisos, enDesarrollo: Seccion[]) {
+    return render(
+      <RolProvider rol={rol} permisos={permisos} enDesarrollo={enDesarrollo}>
+        <Sidebar />
+      </RolProvider>,
+    );
+  }
+
+  it("quien las vería ve las entradas con la etiqueta En desarrollo y enlace al módulo", () => {
+    renderEnDesarrollo("direccion_medica", BLOQUEADOS, EN_DESARROLLO);
+    for (const [nombre, href] of [["Productividad", "/dashboard/productividad"], ["Inteligencia", "/dashboard/inteligencia"]]) {
+      const link = screen.getByRole("link", { name: new RegExp(`^${nombre}`) });
+      expect(link).toHaveAttribute("href", href);
+      expect(link).toHaveTextContent("En desarrollo");
+    }
+    expect(enlace("Cumplimiento")).not.toHaveTextContent("En desarrollo");
+  });
+
+  it("a quien no tiene acceso efectivo no le monta la insignia de alertas (no consulta el conteo)", () => {
+    renderEnDesarrollo("direccion_medica", BLOQUEADOS, EN_DESARROLLO);
+    expect(screen.queryByTestId("insignia-alertas")).not.toBeInTheDocument();
+  });
+
+  it("admin ve las entradas con la etiqueta y conserva la insignia", () => {
+    renderEnDesarrollo("admin", PERMISOS_POR_DEFECTO.admin, EN_DESARROLLO);
+    const inteligencia = screen.getByRole("link", { name: /^Inteligencia/ });
+    expect(inteligencia).toHaveTextContent("En desarrollo");
+    expect(inteligencia).toContainElement(screen.getByTestId("insignia-alertas"));
+  });
+
+  it("quien no las vería según la matriz no ve las entradas", () => {
+    renderEnDesarrollo("coordinador", PERMISOS_POR_DEFECTO.coordinador, []);
+    expect(screen.queryByRole("link", { name: /^Productividad/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("En desarrollo")).not.toBeInTheDocument();
   });
 });

@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { puedeVer } from "@/lib/acceso";
+import { Estado } from "@/components/ui/Estado";
 import { InsigniaAlertas } from "./InsigniaAlertas";
-import { usePermisos } from "./RolContext";
+import { useEnDesarrollo, usePermisos } from "./RolContext";
 
 function IconDashboard({ className }: { className?: string }) {
   return (
@@ -181,6 +182,15 @@ function TituloGrupo({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Etiqueta de módulo en desarrollo en el menú (texto, no solo color). */
+function EtiquetaEnDesarrollo() {
+  return (
+    <Estado tono="atencion" icono={null} className="ml-auto text-[10px] px-1.5">
+      En desarrollo
+    </Estado>
+  );
+}
+
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
   // Cumplimiento vive bajo /dashboard pero es una entrada propia del menú
@@ -193,14 +203,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const [subOpen, setSubOpen] = useState(isDashboard);
   // Solo se muestran las entradas que los permisos dejan abrir (los layouts hacen cumplir lo mismo)
   const permisos = usePermisos();
+  const enDesarrollo = useEnDesarrollo();
   const ver = (href: string) => puedeVer(permisos, href);
+  // Módulos en desarrollo: visibles (con etiqueta) para quien los verá al liberarse
+  const productividadEnDesarrollo = enDesarrollo.includes("productividad");
+  const inteligenciaEnDesarrollo = enDesarrollo.includes("inteligencia");
+  const verProductividad = ver("/dashboard/productividad") || productividadEnDesarrollo;
+  const verInteligencia = ver("/dashboard/inteligencia") || inteligenciaEnDesarrollo;
   const tiposVisibles = TIPOS_PRESTACION.filter((t) => ver(`/dashboard/tipo/${t.slug}`));
-  const analisisVisibles = [
-    "/dashboard",
-    "/dashboard/cumplimiento",
-    "/dashboard/productividad",
-    "/dashboard/inteligencia",
-  ].some(ver);
+  const analisisVisibles =
+    ["/dashboard", "/dashboard/cumplimiento"].some(ver) || verProductividad || verInteligencia;
   const adminVisibles = ADMINISTRACION.filter((e) => ver(e.href));
 
   function handleNav() {
@@ -314,10 +326,26 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
         {ver("/dashboard/cumplimiento") &&
           enlace("/dashboard/cumplimiento", "Cumplimiento", IconCumplimiento, isCumplimiento)}
-        {ver("/dashboard/productividad") &&
-          enlace("/dashboard/productividad", "Productividad", IconProductividad, isProductividad)}
-        {ver("/dashboard/inteligencia") &&
-          enlace("/dashboard/inteligencia", "Inteligencia", IconInteligencia, isInteligencia, <InsigniaAlertas />)}
+        {verProductividad &&
+          enlace(
+            "/dashboard/productividad",
+            "Productividad",
+            IconProductividad,
+            isProductividad,
+            productividadEnDesarrollo && <EtiquetaEnDesarrollo />,
+          )}
+        {verInteligencia &&
+          enlace(
+            "/dashboard/inteligencia",
+            "Inteligencia",
+            IconInteligencia,
+            isInteligencia,
+            <span className="ml-auto flex items-center gap-1">
+              {inteligenciaEnDesarrollo && <EtiquetaEnDesarrollo />}
+              {/* El conteo solo se consulta con acceso efectivo (no mientras esté en desarrollo para los demás) */}
+              {ver("/dashboard/inteligencia") && <InsigniaAlertas />}
+            </span>,
+          )}
 
         {adminVisibles.length > 0 && <TituloGrupo>Administración</TituloGrupo>}
         {adminVisibles.map((e) => enlace(e.href, e.etiqueta, e.Icono, pathname.startsWith(e.href)))}

@@ -50,7 +50,6 @@ const fmtPuntos = (v: number) => `${v.toLocaleString("es-CO", { maximumFractionD
 export function opcionesSparkline(valores: (number | null)[], etiquetas: string[], fmt: (v: number) => string) {
   const ultimo = valores.length - 1;
   return {
-    animation: false,
     grid: { left: 4, right: 4, top: 6, bottom: 2 },
     xAxis: { type: "category", show: false, data: etiquetas },
     yAxis: { type: "value", show: false, scale: true },
@@ -84,7 +83,6 @@ export function opcionesTendencia(serie: PuntoSerie[], seleccionado: string | nu
   const idx = serie.findIndex((p) => p.clave === seleccionado);
   const etiquetas = serie.map((p) => p.etiqueta);
   return {
-    animationDuration: 400,
     grid: { left: 46, right: 24, top: 24, bottom: 58 },
     tooltip: {
       trigger: "axis",

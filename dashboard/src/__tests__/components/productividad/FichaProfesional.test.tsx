@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { PropsGrafico } from "@/components/productividad/Grafico";
 
@@ -16,6 +16,17 @@ jest.mock("@/components/productividad/Grafico", () => ({
 
 const mockUseSWR = jest.fn();
 jest.mock("swr", () => ({ __esModule: true, default: (...args: unknown[]) => mockUseSWR(...args) }));
+
+const mockDescargar = jest.fn();
+jest.mock("@/lib/informes/descarga", () => ({
+  ...jest.requireActual("@/lib/informes/descarga"),
+  descargarArchivo: (...a: unknown[]) => mockDescargar(...a),
+}));
+
+const mockPdf = jest.fn();
+jest.mock("@/components/informes/pdf/generar", () => ({
+  descargarInformePdf: (...a: unknown[]) => mockPdf(...a),
+}));
 
 import { FichaProfesional } from "@/components/productividad/FichaProfesional";
 import { FILTROS_VACIOS } from "@/lib/productividad/filtros";
@@ -58,6 +69,8 @@ function renderizar(respuesta: Partial<{ data: unknown; error: unknown; isLoadin
 
 beforeEach(() => {
   mockUseSWR.mockReset();
+  mockPdf.mockReset();
+  mockDescargar.mockReset();
   for (const k of Object.keys(mockGraficos)) delete mockGraficos[k];
 });
 
@@ -69,6 +82,46 @@ describe("FichaProfesional", () => {
     const params = new URLSearchParams(url.split("?")[1]);
     expect(params.get("documento")).toBe("1053");
     expect(params.get("area")).toBe("Medicina general");
+  });
+
+  it("descarga la ficha en Excel con los filtros activos", async () => {
+    let terminar: (v: string) => void = () => {};
+    mockDescargar.mockReturnValue(new Promise((res) => (terminar = res)));
+    renderizar();
+    fireEvent.click(screen.getByRole("button", { name: "Descargar Excel" }));
+    expect(mockDescargar).toHaveBeenCalledWith("/api/informes/excel?tipo=ficha&area=Medicina+general&documento=1053");
+    expect(screen.getByRole("button", { name: /Generando/ })).toBeDisabled();
+    await act(async () => terminar("x.xlsx"));
+    expect(screen.getByRole("button", { name: "Descargar Excel" })).toBeEnabled();
+  });
+
+  it("descarga la ficha en PDF: Generando… en ese botón y los dos bloqueados mientras tanto", async () => {
+    let terminar: (v: string) => void = () => {};
+    mockPdf.mockReturnValue(new Promise((res) => (terminar = res)));
+    renderizar();
+    fireEvent.click(screen.getByRole("button", { name: "Descargar PDF" }));
+    await waitFor(() =>
+      expect(mockPdf).toHaveBeenCalledWith("/api/informes/datos?tipo=ficha&area=Medicina+general&documento=1053")
+    );
+    expect(screen.getByRole("button", { name: /Generando/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Descargar Excel" })).toBeDisabled();
+    await act(async () => terminar("Ficha.pdf"));
+    expect(screen.getByRole("button", { name: "Descargar PDF" })).toBeEnabled();
+    expect(mockDescargar).not.toHaveBeenCalled();
+  });
+
+  it("muestra el error en línea si el PDF falla", async () => {
+    mockPdf.mockRejectedValue(new Error("No se pudo generar el informe"));
+    renderizar();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Descargar PDF" })));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo generar el informe"));
+  });
+
+  it("muestra el error si la descarga falla", async () => {
+    mockDescargar.mockRejectedValue(new Error("Error al generar el informe"));
+    renderizar();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Descargar Excel" })));
+    expect(screen.getByRole("alert")).toHaveTextContent("Error al generar el informe");
   });
 
   it("es un diálogo modal accesible con el nombre del profesional y recibe el foco", () => {

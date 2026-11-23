@@ -5,7 +5,6 @@
  */
 import {
   Document,
-  Font,
   G,
   Image,
   Line,
@@ -32,9 +31,10 @@ import type {
 } from "@/lib/cumplimiento/informe";
 import type { EstadoMeta } from "@/lib/cumplimiento/presentacion";
 import { COLORES } from "@/lib/tema/tokens";
+import { FAMILIA_TEXTO, FAMILIA_TITULO } from "@/components/informes/pdf/fuentes";
 
-// Sin guiones de partición: los encabezados de las tablas se cortan por palabras completas
-Font.registerHyphenationCallback((palabra) => [palabra]);
+// Las fuentes (Sora y DM Sans, sin guiones de partición) las registra registrarFuentesPdf
+// antes de generar el documento (ver descargarInforme.tsx).
 
 /* ── Paleta: tokens de diseño (lib/tema/tokens). @react-pdf necesita hex literal ── */
 
@@ -83,7 +83,7 @@ const s = StyleSheet.create({
     paddingTop: MARGEN,
     paddingBottom: MARGEN + 18,
     paddingHorizontal: MARGEN,
-    fontFamily: "Helvetica",
+    fontFamily: FAMILIA_TEXTO,
     fontSize: 9,
     color: TINTA_CUERPO,
   },
@@ -99,7 +99,7 @@ const s = StyleSheet.create({
     borderBottomColor: NAVY,
   },
   logo: { width: 120, height: 35 },
-  titulo: { fontWeight: "bold", fontSize: 18, color: NAVY },
+  titulo: { fontFamily: FAMILIA_TITULO, fontWeight: "bold", fontSize: 18, color: NAVY },
   subtitulo: { fontSize: 9, color: GRAY, marginTop: 2 },
   metaEncabezado: { alignItems: "flex-end", maxWidth: 420 },
   metaLinea: { fontSize: 8.5, color: TINTA_CUERPO, marginTop: 2, textAlign: "right" },
@@ -356,7 +356,7 @@ function Eje({ area, techo, marcas, fuente }: { area: Area; techo: number; marca
           <Text
             x={area.izq - 4}
             y={y(area, techo, m) + fuente / 3}
-            style={{ fontSize: fuente, fill: GRAY }}
+            style={{ fontFamily: FAMILIA_TEXTO, fontSize: fuente, fill: GRAY }}
             textAnchor="end"
           >
             {`${m}%`}
@@ -399,7 +399,7 @@ function GraficaBarras({ grafica }: { grafica: GraficaInforme }) {
                 {p.pct !== null && (
                   <Rect x={cx - anchoBarra / 2} y={tope} width={anchoBarra} height={Math.max(base - tope, 0.5)} fill={NAVY_SERIE} />
                 )}
-                <Text x={cx} y={area.alto - 4} textAnchor="middle" style={{ fontSize: 7, fill: GRAY }}>
+                <Text x={cx} y={area.alto - 4} textAnchor="middle" style={{ fontFamily: FAMILIA_TEXTO, fontSize: 7, fill: GRAY }}>
                   {p.etiqueta}
                 </Text>
               </G>
@@ -415,7 +415,7 @@ function GraficaBarras({ grafica }: { grafica: GraficaInforme }) {
                   x={centro(i)}
                   y={yEtiquetaBarra(y(area, grafica.techo, p.pct), y(area, grafica.techo, 100))}
                   textAnchor="middle"
-                  style={{ fontSize: 7.5, fill: NAVY_SERIE, fontWeight: "bold" }}
+                  style={{ fontFamily: FAMILIA_TEXTO, fontSize: 7.5, fill: NAVY_SERIE, fontWeight: "bold" }}
                 >
                   {p.texto}
                 </Text>
@@ -492,7 +492,7 @@ function Tendencia({ tendencia }: { tendencia: TendenciaInforme }) {
           ))}
           {tendencia.puntos.map((p, i) =>
             i % cadaCuanto === 0 || i === n - 1 ? (
-              <Text key={p.periodo} x={x(i)} y={area.alto - 2} textAnchor="middle" style={{ fontSize: 6, fill: GRAY }}>
+              <Text key={p.periodo} x={x(i)} y={area.alto - 2} textAnchor="middle" style={{ fontFamily: FAMILIA_TEXTO, fontSize: 6, fill: GRAY }}>
                 {p.etiqueta}
               </Text>
             ) : null

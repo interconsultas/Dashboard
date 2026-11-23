@@ -114,6 +114,20 @@ describe("ProductividadView", () => {
     expect(mockPush).toHaveBeenLastCalledWith("/dashboard/productividad", { scroll: false });
   });
 
+  it("la cabecera ofrece Exportar con los filtros de la URL", () => {
+    mockParams = new URLSearchParams("area=Salud%20oral&periodo=202609");
+    render(<ProductividadView />);
+    fireEvent.click(screen.getByRole("button", { name: /Exportar/ }));
+    expect(screen.getByRole("menuitem", { name: /Excel — esta vista/ })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: /PDF — esta vista/ })).toBeEnabled();
+  });
+
+  it("sin cargas no ofrece Exportar", () => {
+    swr({ data: { ...RESPUESTA, periodo: null, periodos: { mensual: [], semanal: [] }, kpis: { actual: null, anterior: null, periodo_anterior: null, serie: [] } } });
+    render(<ProductividadView />);
+    expect(screen.queryByRole("button", { name: /Exportar/ })).not.toBeInTheDocument();
+  });
+
   it("muestra esqueletos mientras carga por primera vez", () => {
     swr({ isLoading: true });
     render(<ProductividadView />);

@@ -8,7 +8,16 @@ import { aQueryString, type FiltrosProductividad } from "@/lib/productividad/fil
 import { opcionesServiciosFicha, opcionesTendenciaFicha } from "@/lib/productividad/graficas";
 import { fmtNumero, fmtPct } from "@/lib/productividad/presentacion";
 import type { RespuestaFichaProfesional } from "@/lib/productividad/tipos";
+import { urlInforme } from "@/lib/informes/descarga";
+import { Boton } from "@/components/ui/Boton";
+import { Spinner } from "@/components/ui/Spinner";
+import { useDescarga } from "@/components/informes/useDescarga";
 import { Grafico } from "./Grafico";
+
+const BOTONES_DESCARGA = [
+  { formato: "excel", etiqueta: "Descargar Excel" },
+  { formato: "pdf", etiqueta: "Descargar PDF" },
+] as const;
 
 interface Props {
   documento: string;
@@ -63,6 +72,7 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
   const opcionTendencia = useMemo(() => (data ? opcionesTendenciaFicha(data.tendencia, data.periodo) : null), [data]);
 
   const a = data?.actual;
+  const { descargando, error: errorDescarga, descargar } = useDescarga();
 
   // Portal a <body>: dentro del layout, un contenedor con scroll desplazaba el panel
   // y dejaba una franja sin cubrir arriba.
@@ -107,6 +117,32 @@ export function FichaProfesional({ documento, filtros, onCerrar }: Props) {
           <p className="mt-6 text-sm text-tinta-3">El profesional no tiene agenda en el periodo con los filtros activos.</p>
         ) : (
           <>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {BOTONES_DESCARGA.map((b) => (
+                <Boton
+                  key={b.formato}
+                  variante="secundario"
+                  tamano="sm"
+                  aria-busy={descargando === b.formato}
+                  disabled={descargando !== null}
+                  onClick={() => void descargar(b.formato, urlInforme(b.formato, "ficha", filtros, documento), b.formato)}
+                >
+                  {descargando === b.formato ? (
+                    <>
+                      <Spinner className="h-3.5 w-3.5" /> Generando…
+                    </>
+                  ) : (
+                    b.etiqueta
+                  )}
+                </Boton>
+              ))}
+              {errorDescarga && (
+                <p role="alert" className="text-xs text-critico">
+                  {errorDescarga}
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
               <Indicador titulo="Asignadas" valor={fmtNumero(a.asignadas)} detalle={`${fmtNumero(a.ofertadas)} ofertadas`} />
               <Indicador

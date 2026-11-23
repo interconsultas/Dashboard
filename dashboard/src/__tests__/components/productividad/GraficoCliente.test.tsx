@@ -14,6 +14,7 @@ jest.mock("echarts-for-react/lib/core", () => ({
 }));
 
 import GraficoCliente from "@/components/productividad/GraficoCliente";
+import { capturarGrafica } from "@/lib/informes/registroGraficas";
 
 describe("GraficoCliente", () => {
   beforeEach(() => mockReactECharts.mockClear());
@@ -42,25 +43,47 @@ describe("GraficoCliente", () => {
   });
 
   it("redimensiona la gráfica cuando cambia el tamaño de su contenedor", () => {
-    let alCambiar: () => void = () => {};
+    let alCambiar: (entradas: unknown[]) => void = () => {};
     const observe = jest.fn();
     const disconnect = jest.fn();
     const original = global.ResizeObserver;
-    global.ResizeObserver = jest.fn((cb: () => void) => {
+    global.ResizeObserver = jest.fn((cb: (entradas: unknown[]) => void) => {
       alCambiar = cb;
       return { observe, disconnect, unobserve: jest.fn() };
     }) as unknown as typeof ResizeObserver;
+    const tam = (width: number, height: number) => [{ contentRect: { width, height } }];
 
     const { unmount } = render(<GraficoCliente opcion={{}} etiqueta="Tamaño" />);
-    const chart = { resize: jest.fn() };
+    const chart = { resize: jest.fn(), getWidth: () => 400, getHeight: () => 300 };
     act(() => (mockReactECharts.mock.calls[0][0].onChartReady as (c: unknown) => void)(chart));
     expect(observe).toHaveBeenCalledWith(screen.getByRole("img", { name: "Tamaño" }));
 
-    act(() => alCambiar());
+    // La primera observación llega con el mismo tamaño: redimensionar cortaría la animación de entrada
+    act(() => alCambiar(tam(400, 300)));
+    expect(chart.resize).not.toHaveBeenCalled();
+
+    act(() => alCambiar(tam(520, 300)));
     expect(chart.resize).toHaveBeenCalledTimes(1);
 
     unmount();
     expect(disconnect).toHaveBeenCalled();
     global.ResizeObserver = original;
   });
+
+  it("registra la gráfica por su etiqueta para el PDF y la quita al desmontar", () => {
+    const { unmount } = render(<GraficoCliente opcion={{}} etiqueta="Embudo de la agenda" />);
+    const chart = { resize: jest.fn(), getDataURL: jest.fn(() => "data:image/png;base64,EMB") };
+    act(() => (mockReactECharts.mock.calls[0][0].onChartReady as (c: unknown) => void)(chart));
+    expect(capturarGrafica("Embudo de la agenda")).toBe("data:image/png;base64,EMB");
+    unmount();
+    expect(capturarGrafica("Embudo de la agenda")).toBeNull();
+  });
+
+  it("aplica la animación común de la app a la opción de la gráfica", () => {
+    render(<GraficoCliente opcion={{ series: [{ type: "bar", data: [1] }] }} etiqueta="Animada" />);
+    const props = mockReactECharts.mock.calls[mockReactECharts.mock.calls.length - 1][0] as { option: any };
+    expect(props.option).toMatchObject({ animation: true, animationDuration: 900, animationEasing: "cubicOut" });
+    expect(typeof props.option.series[0].animationDelay).toBe("function");
+  });
+
 });

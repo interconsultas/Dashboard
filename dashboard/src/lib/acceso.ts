@@ -159,8 +159,16 @@ export interface FilaPermiso {
   nivel: string;
 }
 
-/** Permisos de un rol a partir de las filas de permisos_rol, con las reglas fijas aplicadas. */
-export function permisosEfectivos(rol: Rol, filas: readonly FilaPermiso[]): Permisos {
+/**
+ * Permisos de un rol a partir de las filas de permisos_rol, con las reglas fijas aplicadas.
+ * `enDesarrollo` (lib/modulos): para todo rol distinto de admin esas secciones
+ * cuentan como 'ninguno', sin tocar la matriz; al liberarlas vuelve lo configurado.
+ */
+export function permisosEfectivos(
+  rol: Rol,
+  filas: readonly FilaPermiso[],
+  enDesarrollo: readonly Seccion[] = [],
+): Permisos {
   if (rol === "admin") return todas("editar");
 
   const permisos = todas("ninguno");
@@ -170,7 +178,22 @@ export function permisosEfectivos(rol: Rol, filas: readonly FilaPermiso[]): Perm
     if (!def.configurable) continue;
     permisos[f.seccion] = f.nivel === "editar" && !def.admiteEdicion ? "ver" : f.nivel;
   }
+  for (const s of enDesarrollo) permisos[s] = "ninguno";
   return permisos;
+}
+
+/**
+ * Secciones en desarrollo que el rol vería si ya estuvieran liberadas: admin
+ * las ve todas (vista previa); los demás, las que la matriz les deja ver (se
+ * les muestra el aviso "Módulo en desarrollo" en lugar de negar el acceso).
+ */
+export function seccionesEnDesarrolloVisibles(
+  rol: Rol,
+  filas: readonly FilaPermiso[],
+  enDesarrollo: readonly Seccion[],
+): Seccion[] {
+  const segunMatriz = permisosEfectivos(rol, filas);
+  return enDesarrollo.filter((s) => segunMatriz[s] !== "ninguno");
 }
 
 /** Requisito de una página o ruta /api: basta con tener el nivel en una de las secciones. */
@@ -269,6 +292,10 @@ export const PERMISOS_API = {
   // El simulador de Inteligencia parte de estos mismos agregados
   "/api/productividad": { GET: ver("productividad", "inteligencia") },
   "/api/productividad/profesional": { GET: ver("productividad") },
+  // El informe mensual agrega prioridades solo si además se ve Inteligencia
+  "/api/informes/excel": { GET: ver("productividad") },
+  // Modelo del informe en JSON para el PDF que se arma en el navegador
+  "/api/informes/datos": { GET: ver("productividad") },
   "/api/inteligencia/grafo": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas": { GET: ver("inteligencia") },
   "/api/inteligencia/alertas/conteo": { GET: ver("inteligencia") },

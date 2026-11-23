@@ -73,7 +73,6 @@ export function opcionesProyeccion(s: SerieProyectada, siguiente: Siguiente, met
   }
 
   return {
-    animationDuration: 300,
     grid: { left: 40, right: 12, top: 12, bottom: 24 },
     tooltip: {
       trigger: "axis",

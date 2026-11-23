@@ -8,9 +8,9 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   // Permisos efectivos de permisos_rol: el menú y los controles de edición los siguen
-  const { rol, permisos } = await sesionConPermisos();
+  const { rol, permisos, enDesarrollo } = await sesionConPermisos();
   return (
-    <RolProvider rol={rol} permisos={permisos}>
+    <RolProvider rol={rol} permisos={permisos} enDesarrollo={enDesarrollo}>
       <AppShell>{children}</AppShell>
     </RolProvider>
   );
