@@ -161,16 +161,21 @@ export interface FilaPermiso {
 
 /**
  * Permisos de un rol a partir de las filas de permisos_rol, con las reglas fijas aplicadas.
- * `enDesarrollo` (lib/modulos): para todo rol distinto de admin esas secciones
- * cuentan como 'ninguno', sin tocar la matriz; al liberarlas vuelve lo configurado.
+ * `enDesarrollo` (lib/modulos): esas secciones cuentan como 'ninguno' para
+ * todos los roles, admin incluido (su acceso total no lo anula), sin tocar la
+ * matriz; al liberarlas vuelve lo configurado.
  */
 export function permisosEfectivos(
   rol: Rol,
   filas: readonly FilaPermiso[],
   enDesarrollo: readonly Seccion[] = [],
 ): Permisos {
-  if (rol === "admin") return todas("editar");
+  const permisos = rol === "admin" ? todas("editar") : segunMatriz(rol, filas);
+  for (const s of enDesarrollo) permisos[s] = "ninguno";
+  return permisos;
+}
 
+function segunMatriz(rol: Rol, filas: readonly FilaPermiso[]): Permisos {
   const permisos = todas("ninguno");
   for (const f of filas) {
     if (f.rol !== rol || !esSeccion(f.seccion) || !esNivel(f.nivel)) continue;
@@ -178,14 +183,13 @@ export function permisosEfectivos(
     if (!def.configurable) continue;
     permisos[f.seccion] = f.nivel === "editar" && !def.admiteEdicion ? "ver" : f.nivel;
   }
-  for (const s of enDesarrollo) permisos[s] = "ninguno";
   return permisos;
 }
 
 /**
  * Secciones en desarrollo que el rol vería si ya estuvieran liberadas: admin
- * las ve todas (vista previa); los demás, las que la matriz les deja ver (se
- * les muestra el aviso "Módulo en desarrollo" en lugar de negar el acceso).
+ * todas; los demás, las que la matriz les deja ver. A ellos se les muestra
+ * solo el aviso "Módulo en desarrollo" en lugar de negar el acceso.
  */
 export function seccionesEnDesarrolloVisibles(
   rol: Rol,

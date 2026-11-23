@@ -64,11 +64,19 @@ describe("acceso-servidor", () => {
     });
 
     describe("módulo en desarrollo", () => {
-      it("admin lo abre como vista previa", async () => {
+      it("admin también recibe solo el aviso de módulo en desarrollo", async () => {
         mockRol.mockResolvedValue("admin");
+        mockObtener.mockResolvedValue({ ...PERMISOS_POR_DEFECTO.admin, productividad: "ninguno", inteligencia: "ninguno" });
         mockEnDesarrollo.mockResolvedValue(["productividad", "inteligencia"]);
-        await expect(exigirSeccion("inteligencia")).resolves.toBe("vista_previa");
+        await expect(exigirSeccion("inteligencia")).resolves.toBe("en_desarrollo");
+        await expect(exigirSeccion("productividad")).resolves.toBe("en_desarrollo");
         await expect(exigirSeccion("usuarios")).resolves.toBe("completo");
+      });
+
+      it("el estado en desarrollo prevalece aunque los permisos recibidos den acceso", async () => {
+        mockRol.mockResolvedValue("admin");
+        mockEnDesarrollo.mockResolvedValue(["inteligencia"]);
+        await expect(exigirSeccion("inteligencia")).resolves.toBe("en_desarrollo");
       });
 
       it("quien lo vería según la matriz recibe el aviso de módulo en desarrollo", async () => {
