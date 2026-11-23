@@ -185,7 +185,7 @@ function TituloGrupo({ children }: { children: React.ReactNode }) {
 /** Etiqueta de módulo en desarrollo en el menú (texto, no solo color). */
 function EtiquetaEnDesarrollo() {
   return (
-    <Estado tono="atencion" icono={null} className="ml-auto text-[10px] px-1.5">
+    <Estado tono="atencion" icono={null} className="ml-auto shrink-0 whitespace-nowrap text-[10px] px-1.5">
       En desarrollo
     </Estado>
   );
@@ -230,14 +230,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         className={clasesEntrada(activa)}
       >
         <Icono className="w-[18px] h-[18px] flex-shrink-0" />
-        {etiqueta}
+        <span className="min-w-0 truncate">{etiqueta}</span>
         {extra}
       </Link>
     );
   }
 
   return (
-    <aside className="w-60 md:w-60 h-screen sticky top-0 flex flex-col flex-shrink-0 bg-menu-fondo">
+    <aside className="w-64 md:w-64 h-screen sticky top-0 flex flex-col flex-shrink-0 bg-menu-fondo">
       {/* Marca: el logo real en una tarjeta blanca */}
       <div className="px-3 pt-4 pb-2 flex items-center gap-2">
         <div className="bg-superficie rounded-control shadow-logo px-2.5 py-3 flex items-center justify-center flex-1">
@@ -264,7 +264,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav aria-label="Menú principal" className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto sidebar-scroll">
+      <nav aria-label="Menú principal" className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto overflow-x-hidden sidebar-scroll">
         {analisisVisibles && <TituloGrupo>Análisis</TituloGrupo>}
 
         {/* Dashboard — con sub-items */}
@@ -340,7 +340,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             "Inteligencia",
             IconInteligencia,
             isInteligencia,
-            <span className="ml-auto flex items-center gap-1">
+            <span className="ml-auto flex shrink-0 items-center gap-1">
               {inteligenciaEnDesarrollo && <EtiquetaEnDesarrollo />}
               {/* El conteo solo se consulta con acceso efectivo (no mientras esté en desarrollo para los demás) */}
               {ver("/dashboard/inteligencia") && <InsigniaAlertas />}
