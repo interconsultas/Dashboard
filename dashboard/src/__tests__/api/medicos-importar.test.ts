@@ -1,4 +1,4 @@
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/etl-run-sync", () => ({ runEtlMedicosSync: jest.fn() }));
 jest.mock("fs/promises", () => ({
   writeFile: jest.fn().mockResolvedValue(undefined),
@@ -9,11 +9,11 @@ jest.mock("fs", () => ({ existsSync: jest.fn().mockReturnValue(true) }));
 
 import { NextResponse } from "next/server";
 import { POST } from "@/app/api/admin/medicos/importar/route";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { runEtlMedicosSync } from "@/lib/etl-run-sync";
 import { writeFile, unlink } from "fs/promises";
 
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 const mockRunEtl = runEtlMedicosSync as jest.MockedFunction<typeof runEtlMedicosSync>;
 const mockWriteFile = writeFile as jest.MockedFunction<typeof writeFile>;
 const mockUnlink = unlink as jest.MockedFunction<typeof unlink>;
@@ -33,12 +33,12 @@ function archivoValido(nombre = "BD profesionales TXT.xlsx", sizeBytes = 100) {
 describe("POST /api/admin/medicos/importar", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
   });
 
-  it("retorna el error de requireAuth si no está autorizado", async () => {
+  it("retorna el error de requirePermiso si no está autorizado", async () => {
     const authError = NextResponse.json({ error: "No autorizado" }, { status: 403 });
-    mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
     const res = await POST(reqConFormData(new FormData()));
 

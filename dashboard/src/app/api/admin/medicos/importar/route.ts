@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -9,7 +10,7 @@ import { runEtlMedicosSync } from "@/lib/etl-run-sync";
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — es un catalogo, no un archivo de autorizaciones
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/medicos/importar"].POST);
   if (error) return error;
 
   let formData: FormData;

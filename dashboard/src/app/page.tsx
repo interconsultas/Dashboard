@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { rutaDeEntrada } from "@/lib/acceso-servidor";
 
-export default function HomePage() {
-  redirect("/admin/carga");
+/** La raíz lleva al inicio del rol según sus permisos (o a /sin-acceso). */
+export default async function HomePage() {
+  redirect(await rutaDeEntrada());
 }

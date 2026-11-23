@@ -143,3 +143,13 @@ describe("ListaArchivos - botón Eliminar", () => {
     expect(onEliminado).not.toHaveBeenCalled();
   });
 });
+
+describe("ListaArchivos - solo consulta", () => {
+  it("sin permiso de edición no ofrece Eliminar pero sí Ver informe", () => {
+    render(
+      <ListaArchivos cargas={[carga()]} onVerInforme={jest.fn()} onEliminado={jest.fn()} puedeEliminar={false} />
+    );
+    expect(screen.queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver informe" })).toBeInTheDocument();
+  });
+});

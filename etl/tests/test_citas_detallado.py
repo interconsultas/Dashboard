@@ -476,11 +476,11 @@ class TestCargarDetallado:
         resultado, _, cur = _cargar(_guardar_texto(tmp_path), servicios_existentes=["50110"])
 
         filas = cur.lote("INSERT INTO servicios_citas")
-        assert sorted(filas) == sorted([
-            ("50110", "CONSULTA MEDICINA GENERAL", 202610, 202610),
-            ("50114", "CONSULTA NO PROGRAMADA", 202610, 202610),
-            ("11", "CONSULTA NUTRICION", 202610, 202610),
-        ])
+        assert sorted(filas, key=lambda f: f["codigo"]) == [
+            {"codigo": "11", "nombre": "CONSULTA NUTRICION", "primer": 202610, "ultimo": 202610},
+            {"codigo": "50110", "nombre": "CONSULTA MEDICINA GENERAL", "primer": 202610, "ultimo": 202610},
+            {"codigo": "50114", "nombre": "CONSULTA NO PROGRAMADA", "primer": 202610, "ultimo": 202610},
+        ]
         sql = next(s for s, _ in cur.lotes if s.upper().startswith("INSERT INTO SERVICIOS_CITAS"))
         assert "ON CONFLICT (codigo_servicio) DO UPDATE" in sql
         assert "LEAST" in sql and "GREATEST" in sql
@@ -488,6 +488,18 @@ class TestCargarDetallado:
             {"codigo": "11", "nombre": "CONSULTA NUTRICION"},
             {"codigo": "50114", "nombre": "CONSULTA NO PROGRAMADA"},
         ]
+
+    def test_un_servicio_nuevo_recibe_el_area_de_la_regla_y_uno_existente_conserva_la_suya(
+            self, tmp_path):
+        _, _, cur = _cargar(_guardar_texto(tmp_path))
+
+        sql = next(s for s, _ in cur.lotes if s.upper().startswith("INSERT INTO SERVICIOS_CITAS"))
+        insercion, actualizacion = sql.split("ON CONFLICT")
+        # La regla vive solo en SQL: el área de un servicio nuevo sale de la función
+        assert "area" in insercion
+        assert "clasificar_area_servicio(%(nombre)s)" in insercion
+        # Al actualizar un servicio existente nunca se reclasifica (editada o no)
+        assert "area" not in actualizacion
 
     def test_la_carga_mensual_alimenta_citas_atendidas_con_las_confirmadas(self, tmp_path):
         resultado, _, cur = _cargar(_guardar_texto(tmp_path))

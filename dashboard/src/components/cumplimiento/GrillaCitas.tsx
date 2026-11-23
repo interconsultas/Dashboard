@@ -6,6 +6,8 @@ interface Props {
   filas: FilaGrilla[];
   mensajeVacio?: string;
   onCambiarCitas: (documento: string, valor: string) => void;
+  /** Solo consulta: las citas no se pueden editar. */
+  soloLectura?: boolean;
 }
 
 const ENCABEZADOS = ["Profesional", "Cédula", "Citas atendidas", "Programa"];
@@ -26,6 +28,7 @@ export function GrillaCitas({
   filas,
   mensajeVacio = "No hay profesionales para mostrar",
   onCambiarCitas,
+  soloLectura = false,
 }: Props) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
@@ -76,6 +79,7 @@ export function GrillaCitas({
                     aria-label={`Citas atendidas de ${f.nombre}`}
                     aria-invalid={f.citasInvalida}
                     value={f.citas}
+                    readOnly={soloLectura}
                     onChange={(e) => onCambiarCitas(f.documento, e.target.value)}
                   />
                   {f.citasInvalida && (

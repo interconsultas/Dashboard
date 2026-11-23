@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Sidebar } from "./Sidebar";
+import { AvisoSinAcceso } from "./AvisoSinAcceso";
 
 function IconMenu({ className }: { className?: string }) {
   return (
@@ -51,6 +52,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto print:p-0 print:overflow-visible">
+          {/* useSearchParams exige un límite de Suspense en el App Router */}
+          <Suspense fallback={null}>
+            <AvisoSinAcceso />
+          </Suspense>
           {children}
         </main>
       </div>

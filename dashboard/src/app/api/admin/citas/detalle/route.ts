@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { parsePeriodo } from "@/lib/cumplimiento/periodo";
 import { agruparDetalle, type DetalleCitas, type FilaServicioDb } from "@/lib/citas/detalle";
 
@@ -10,7 +11,7 @@ import { agruparDetalle, type DetalleCitas, type FilaServicioDb } from "@/lib/ci
  * Las sumas de plan agrupador y tiempo de servicio se acumulan por servicio.
  */
 export async function GET(request: Request) {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas/detalle"].GET);
   if (error) return error;
 
   const periodo = parsePeriodo(new URL(request.url).searchParams.get("periodo"));

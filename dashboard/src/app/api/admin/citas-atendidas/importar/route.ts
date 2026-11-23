@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -11,7 +12,7 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, el mismo límite que la import
 const EXTENSIONES = /\.xlsx?$/i;
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/citas-atendidas/importar"].POST);
   if (error) return error;
 
   let formData: FormData;

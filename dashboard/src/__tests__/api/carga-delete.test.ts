@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 jest.mock("@/lib/db", () => ({ query: jest.fn(), queryOne: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/etl-spawn", () => ({ spawnEtl: jest.fn() }));
 
 import { DELETE } from "@/app/api/carga/[jobId]/route";
 import { query, queryOne } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { spawnEtl } from "@/lib/etl-spawn";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockQueryOne = queryOne as jest.MockedFunction<typeof queryOne>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 const mockSpawnEtl = spawnEtl as jest.MockedFunction<typeof spawnEtl>;
 
 const JOB_ID = "550e8400-e29b-41d4-a716-446655440000";
@@ -29,9 +29,9 @@ function call(jobId: string) {
 describe("DELETE /api/carga/[jobId]", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("retorna el error de requireAuth si no está autorizado", async () => {
+  it("retorna el error de requirePermiso si no está autorizado", async () => {
     const authError = NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
     const res = await call(JOB_ID);
 
@@ -40,7 +40,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   });
 
   it("retorna 400 si jobId no tiene formato UUID", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
 
     const res = await call("no-es-un-uuid");
 
@@ -49,7 +49,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   });
 
   it("retorna 404 si el job no existe", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQueryOne.mockResolvedValue(null);
 
     const res = await call(JOB_ID);
@@ -58,7 +58,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   });
 
   it("retorna 409 si el estado no es eliminable", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQueryOne.mockResolvedValue({ estado: "procesando", periodo_detectado: 202603 });
 
     const res = await call(JOB_ID);
@@ -70,7 +70,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   });
 
   it("retorna 409 si no tiene periodo_detectado", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQueryOne.mockResolvedValue({ estado: "exitoso", periodo_detectado: null });
 
     const res = await call(JOB_ID);
@@ -80,7 +80,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   });
 
   it("retorna 409 si pierde la carrera al marcar 'eliminando' (doble click)", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQueryOne.mockResolvedValue({ estado: "exitoso", periodo_detectado: 202603 });
     mockQuery.mockResolvedValue([]);
 
@@ -93,7 +93,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   it.each(["exitoso", "exitoso_con_advertencias"])(
     "retorna 202 y spawnea --delete cuando el estado es '%s'",
     async (estado) => {
-      mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+      mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
       mockQueryOne.mockResolvedValue({ estado, periodo_detectado: 202603 });
       mockQuery.mockResolvedValue([{ job_id: JOB_ID }]);
 
@@ -107,7 +107,7 @@ describe("DELETE /api/carga/[jobId]", () => {
   );
 
   it("marca 'eliminando' solo si el estado sigue siendo eliminable (query atómica)", async () => {
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQueryOne.mockResolvedValue({ estado: "exitoso", periodo_detectado: 202603 });
     mockQuery.mockResolvedValue([{ job_id: JOB_ID }]);
 

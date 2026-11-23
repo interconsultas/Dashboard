@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 
 export async function GET() {
-  const { error } = await requireAuth(["admin", "direccion_medica"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/medicos"].GET);
   if (error) return error;
 
   const rows = await query<{
@@ -22,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/admin/medicos"].POST);
   if (error) return error;
 
   const body = await request.json();

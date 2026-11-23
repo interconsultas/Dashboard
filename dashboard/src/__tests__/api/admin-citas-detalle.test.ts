@@ -3,15 +3,15 @@ jest.mock("@/lib/db", () => ({
   default: { connect: jest.fn() },
   query: jest.fn(),
 }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { GET } from "@/app/api/admin/citas/detalle/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 
@@ -58,18 +58,18 @@ function mockConsultas(filas: unknown[] = FILAS_SERVICIO, periodos = [{ periodo:
 describe("GET /api/admin/citas/detalle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockConsultas();
   });
 
-  it("permite los roles admin y direccion_medica", async () => {
+  it("pide ver Citas o Cumplimiento", async () => {
     await GET(reqGet("?periodo=202610"));
-    expect(mockRequireAuth).toHaveBeenCalledWith(["admin", "direccion_medica"]);
+    expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["citas", "cumplimiento"], nivel: "ver" });
   });
 
-  it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+  it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
     const authError = NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+    mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
     const res = await GET(reqGet("?periodo=202610"));
 

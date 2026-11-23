@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { queryOne } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import bcrypt from "bcryptjs";
 
 const VALID_ROLES = new Set(["admin", "direccion_medica", "coordinador"]);
@@ -9,7 +10,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { error, user } = await requireAuth(["admin"]);
+  const { error, user } = await requirePermiso(PERMISOS_API["/api/admin/usuarios/[id]"].PATCH);
   if (error) return error;
 
   const id = parseInt(params.id, 10);
@@ -73,7 +74,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { error, user } = await requireAuth(["admin"]);
+  const { error, user } = await requirePermiso(PERMISOS_API["/api/admin/usuarios/[id]"].DELETE);
   if (error) return error;
 
   const id = parseInt(params.id, 10);

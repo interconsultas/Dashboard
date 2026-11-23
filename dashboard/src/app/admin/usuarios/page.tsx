@@ -3,6 +3,7 @@
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
+import { MatrizPermisos } from "@/components/usuarios/MatrizPermisos";
 
 interface Usuario {
   id: number; email: string; nombre: string;
@@ -35,7 +36,48 @@ function BadgeRol({ rol }: { rol: string }) {
 
 const EMPTY = { email: "", nombre: "", password: "", rol: "admin", regional: "MANIZALES" };
 
+type Pestana = "usuarios" | "permisos";
+
+const PESTANAS: Array<{ clave: Pestana; etiqueta: string }> = [
+  { clave: "usuarios", etiqueta: "Usuarios" },
+  { clave: "permisos", etiqueta: "Permisos por rol" },
+];
+
 export default function UsuariosPage() {
+  const [pestana, setPestana] = useState<Pestana>("usuarios");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-brand-navy">Gestión de usuarios</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Administra accesos al sistema</p>
+      </div>
+
+      <div role="tablist" className="flex gap-1 border-b border-gray-200">
+        {PESTANAS.map((p) => (
+          <button
+            key={p.clave}
+            type="button"
+            role="tab"
+            aria-selected={pestana === p.clave}
+            onClick={() => setPestana(p.clave)}
+            className={`px-4 py-2 text-sm font-semibold -mb-px border-b-2 transition-colors ${
+              pestana === p.clave
+                ? "border-brand-navy text-brand-navy"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            {p.etiqueta}
+          </button>
+        ))}
+      </div>
+
+      {pestana === "usuarios" ? <GestionUsuarios /> : <MatrizPermisos />}
+    </div>
+  );
+}
+
+function GestionUsuarios() {
   const { data: usuarios, isLoading } = useSWR<Usuario[]>("/api/admin/usuarios", fetcher);
   const [form, setForm] = useState({ ...EMPTY });
   const [editId, setEditId] = useState<number | null>(null);
@@ -82,11 +124,6 @@ export default function UsuariosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-navy">Gestión de usuarios</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Administra accesos al sistema</p>
-      </div>
-
       {/* Formulario */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">

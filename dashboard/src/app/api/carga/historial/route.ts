@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { query } from "@/lib/db";
 import { LogCarga } from "@/types/carga";
 
 export async function GET() {
-  const { error } = await requireAuth(["admin"]);
+  const { error } = await requirePermiso(PERMISOS_API["/api/carga/historial"].GET);
   if (error) return error;
 
   const rows = await query<LogCarga>(

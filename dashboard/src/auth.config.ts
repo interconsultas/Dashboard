@@ -1,8 +1,11 @@
 import type { NextAuthConfig } from "next-auth";
+import { esRol } from "./lib/acceso";
 
 /**
  * Configuración Edge-compatible (sin Node.js crypto).
- * Usada en middleware.ts para proteger rutas sin acceder a la BD.
+ * Usada en middleware.ts para exigir sesión sin acceder a la BD. El acceso por
+ * sección depende de permisos_rol (BD): lo validan los layouts del servidor
+ * (exigirSeccion) y las rutas /api (requirePermiso).
  * Los providers con bcrypt van en lib/auth.ts (Node.js runtime).
  */
 export const authConfig: NextAuthConfig = {
@@ -12,12 +15,14 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnLogin = nextUrl.pathname.startsWith("/login");
+      const { pathname } = nextUrl;
+      const isOnLogin = pathname.startsWith("/login");
+      const rol = (auth?.user as { rol?: unknown } | undefined)?.rol;
 
-      // Si está en /login y ya autenticado → redirigir al panel
+      // Si está en /login y ya autenticado → la raíz resuelve el inicio del rol
       if (isOnLogin) {
-        if (isLoggedIn) {
-          return Response.redirect(new URL("/admin/carga", nextUrl));
+        if (isLoggedIn && esRol(rol)) {
+          return Response.redirect(new URL("/", nextUrl));
         }
         return true;
       }
@@ -25,7 +30,11 @@ export const authConfig: NextAuthConfig = {
       // Cualquier otra ruta requiere autenticación
       if (!isLoggedIn) return false;
 
-      return true;
+      // Las rutas /api validan su propio permiso con requirePermiso (403 en JSON)
+      if (pathname === "/api" || pathname.startsWith("/api/")) return true;
+
+      // Sin un rol válido no hay página a la cual enviarlo: vuelve al login
+      return esRol(rol);
     },
     async jwt({ token, user }) {
       if (user) {

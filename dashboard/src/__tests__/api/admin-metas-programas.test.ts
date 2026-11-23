@@ -1,15 +1,15 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
-jest.mock("@/lib/middleware-roles", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/lib/middleware-roles", () => ({ requirePermiso: jest.fn() }));
 jest.mock("@/lib/cache", () => ({ clearCache: jest.fn() }));
 
 import { NextResponse } from "next/server";
 import { GET, PUT } from "@/app/api/admin/metas/programas/route";
 import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
 import { clearCache } from "@/lib/cache";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequirePermiso = requirePermiso as jest.MockedFunction<typeof requirePermiso>;
 
 const ADMIN_USER = { id: "1", email: "admin@ips.local", rol: "admin" as const, regional: null };
 
@@ -22,19 +22,19 @@ const FILA_VALIDA = { programa_especialidad: "RCV", programa: "RCV" };
 describe("/api/admin/metas/programas", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAuth.mockResolvedValue({ error: null, user: ADMIN_USER });
+    mockRequirePermiso.mockResolvedValue({ error: null, user: ADMIN_USER });
     mockQuery.mockResolvedValue([]);
   });
 
   describe("GET", () => {
-    it("permite los roles admin y direccion_medica", async () => {
+    it("pide ver Metas", async () => {
       await GET();
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin", "direccion_medica"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["metas"], nivel: "ver" });
     });
 
-    it("retorna el error de requireAuth sin consultar la base de datos", async () => {
+    it("retorna el error de requirePermiso sin consultar la base de datos", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await GET();
 
@@ -68,14 +68,14 @@ describe("/api/admin/metas/programas", () => {
   });
 
   describe("PUT", () => {
-    it("permite solo el rol admin", async () => {
+    it("pide editar Metas", async () => {
       await PUT(reqPut({ mapeo: [FILA_VALIDA] }));
-      expect(mockRequireAuth).toHaveBeenCalledWith(["admin"]);
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["metas"], nivel: "editar" });
     });
 
-    it("retorna el error de requireAuth sin escribir", async () => {
+    it("retorna el error de requirePermiso sin escribir", async () => {
       const authError = NextResponse.json({ error: "Sin permisos suficientes" }, { status: 403 });
-      mockRequireAuth.mockResolvedValue({ error: authError, user: null });
+      mockRequirePermiso.mockResolvedValue({ error: authError, user: null });
 
       const res = await PUT(reqPut({ mapeo: [FILA_VALIDA] }));
 

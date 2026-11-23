@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware-roles";
+import { requirePermiso } from "@/lib/middleware-roles";
+import { PERMISOS_API } from "@/lib/acceso";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -8,7 +9,7 @@ import { query } from "@/lib/db";
 import { spawnEtl } from "@/lib/etl-spawn";
 
 export async function POST(req: NextRequest) {
-  const { error, user } = await requireAuth(["admin"]);
+  const { error, user } = await requirePermiso(PERMISOS_API["/api/carga/upload"].POST);
   if (error) return error;
 
   let formData: FormData;
