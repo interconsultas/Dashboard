@@ -31,7 +31,16 @@ export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, cla
   useEffect(() => {
     const nodo = contenedor.current;
     if (!nodo || typeof ResizeObserver === "undefined") return;
-    const observador = new ResizeObserver(() => instancia.current?.resize());
+    // ResizeObserver avisa apenas empieza a observar, con el mismo tamaño: un
+    // resize() ahí redibuja sin animación y corta la entrada de la gráfica.
+    // Solo se redimensiona cuando el tamaño cambió de verdad.
+    const observador = new ResizeObserver((entradas) => {
+      const chart = instancia.current;
+      const caja = entradas[entradas.length - 1]?.contentRect;
+      if (!chart || !caja) return;
+      if (Math.round(caja.width) === chart.getWidth() && Math.round(caja.height) === chart.getHeight()) return;
+      chart.resize();
+    });
     observador.observe(nodo);
     return () => observador.disconnect();
   }, []);
