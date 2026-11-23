@@ -7,6 +7,7 @@ import {
   destinoSinAcceso,
   seccionDeRuta,
   permisosEfectivos,
+  seccionesEnDesarrolloVisibles,
   cumpleRequisito,
   validarCambiosPermisos,
   PERMISOS_POR_DEFECTO,
@@ -154,6 +155,52 @@ describe("permisosEfectivos", () => {
     const p = permisosEfectivos("coordinador", filas);
     expect(p).toEqual(permisos());
     expect(Object.keys(p)).not.toContain("otra");
+  });
+
+  describe("con módulos en desarrollo", () => {
+    const EN_DESARROLLO: Seccion[] = ["productividad", "inteligencia"];
+    const filas = filasDe("direccion_medica", PERMISOS_POR_DEFECTO.direccion_medica);
+
+    it("para los roles no admin la sección en desarrollo queda sin acceso, aunque la matriz diga otra cosa", () => {
+      const p = permisosEfectivos("direccion_medica", filas, EN_DESARROLLO);
+      expect(p.productividad).toBe("ninguno");
+      expect(p.inteligencia).toBe("ninguno");
+      expect(p.dashboard).toBe("ver");
+      expect(p.metas).toBe("ver");
+    });
+
+    it("no modifica las filas de la matriz: sin módulos en desarrollo vuelve el acceso configurado", () => {
+      const copia = JSON.parse(JSON.stringify(filas));
+      permisosEfectivos("direccion_medica", filas, EN_DESARROLLO);
+      expect(filas).toEqual(copia);
+      expect(permisosEfectivos("direccion_medica", filas, []).productividad).toBe("ver");
+      expect(permisosEfectivos("direccion_medica", filas).inteligencia).toBe("ver");
+    });
+
+    it("admin conserva editar en las secciones en desarrollo", () => {
+      const p = permisosEfectivos("admin", [], EN_DESARROLLO);
+      expect(p.productividad).toBe("editar");
+      expect(p.inteligencia).toBe("editar");
+    });
+  });
+});
+
+describe("seccionesEnDesarrolloVisibles", () => {
+  const EN_DESARROLLO: Seccion[] = ["productividad", "inteligencia"];
+
+  it("admin las ve todas (vista previa)", () => {
+    expect(seccionesEnDesarrolloVisibles("admin", [], EN_DESARROLLO)).toEqual(EN_DESARROLLO);
+  });
+
+  it("los demás roles, solo las que la matriz les deja ver", () => {
+    const filas = [{ rol: "coordinador", seccion: "inteligencia", nivel: "ver" }];
+    expect(seccionesEnDesarrolloVisibles("coordinador", filas, EN_DESARROLLO)).toEqual(["inteligencia"]);
+    expect(seccionesEnDesarrolloVisibles("coordinador", [], EN_DESARROLLO)).toEqual([]);
+  });
+
+  it("sin módulos en desarrollo no hay ninguna", () => {
+    const filas = filasDe("direccion_medica", PERMISOS_POR_DEFECTO.direccion_medica);
+    expect(seccionesEnDesarrolloVisibles("direccion_medica", filas, [])).toEqual([]);
   });
 });
 

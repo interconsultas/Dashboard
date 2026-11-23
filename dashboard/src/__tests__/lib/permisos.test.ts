@@ -1,7 +1,7 @@
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
 
 import { query } from "@/lib/db";
-import { obtenerPermisos, invalidarPermisos, TTL_PERMISOS_MS } from "@/lib/permisos";
+import { obtenerPermisos, obtenerEnDesarrollo, invalidarPermisos, TTL_PERMISOS_MS } from "@/lib/permisos";
 import { PERMISOS_POR_DEFECTO } from "@/lib/acceso";
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
@@ -12,9 +12,17 @@ const FILAS = [
   { rol: "direccion_medica", seccion: "metas", nivel: "editar" },
 ];
 
+const MODULOS_ORIGINAL = process.env.MODULOS_EN_DESARROLLO;
+afterAll(() => {
+  if (MODULOS_ORIGINAL === undefined) delete process.env.MODULOS_EN_DESARROLLO;
+  else process.env.MODULOS_EN_DESARROLLO = MODULOS_ORIGINAL;
+});
+
 describe("obtenerPermisos", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Estas pruebas cubren la matriz: ningún módulo en desarrollo
+    process.env.MODULOS_EN_DESARROLLO = "";
     jest.useRealTimers();
     invalidarPermisos();
     mockQuery.mockResolvedValue(FILAS as never);
@@ -70,5 +78,45 @@ describe("obtenerPermisos", () => {
     mockQuery.mockRejectedValueOnce(new Error("conexión rechazada"));
     await expect(obtenerPermisos("coordinador")).rejects.toThrow("conexión rechazada");
     expect((await obtenerPermisos("coordinador")).productividad).toBe("ver");
+  });
+});
+
+describe("módulos en desarrollo", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    invalidarPermisos();
+    mockQuery.mockResolvedValue(FILAS as never);
+    delete process.env.MODULOS_EN_DESARROLLO;
+  });
+
+  it("por defecto Productividad e Inteligencia quedan sin acceso para los demás roles", async () => {
+    const p = await obtenerPermisos("coordinador");
+    expect(p.productividad).toBe("ninguno");
+    expect(p.inteligencia).toBe("ninguno");
+    expect(p.dashboard).toBe("ver");
+  });
+
+  it("admin conserva el acceso total", async () => {
+    expect(await obtenerPermisos("admin")).toEqual(PERMISOS_POR_DEFECTO.admin);
+  });
+
+  it("con la variable vacía se libera lo configurado en la matriz", async () => {
+    process.env.MODULOS_EN_DESARROLLO = "";
+    expect((await obtenerPermisos("coordinador")).productividad).toBe("ver");
+  });
+
+  it("obtenerEnDesarrollo: las secciones en desarrollo que la matriz deja ver al rol", async () => {
+    expect(await obtenerEnDesarrollo("coordinador")).toEqual(["productividad"]);
+    expect(await obtenerEnDesarrollo("direccion_medica")).toEqual([]);
+  });
+
+  it("obtenerEnDesarrollo: admin las ve todas sin consultar la base", async () => {
+    expect(await obtenerEnDesarrollo("admin")).toEqual(["productividad", "inteligencia"]);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it("obtenerEnDesarrollo: sin módulos en desarrollo no hay ninguna", async () => {
+    process.env.MODULOS_EN_DESARROLLO = "";
+    expect(await obtenerEnDesarrollo("coordinador")).toEqual([]);
   });
 });

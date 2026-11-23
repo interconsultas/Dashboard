@@ -4,10 +4,13 @@ import {
   ROLES,
   SECCIONES,
   permisosEfectivos,
+  seccionesEnDesarrolloVisibles,
   type FilaPermiso,
   type Permisos,
   type Rol,
+  type Seccion,
 } from "@/lib/acceso";
+import { modulosEnDesarrollo } from "@/lib/modulos";
 
 /**
  * Lectura de permisos_rol con caché en memoria (Node.js runtime).
@@ -69,10 +72,20 @@ async function filasEnCache(): Promise<FilaPermiso[]> {
   return c.filas;
 }
 
-/** Permisos efectivos del rol. admin no consulta la base: siempre tiene acceso total. */
+/**
+ * Permisos efectivos del rol. admin no consulta la base: siempre tiene acceso total.
+ * Las secciones en desarrollo (MODULOS_EN_DESARROLLO) quedan sin acceso para los demás.
+ */
 export async function obtenerPermisos(rol: Rol): Promise<Permisos> {
   if (rol === "admin") return permisosEfectivos("admin", []);
-  return permisosEfectivos(rol, await filasEnCache());
+  return permisosEfectivos(rol, await filasEnCache(), modulosEnDesarrollo());
+}
+
+/** Secciones en desarrollo que el rol vería ya liberadas (admin: todas, como vista previa). */
+export async function obtenerEnDesarrollo(rol: Rol): Promise<Seccion[]> {
+  const enDesarrollo = modulosEnDesarrollo();
+  if (rol === "admin" || enDesarrollo.length === 0) return seccionesEnDesarrolloVisibles(rol, [], enDesarrollo);
+  return seccionesEnDesarrolloVisibles(rol, await filasEnCache(), enDesarrollo);
 }
 
 /** Descarta el caché; llamar después de guardar permisos. */

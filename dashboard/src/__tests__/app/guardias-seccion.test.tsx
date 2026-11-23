@@ -3,11 +3,12 @@
  * propia página). El middleware solo exige sesión.
  */
 jest.mock("@/lib/acceso-servidor", () => ({
-  exigirSeccion: jest.fn(async () => undefined),
+  exigirSeccion: jest.fn(async () => "completo"),
   rutaDeEntrada: jest.fn(async () => "/dashboard/productividad"),
-  sesionConPermisos: jest.fn(async () => ({ rol: "coordinador", permisos: PERMISOS_PRUEBA })),
+  sesionConPermisos: jest.fn(async () => ({ rol: "coordinador", permisos: PERMISOS_PRUEBA, enDesarrollo: EN_DESARROLLO })),
 }));
 const PERMISOS_PRUEBA = { dashboard: "ver", productividad: "ver" };
+const EN_DESARROLLO = ["inteligencia"];
 jest.mock("next/navigation", () => ({
   redirect: jest.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
@@ -71,14 +72,16 @@ describe("guardias de sección", () => {
   it.each([
     ["admin", () => import("@/app/admin/layout")],
     ["dashboard", () => import("@/app/dashboard/layout")],
-  ])("el layout de /%s pasa el rol y los permisos efectivos al menú", async (_n, cargar) => {
+  ])("el layout de /%s pasa el rol, los permisos efectivos y los módulos en desarrollo al menú", async (_n, cargar) => {
     const { default: Layout } = await cargar();
     const arbol = (await Layout({ children: <p>x</p> })) as React.ReactElement<{
       rol: string;
       permisos: unknown;
+      enDesarrollo: unknown;
     }>;
     expect(arbol.type).toBe(RolProvider);
     expect(arbol.props.rol).toBe("coordinador");
     expect(arbol.props.permisos).toBe(PERMISOS_PRUEBA);
+    expect(arbol.props.enDesarrollo).toBe(EN_DESARROLLO);
   });
 });
