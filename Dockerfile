@@ -43,6 +43,10 @@ ENV ETL_SCRIPT_PATH=/app/etl/etl_autorizaciones.py
 ENV UPLOADS_DIR=/app/tmp_uploads
 ENV ETL_LOGS_DIR=/app/logs
 ENV PORT=3000
+# server.js (standalone) escucha en $HOSTNAME, que Docker define con el ID del
+# contenedor: sin esto no escucha en localhost y el HEALTHCHECK siempre falla.
+# No cambia la exposición: hacia afuera solo se publica el puerto 3000.
+ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3000
 
