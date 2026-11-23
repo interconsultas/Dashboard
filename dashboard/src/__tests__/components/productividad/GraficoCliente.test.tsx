@@ -73,4 +73,11 @@ describe("GraficoCliente", () => {
     unmount();
     expect(capturarGrafica("Embudo de la agenda")).toBeNull();
   });
+
+  it("aplica la animación común de la app a la opción de la gráfica", () => {
+    render(<GraficoCliente opcion={{ series: [{ type: "bar", data: [1] }] }} etiqueta="Animada" />);
+    const props = mockReactECharts.mock.calls[mockReactECharts.mock.calls.length - 1][0] as { option: any };
+    expect(props.option).toMatchObject({ animation: true, animationDuration: 900, animationEasing: "cubicOut" });
+    expect(typeof props.option.series[0].animationDelay).toBe("function");
+  });
 });

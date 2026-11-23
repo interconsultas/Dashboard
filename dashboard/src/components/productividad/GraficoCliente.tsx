@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import { echarts, NOMBRE_TEMA, type EChartsType } from "@/lib/echarts";
+import { conAnimacion, prefiereMenosMovimiento } from "@/lib/tema/animacion";
 import { registrarGrafica } from "@/lib/informes/registroGraficas";
 
 export interface PropsGrafico {
@@ -22,6 +23,8 @@ export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, cla
   const contenedor = useRef<HTMLDivElement>(null);
   const instancia = useRef<EChartsType | null>(null);
   const quitarDelRegistro = useRef<(() => void) | null>(null);
+  // Misma animación en todas las gráficas (y ninguna con movimiento reducido)
+  const opcionAnimada = useMemo(() => conAnimacion(opcion, prefiereMenosMovimiento()), [opcion]);
 
   // echarts-for-react solo se redimensiona con la ventana; la tarjeta cambia de
   // ancho al cargar la grilla o al plegar el menú, así que se observa el contenedor.
@@ -48,7 +51,7 @@ export default function GraficoCliente({ opcion, etiqueta, eventos, onListo, cla
       <ReactEChartsCore
         echarts={echarts}
         theme={NOMBRE_TEMA}
-        option={opcion}
+        option={opcionAnimada}
         notMerge
         lazyUpdate
         onEvents={eventos}
