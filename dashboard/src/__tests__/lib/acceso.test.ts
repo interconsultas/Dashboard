@@ -32,14 +32,14 @@ function filasDe(rol: Rol, p: Permisos) {
 describe("SECCIONES", () => {
   it("lista las secciones en el orden del menú", () => {
     expect(CLAVES).toEqual([
-      "dashboard", "cumplimiento", "productividad", "carga",
+      "dashboard", "cumplimiento", "productividad", "inteligencia", "carga",
       "profesionales", "metas", "citas", "usuarios",
     ]);
   });
 
-  it("solo metas, citas, carga, profesionales y usuarios admiten edición", () => {
+  it("solo inteligencia (reglas de alerta), metas, citas, carga, profesionales y usuarios admiten edición", () => {
     const editables = SECCIONES.filter((s) => s.admiteEdicion).map((s) => s.clave);
-    expect(editables.sort()).toEqual(["carga", "citas", "metas", "profesionales", "usuarios"]);
+    expect(editables.sort()).toEqual(["carga", "citas", "inteligencia", "metas", "profesionales", "usuarios"]);
   });
 
   it("usuarios no es configurable", () => {
@@ -63,6 +63,7 @@ describe("seccionDeRuta", () => {
     ["/dashboard/cumplimiento", "cumplimiento"],
     ["/dashboard/cumplimientos", "dashboard"],
     ["/dashboard/productividad", "productividad"],
+    ["/dashboard/inteligencia", "inteligencia"],
     ["/admin/carga", "carga"],
     ["/admin/medicos", "profesionales"],
     ["/admin/metas", "metas"],
@@ -88,6 +89,7 @@ describe("PERMISOS_POR_DEFECTO (semilla de 018 = acceso fijo anterior)", () => {
     ["/dashboard/tipo/rx", TODOS],
     ["/dashboard/cumplimiento", ["admin", "direccion_medica"]],
     ["/dashboard/productividad", ["admin", "direccion_medica"]],
+    ["/dashboard/inteligencia", ["admin", "direccion_medica"]],
     ["/admin/metas", ["admin", "direccion_medica"]],
     ["/admin/metas/programas", ["admin", "direccion_medica"]],
     ["/admin/citas", ["admin"]],
@@ -251,6 +253,16 @@ describe("PERMISOS_API", () => {
     expect(PERMISOS_API["/api/admin/citas/detalle"].GET!.secciones).toEqual(
       expect.arrayContaining(["citas", "cumplimiento"]),
     );
+    // El simulador de Inteligencia lee los agregados de productividad
+    expect(PERMISOS_API["/api/productividad"].GET!.secciones).toEqual(
+      expect.arrayContaining(["productividad", "inteligencia"]),
+    );
+  });
+
+  it("quien ve Inteligencia sin Productividad puede leer los agregados del simulador, pero no la ficha", () => {
+    const soloInteligencia = { ...permisosEfectivos("coordinador", []), inteligencia: "ver" } as Permisos;
+    expect(cumpleRequisito(soloInteligencia, PERMISOS_API["/api/productividad"].GET!)).toBe(true);
+    expect(cumpleRequisito(soloInteligencia, PERMISOS_API["/api/productividad/profesional"].GET!)).toBe(false);
   });
 
   it("con los permisos por defecto cada rol conserva el acceso que tenía en la API", () => {
@@ -261,6 +273,11 @@ describe("PERMISOS_API", () => {
       ["/api/cumplimiento", "POST", ["admin", "direccion_medica"]],
       ["/api/productividad", "GET", ["admin", "direccion_medica"]],
       ["/api/productividad/profesional", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/grafo", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/alertas", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/alertas/conteo", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/reglas", "GET", ["admin", "direccion_medica"]],
+      ["/api/inteligencia/reglas", "PUT", ["admin"]],
       ["/api/admin/metas", "GET", ["admin", "direccion_medica"]],
       ["/api/admin/metas", "PUT", ["admin"]],
       ["/api/admin/metas/programas", "GET", ["admin", "direccion_medica"]],
@@ -306,6 +323,15 @@ describe("PERMISOS_API", () => {
 
 describe("validarCambiosPermisos", () => {
   const ok = (cambios: unknown) => validarCambiosPermisos({ cambios });
+
+  it("Inteligencia admite editar (reglas de alerta) y se conserva en los permisos efectivos", () => {
+    expect(ok([{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }])).toEqual({
+      cambios: [{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }],
+    });
+    const efectivos = permisosEfectivos("direccion_medica", [{ rol: "direccion_medica", seccion: "inteligencia", nivel: "editar" }]);
+    expect(efectivos.inteligencia).toBe("editar");
+    expect(PERMISOS_POR_DEFECTO.direccion_medica.inteligencia).toBe("ver");
+  });
 
   it("acepta cambios válidos de los roles configurables", () => {
     const r = ok([

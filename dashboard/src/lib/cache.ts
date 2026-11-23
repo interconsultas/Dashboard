@@ -31,6 +31,13 @@ export function clearCache(): void {
   store.clear();
 }
 
+/** Borra las entradas cuya clave empieza con el prefijo (p. ej. al cambiar reglas de alerta). */
+export function clearCachePrefix(prefijo: string): void {
+  for (const clave of Array.from(store.keys())) {
+    if (clave.startsWith(prefijo)) store.delete(clave);
+  }
+}
+
 /** Genera una clave de caché a partir de un prefijo y los search params */
 export function cacheKey(prefix: string, params: URLSearchParams): string {
   const sorted = new URLSearchParams(Array.from(params.entries()).sort());

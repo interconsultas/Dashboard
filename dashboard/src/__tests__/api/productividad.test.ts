@@ -65,9 +65,9 @@ describe("GET /api/productividad", () => {
   });
 
   describe("permisos", () => {
-    it("pide ver Productividad", async () => {
+    it("pide ver Productividad o Inteligencia (el simulador usa estos agregados)", async () => {
       await GET(req());
-      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["productividad"], nivel: "ver" });
+      expect(mockRequirePermiso).toHaveBeenCalledWith({ secciones: ["productividad", "inteligencia"], nivel: "ver" });
     });
 
     it("retorna el error de requirePermiso sin consultar la base de datos", async () => {

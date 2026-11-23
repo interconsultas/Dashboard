@@ -29,6 +29,7 @@ const LAYOUTS: Array<[string, Seccion, () => Promise<{ default: Layout }>]> = [
   ["dashboard/tipo", "dashboard", () => import("@/app/dashboard/tipo/layout")],
   ["dashboard/cumplimiento", "cumplimiento", () => import("@/app/dashboard/cumplimiento/layout")],
   ["dashboard/productividad", "productividad", () => import("@/app/dashboard/productividad/layout")],
+  ["dashboard/inteligencia", "inteligencia", () => import("@/app/dashboard/inteligencia/layout")],
   ["admin/carga", "carga", () => import("@/app/admin/carga/layout")],
   ["admin/medicos", "profesionales", () => import("@/app/admin/medicos/layout")],
   ["admin/metas", "metas", () => import("@/app/admin/metas/layout")],
