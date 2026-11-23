@@ -342,8 +342,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             isInteligencia,
             <span className="ml-auto flex shrink-0 items-center gap-1">
               {inteligenciaEnDesarrollo && <EtiquetaEnDesarrollo />}
-              {/* El conteo solo se consulta con acceso efectivo (no mientras esté en desarrollo para los demás) */}
-              {ver("/dashboard/inteligencia") && <InsigniaAlertas />}
+              {/* El conteo solo se consulta con acceso efectivo y nunca mientras esté en desarrollo (para nadie) */}
+              {!inteligenciaEnDesarrollo && ver("/dashboard/inteligencia") && <InsigniaAlertas />}
             </span>,
           )}
 

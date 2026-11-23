@@ -297,11 +297,23 @@ describe("Sidebar — módulos en desarrollo", () => {
     expect(screen.queryByTestId("insignia-alertas")).not.toBeInTheDocument();
   });
 
-  it("admin ve las entradas con la etiqueta y conserva la insignia", () => {
-    renderEnDesarrollo("admin", PERMISOS_POR_DEFECTO.admin, EN_DESARROLLO);
-    const inteligencia = screen.getByRole("link", { name: /^Inteligencia/ });
-    expect(inteligencia).toHaveTextContent("En desarrollo");
-    expect(inteligencia).toContainElement(screen.getByTestId("insignia-alertas"));
+  it("admin ve las entradas con la etiqueta, sin la insignia de alertas", () => {
+    const adminBloqueado: Permisos = { ...PERMISOS_POR_DEFECTO.admin, productividad: "ninguno", inteligencia: "ninguno" };
+    renderEnDesarrollo("admin", adminBloqueado, EN_DESARROLLO);
+    for (const nombre of ["Productividad", "Inteligencia"]) {
+      expect(screen.getByRole("link", { name: new RegExp(`^${nombre}`) })).toHaveTextContent("En desarrollo");
+    }
+    expect(screen.queryByTestId("insignia-alertas")).not.toBeInTheDocument();
+  });
+
+  it("nunca monta la insignia mientras Inteligencia esté en desarrollo, aunque los permisos den acceso", () => {
+    renderEnDesarrollo("admin", PERMISOS_POR_DEFECTO.admin, ["inteligencia"]);
+    expect(screen.queryByTestId("insignia-alertas")).not.toBeInTheDocument();
+  });
+
+  it("con Inteligencia liberada vuelve la insignia", () => {
+    renderEnDesarrollo("admin", PERMISOS_POR_DEFECTO.admin, []);
+    expect(screen.getByRole("link", { name: /^Inteligencia/ })).toContainElement(screen.getByTestId("insignia-alertas"));
   });
 
   it("quien no las vería según la matriz no ve las entradas", () => {

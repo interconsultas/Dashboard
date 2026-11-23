@@ -177,10 +177,16 @@ describe("permisosEfectivos", () => {
       expect(permisosEfectivos("direccion_medica", filas).inteligencia).toBe("ver");
     });
 
-    it("admin conserva editar en las secciones en desarrollo", () => {
+    it("admin tampoco tiene acceso: su acceso total implícito no anula el bloqueo", () => {
       const p = permisosEfectivos("admin", [], EN_DESARROLLO);
-      expect(p.productividad).toBe("editar");
-      expect(p.inteligencia).toBe("editar");
+      expect(p.productividad).toBe("ninguno");
+      expect(p.inteligencia).toBe("ninguno");
+      expect(p.usuarios).toBe("editar");
+      expect(p.carga).toBe("editar");
+    });
+
+    it("admin recupera el acceso total al liberar los módulos", () => {
+      expect(permisosEfectivos("admin", [], [])).toEqual(PERMISOS_POR_DEFECTO.admin);
     });
   });
 });
@@ -188,7 +194,7 @@ describe("permisosEfectivos", () => {
 describe("seccionesEnDesarrolloVisibles", () => {
   const EN_DESARROLLO: Seccion[] = ["productividad", "inteligencia"];
 
-  it("admin las ve todas (vista previa)", () => {
+  it("admin las vería todas al liberarse", () => {
     expect(seccionesEnDesarrolloVisibles("admin", [], EN_DESARROLLO)).toEqual(EN_DESARROLLO);
   });
 

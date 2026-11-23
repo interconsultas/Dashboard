@@ -73,15 +73,16 @@ async function filasEnCache(): Promise<FilaPermiso[]> {
 }
 
 /**
- * Permisos efectivos del rol. admin no consulta la base: siempre tiene acceso total.
- * Las secciones en desarrollo (MODULOS_EN_DESARROLLO) quedan sin acceso para los demás.
+ * Permisos efectivos del rol. admin no consulta la base: tiene acceso total.
+ * Las secciones en desarrollo (MODULOS_EN_DESARROLLO) quedan sin acceso para
+ * todos los roles, admin incluido.
  */
 export async function obtenerPermisos(rol: Rol): Promise<Permisos> {
-  if (rol === "admin") return permisosEfectivos("admin", []);
-  return permisosEfectivos(rol, await filasEnCache(), modulosEnDesarrollo());
+  const filas = rol === "admin" ? [] : await filasEnCache();
+  return permisosEfectivos(rol, filas, modulosEnDesarrollo());
 }
 
-/** Secciones en desarrollo que el rol vería ya liberadas (admin: todas, como vista previa). */
+/** Secciones en desarrollo que el rol vería ya liberadas (admin: todas). */
 export async function obtenerEnDesarrollo(rol: Rol): Promise<Seccion[]> {
   const enDesarrollo = modulosEnDesarrollo();
   if (rol === "admin" || enDesarrollo.length === 0) return seccionesEnDesarrolloVisibles(rol, [], enDesarrollo);

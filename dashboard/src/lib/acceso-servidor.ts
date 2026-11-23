@@ -26,20 +26,17 @@ export async function sesionConPermisos(): Promise<
 /**
  * Cómo se abre una sección:
  *   - completo: contenido normal.
- *   - vista_previa: módulo en desarrollo abierto por admin (contenido + aviso).
- *   - en_desarrollo: módulo en desarrollo que el rol vería ya liberado (solo el aviso).
+ *   - en_desarrollo: módulo en desarrollo que el rol vería ya liberado (admin
+ *     siempre): solo el aviso, nada del módulo.
  */
-export type AccesoSeccion = "completo" | "vista_previa" | "en_desarrollo";
+export type AccesoSeccion = "completo" | "en_desarrollo";
 
 /** Redirige si el rol de la sesión no puede ver la sección. Llamar desde el layout de la sección. */
 export async function exigirSeccion(seccion: Seccion): Promise<AccesoSeccion> {
   const { rol, permisos, enDesarrollo } = await sesionConPermisos();
   if (!rol) redirect("/login");
-  const enDesarrolloVisible = enDesarrollo.includes(seccion);
-  if (cumpleRequisito(permisos, { secciones: [seccion], nivel: "ver" })) {
-    return enDesarrolloVisible ? "vista_previa" : "completo";
-  }
-  if (enDesarrolloVisible) return "en_desarrollo";
+  if (enDesarrollo.includes(seccion)) return "en_desarrollo";
+  if (cumpleRequisito(permisos, { secciones: [seccion], nivel: "ver" })) return "completo";
   redirect(destinoSinAcceso(rol, permisos));
 }
 

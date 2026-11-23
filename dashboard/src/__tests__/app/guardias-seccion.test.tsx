@@ -52,6 +52,16 @@ describe("guardias de sección", () => {
     expect(resultado).toBe(hijo);
   });
 
+  it.each(LAYOUTS.filter(([, s]) => s === "productividad" || s === "inteligencia"))(
+    "layout de %s en desarrollo no entrega el contenido (a nadie, admin incluido)",
+    async (_ruta, _seccion, cargar) => {
+      mockExigir.mockResolvedValueOnce("en_desarrollo");
+      const { default: SeccionLayout } = await cargar();
+      const hijo = <p>contenido</p>;
+      expect(await SeccionLayout({ children: hijo })).not.toBe(hijo);
+    },
+  );
+
   it("si exigirSeccion redirige, el layout no muestra el contenido", async () => {
     mockExigir.mockRejectedValueOnce(new Error("REDIRECT:/dashboard?sin_acceso=1"));
     const { default: SeccionLayout } = await import("@/app/admin/metas/layout");

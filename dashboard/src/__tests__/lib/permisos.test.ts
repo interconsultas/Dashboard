@@ -96,8 +96,12 @@ describe("módulos en desarrollo", () => {
     expect(p.dashboard).toBe("ver");
   });
 
-  it("admin conserva el acceso total", async () => {
-    expect(await obtenerPermisos("admin")).toEqual(PERMISOS_POR_DEFECTO.admin);
+  it("admin tampoco accede a los módulos en desarrollo (sin consultar la base)", async () => {
+    const p = await obtenerPermisos("admin");
+    expect(p.productividad).toBe("ninguno");
+    expect(p.inteligencia).toBe("ninguno");
+    expect(p.usuarios).toBe("editar");
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 
   it("con la variable vacía se libera lo configurado en la matriz", async () => {
@@ -110,7 +114,7 @@ describe("módulos en desarrollo", () => {
     expect(await obtenerEnDesarrollo("direccion_medica")).toEqual([]);
   });
 
-  it("obtenerEnDesarrollo: admin las ve todas sin consultar la base", async () => {
+  it("obtenerEnDesarrollo: admin las vería todas al liberarse (sin consultar la base)", async () => {
     expect(await obtenerEnDesarrollo("admin")).toEqual(["productividad", "inteligencia"]);
     expect(mockQuery).not.toHaveBeenCalled();
   });

@@ -1,40 +1,7 @@
 import { EncabezadoPagina } from "./EncabezadoPagina";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
-import { Estado } from "@/components/ui/Estado";
 import { Tarjeta } from "@/components/ui/Tarjeta";
-import type { Seccion } from "@/lib/acceso";
-
-interface InfoModulo {
-  nombre: string;
-  proposito: string;
-  incluye: readonly string[];
-  fase: string;
-}
-
-/** Lo que traerá cada módulo en desarrollo (sin fechas: solo la fase del cronograma). */
-const INFO: Partial<Record<Seccion, InfoModulo>> = {
-  productividad: {
-    nombre: "Productividad",
-    proposito: "Seguimiento de la oferta y el uso de las citas por área, servicio y profesional.",
-    incluye: [
-      "Indicadores de citas por mes y por semana",
-      "Filtros cruzados",
-      "Productividad por profesional y ficha individual",
-      "Exportación a PDF y Excel",
-    ],
-    fase: "Fase 2",
-  },
-  inteligencia: {
-    nombre: "Inteligencia",
-    proposito: "Análisis de las relaciones entre los datos para anticipar dónde actuar.",
-    incluye: [
-      "Mapa de relaciones",
-      "Simulador «¿qué pasa si…?»",
-      "Alertas y proyección del siguiente periodo",
-    ],
-    fase: "Fase 3",
-  },
-};
+import { SECCIONES, type Seccion } from "@/lib/acceso";
 
 function IconoHerramienta() {
   return (
@@ -44,55 +11,24 @@ function IconoHerramienta() {
   );
 }
 
-/** Pantalla para quien verá el módulo cuando se entregue (dentro del shell de la app). */
+/**
+ * Pantalla de un módulo en desarrollo (dentro del shell de la app), para
+ * cualquier rol que lo vería ya liberado, admin incluido. Solo el aviso: nada
+ * del contenido, alcance ni cronograma del módulo.
+ */
 export function ModuloEnDesarrollo({ seccion }: { seccion: Seccion }) {
-  const info = INFO[seccion];
-  const nombre = info?.nombre ?? seccion;
+  const nombre = SECCIONES.find((s) => s.clave === seccion)?.etiqueta ?? seccion;
   return (
     <div className="space-y-4">
-      <EncabezadoPagina
-        migas={[{ etiqueta: "Análisis" }, { etiqueta: nombre }]}
-        titulo={nombre}
-        subtitulo={info?.proposito}
-        acciones={<Estado tono="atencion">En desarrollo</Estado>}
-      />
+      <EncabezadoPagina migas={[{ etiqueta: "Análisis" }, { etiqueta: nombre }]} titulo={nombre} />
       <Tarjeta as="div">
         <EstadoVacio
           compacto
           icono={<IconoHerramienta />}
           titulo="Módulo en desarrollo"
-          descripcion={
-            info
-              ? `Se entrega en la ${info.fase} del cronograma. Cuando esté disponible aparecerá aquí con tus permisos actuales.`
-              : "Este módulo aún no está disponible."
-          }
-          accion={
-            info && (
-              <div className="text-left">
-                <p className="text-sm font-semibold text-tinta">Incluirá:</p>
-                <ul className="mt-1 list-disc pl-5 text-sm text-tinta-2 space-y-0.5">
-                  {info.incluye.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )
-          }
+          descripcion="Este módulo estará disponible próximamente."
         />
       </Tarjeta>
-    </div>
-  );
-}
-
-/** Aviso fijo (no se puede cerrar) sobre un módulo en desarrollo que admin ve como vista previa. */
-export function AvisoVistaPrevia() {
-  return (
-    <div
-      role="note"
-      className="mb-3 flex items-center gap-2 rounded-control border border-borde bg-atencion-suave px-3 py-1.5 text-xs font-semibold text-atencion"
-    >
-      <span aria-hidden>▲</span>
-      Vista previa — módulo en desarrollo, solo visible para administradores
     </div>
   );
 }

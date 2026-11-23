@@ -1,9 +1,9 @@
 /**
  * @jest-environment jsdom
  *
- * Productividad e Inteligencia en desarrollo: quien los vería ya liberados ve
- * el aviso "Módulo en desarrollo"; admin ve el módulo con el aviso de vista
- * previa; quien no tiene permiso en la matriz sigue sin acceso (redirige).
+ * Productividad e Inteligencia en desarrollo: quien los vería ya liberados
+ * (admin incluido) ve solo el aviso "Módulo en desarrollo", nada del módulo;
+ * quien no tiene permiso en la matriz sigue sin acceso (redirige).
  */
 jest.mock("@/lib/acceso-servidor", () => ({ exigirSeccion: jest.fn() }));
 jest.mock("next/link", () => ({
@@ -12,7 +12,7 @@ jest.mock("next/link", () => ({
 }));
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { exigirSeccion } from "@/lib/acceso-servidor";
 
@@ -20,9 +20,9 @@ const mockExigir = exigirSeccion as jest.MockedFunction<typeof exigirSeccion>;
 
 type Layout = (props: { children: React.ReactNode }) => Promise<React.ReactNode>;
 
-const MODULOS: Array<[string, string, RegExp, () => Promise<{ default: Layout }>]> = [
-  ["productividad", "Productividad", /Fase 2 del cronograma/, () => import("@/app/dashboard/productividad/layout")],
-  ["inteligencia", "Inteligencia", /Fase 3 del cronograma/, () => import("@/app/dashboard/inteligencia/layout")],
+const MODULOS: Array<[string, string, () => Promise<{ default: Layout }>]> = [
+  ["productividad", "Productividad", () => import("@/app/dashboard/productividad/layout")],
+  ["inteligencia", "Inteligencia", () => import("@/app/dashboard/inteligencia/layout")],
 ];
 
 async function renderLayout(cargar: () => Promise<{ default: Layout }>) {
@@ -31,31 +31,30 @@ async function renderLayout(cargar: () => Promise<{ default: Layout }>) {
   return render(<>{arbol}</>);
 }
 
-describe.each(MODULOS)("módulo %s en desarrollo", (seccion, nombre, fase, cargar) => {
+describe.each(MODULOS)("módulo %s en desarrollo", (seccion, nombre, cargar) => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("a quien lo vería ya liberado le muestra el aviso, no el módulo", async () => {
+  it("muestra solo el aviso: encabezado con el nombre y la tarjeta de módulo en desarrollo", async () => {
     mockExigir.mockResolvedValue("en_desarrollo");
     await renderLayout(cargar);
 
     expect(mockExigir).toHaveBeenCalledWith(seccion);
     expect(screen.queryByText("contenido real")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: nombre })).toBeInTheDocument();
-    expect(screen.getByText("Módulo en desarrollo")).toBeInTheDocument();
-    expect(screen.getByText(fase)).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem").length).toBeGreaterThanOrEqual(3);
-    expect(screen.queryByText(/Vista previa/)).not.toBeInTheDocument();
+    const aviso = screen.getByRole("status");
+    expect(within(aviso).getByText("Módulo en desarrollo")).toBeInTheDocument();
+    expect(within(aviso).getByText("Este módulo estará disponible próximamente.")).toBeInTheDocument();
   });
 
-  it("admin ve el módulo real con el aviso fijo de vista previa", async () => {
-    mockExigir.mockResolvedValue("vista_previa");
+  it("no revela nada del módulo: ni funcionalidades, ni fase, ni enlaces, ni exportación", async () => {
+    mockExigir.mockResolvedValue("en_desarrollo");
     await renderLayout(cargar);
 
-    expect(screen.getByText("contenido real")).toBeInTheDocument();
-    const aviso = screen.getByRole("note");
-    expect(aviso).toHaveTextContent("Vista previa — módulo en desarrollo, solo visible para administradores");
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.queryByText("Módulo en desarrollo")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("status")).queryAllByRole("listitem")).toHaveLength(0);
+    expect(screen.queryByText(/Fase|cronograma|Incluirá/)).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.queryByText(/Vista previa/)).not.toBeInTheDocument();
   });
 
   it("ya liberado muestra el módulo sin avisos", async () => {

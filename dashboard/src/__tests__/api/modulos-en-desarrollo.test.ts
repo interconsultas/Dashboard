@@ -1,7 +1,7 @@
 /**
  * Productividad e Inteligencia en desarrollo (MODULOS_EN_DESARROLLO por
- * defecto): sus rutas /api responden 403 a todo rol distinto de admin, aunque
- * la matriz permisos_rol les dé acceso. Usa obtenerPermisos real (BD simulada).
+ * defecto): sus rutas /api responden 403 a todos los roles, admin incluido,
+ * aunque la matriz permisos_rol les dé acceso. Usa obtenerPermisos real (BD simulada).
  */
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
@@ -72,15 +72,15 @@ describe.each(RUTAS_MODULO)("%s", (_ruta, requisito) => {
     expect(error?.status).toBe(403);
   });
 
-  it("deja pasar a admin", async () => {
+  it("responde 403 también a admin", async () => {
     mockAuth.mockResolvedValue(sesion("admin"));
     const { error } = await requirePermiso(requisito);
-    expect(error).toBeNull();
+    expect(error?.status).toBe(403);
   });
 
-  it("con los módulos liberados vuelve el acceso de la matriz", async () => {
+  it.each(["admin", "direccion_medica"])("con los módulos liberados vuelve el acceso de %s", async (rol) => {
     process.env.MODULOS_EN_DESARROLLO = "";
-    mockAuth.mockResolvedValue(sesion("direccion_medica"));
+    mockAuth.mockResolvedValue(sesion(rol));
     const { error } = await requirePermiso(requisito);
     expect(error).toBeNull();
   });
@@ -90,8 +90,10 @@ describe("handlers reales", () => {
   it.each([
     ["GET /api/productividad", () => getProductividad(new NextRequest("http://x/api/productividad"))],
     ["GET /api/informes/excel", () => getInformeExcel(new NextRequest("http://x/api/informes/excel?tipo=vista"))],
-  ])("%s responde 403 a dirección médica sin consultar datos", async (_n, llamar) => {
+  ])("%s responde 403 a dirección médica y a admin sin consultar datos", async (_n, llamar) => {
     mockAuth.mockResolvedValue(sesion("direccion_medica"));
+    expect((await llamar()).status).toBe(403);
+    mockAuth.mockResolvedValue(sesion("admin"));
     const res = await llamar();
     expect(res.status).toBe(403);
     // Solo se leyó permisos_rol
