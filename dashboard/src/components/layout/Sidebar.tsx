@@ -277,18 +277,18 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           Metas
         </Link>
 
-        {/* Citas atendidas */}
+        {/* Citas */}
         <Link
-          href="/admin/citas-atendidas"
+          href="/admin/citas"
           onClick={handleNav}
           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname.startsWith("/admin/citas-atendidas")
+            pathname.startsWith("/admin/citas")
               ? "bg-brand-green text-white shadow-lg shadow-green-900/20"
               : "text-white/70 hover:bg-white/10 hover:text-white"
           }`}
         >
           <IconCitas className="w-[18px] h-[18px] flex-shrink-0" />
-          Citas atendidas
+          Citas
         </Link>
 
         {/* Usuarios */}
