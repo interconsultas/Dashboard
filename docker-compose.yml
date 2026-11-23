@@ -40,6 +40,9 @@ services:
       SEMAFORO_VERDE_MIN: ${SEMAFORO_VERDE_MIN:-80}
       SEMAFORO_AMARILLO_MIN: ${SEMAFORO_AMARILLO_MIN:-60}
       CUMPLIMIENTO_ATRIBUCION: ${CUMPLIMIENTO_ATRIBUCION:-ordenador}
+      # Sin definir = productividad,inteligencia en desarrollo; vacía (`=`) = todos liberados.
+      # Se usa "-" y no ":-" para que el valor vacío llegue a la app.
+      MODULOS_EN_DESARROLLO: ${MODULOS_EN_DESARROLLO-productividad,inteligencia}
       # Variables para el ETL de Python
       DB_HOST: db
       DB_PORT: "5432"
