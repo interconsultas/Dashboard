@@ -10,7 +10,7 @@ import { esSeccion, type Seccion } from "./acceso";
  * desarrollo (todos liberados). Sin definir = este valor por defecto, que deja
  * bloqueado lo que aún no se entrega.
  */
-export const MODULOS_EN_DESARROLLO_POR_DEFECTO: readonly Seccion[] = ["productividad", "inteligencia"];
+export const MODULOS_EN_DESARROLLO_POR_DEFECTO: readonly Seccion[] = ["inteligencia"];
 
 /** Interpreta el valor de la variable. Ignora claves desconocidas y repetidas. */
 export function leerModulosEnDesarrollo(valor: string | undefined): Seccion[] {

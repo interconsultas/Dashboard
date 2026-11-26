@@ -5,9 +5,9 @@ import {
 } from "@/lib/modulos";
 
 describe("leerModulosEnDesarrollo", () => {
-  it("sin variable usa el valor por defecto del código (Productividad e Inteligencia bloqueadas)", () => {
-    expect(MODULOS_EN_DESARROLLO_POR_DEFECTO).toEqual(["productividad", "inteligencia"]);
-    expect(leerModulosEnDesarrollo(undefined)).toEqual(["productividad", "inteligencia"]);
+  it("sin variable usa el valor por defecto del código (solo Inteligencia bloqueada)", () => {
+    expect(MODULOS_EN_DESARROLLO_POR_DEFECTO).toEqual(["inteligencia"]);
+    expect(leerModulosEnDesarrollo(undefined)).toEqual(["inteligencia"]);
   });
 
   it("toma la lista separada por comas, sin espacios ni mayúsculas que estorben", () => {
@@ -35,7 +35,7 @@ describe("modulosEnDesarrollo", () => {
 
   it("lee MODULOS_EN_DESARROLLO del entorno en cada llamada", () => {
     delete process.env.MODULOS_EN_DESARROLLO;
-    expect(modulosEnDesarrollo()).toEqual(["productividad", "inteligencia"]);
+    expect(modulosEnDesarrollo()).toEqual(["inteligencia"]);
     process.env.MODULOS_EN_DESARROLLO = "";
     expect(modulosEnDesarrollo()).toEqual([]);
     process.env.MODULOS_EN_DESARROLLO = "inteligencia";
