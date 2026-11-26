@@ -89,14 +89,15 @@ describe("módulos en desarrollo", () => {
     delete process.env.MODULOS_EN_DESARROLLO;
   });
 
-  it("por defecto Productividad e Inteligencia quedan sin acceso para los demás roles", async () => {
+  it("por defecto Inteligencia queda sin acceso y Productividad sigue la matriz", async () => {
     const p = await obtenerPermisos("coordinador");
-    expect(p.productividad).toBe("ninguno");
+    expect(p.productividad).toBe("ver");
     expect(p.inteligencia).toBe("ninguno");
     expect(p.dashboard).toBe("ver");
   });
 
   it("admin tampoco accede a los módulos en desarrollo (sin consultar la base)", async () => {
+    process.env.MODULOS_EN_DESARROLLO = "productividad,inteligencia";
     const p = await obtenerPermisos("admin");
     expect(p.productividad).toBe("ninguno");
     expect(p.inteligencia).toBe("ninguno");
@@ -110,11 +111,15 @@ describe("módulos en desarrollo", () => {
   });
 
   it("obtenerEnDesarrollo: las secciones en desarrollo que la matriz deja ver al rol", async () => {
+    expect(await obtenerEnDesarrollo("coordinador")).toEqual([]);
+    process.env.MODULOS_EN_DESARROLLO = "productividad,inteligencia";
     expect(await obtenerEnDesarrollo("coordinador")).toEqual(["productividad"]);
     expect(await obtenerEnDesarrollo("direccion_medica")).toEqual([]);
   });
 
   it("obtenerEnDesarrollo: admin las vería todas al liberarse (sin consultar la base)", async () => {
+    expect(await obtenerEnDesarrollo("admin")).toEqual(["inteligencia"]);
+    process.env.MODULOS_EN_DESARROLLO = "productividad,inteligencia";
     expect(await obtenerEnDesarrollo("admin")).toEqual(["productividad", "inteligencia"]);
     expect(mockQuery).not.toHaveBeenCalled();
   });

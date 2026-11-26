@@ -1,7 +1,8 @@
 /**
- * Productividad e Inteligencia en desarrollo (MODULOS_EN_DESARROLLO por
- * defecto): sus rutas /api responden 403 a todos los roles, admin incluido,
- * aunque la matriz permisos_rol les dé acceso. Usa obtenerPermisos real (BD simulada).
+ * Productividad e Inteligencia en desarrollo (MODULOS_EN_DESARROLLO): sus rutas
+ * /api responden 403 a todos los roles, admin incluido, aunque la matriz
+ * permisos_rol les dé acceso. Por defecto solo Inteligencia sigue en desarrollo.
+ * Usa obtenerPermisos real (BD simulada).
  */
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({ query: jest.fn() }));
@@ -39,7 +40,7 @@ const MODULOS_ORIGINAL = process.env.MODULOS_EN_DESARROLLO;
 beforeEach(() => {
   jest.clearAllMocks();
   invalidarPermisos();
-  delete process.env.MODULOS_EN_DESARROLLO;
+  process.env.MODULOS_EN_DESARROLLO = "productividad,inteligencia";
   mockQuery.mockResolvedValue(FILAS as never);
 });
 
@@ -83,6 +84,19 @@ describe.each(RUTAS_MODULO)("%s", (_ruta, requisito) => {
     mockAuth.mockResolvedValue(sesion(rol));
     const { error } = await requirePermiso(requisito);
     expect(error).toBeNull();
+  });
+});
+
+describe("valor por defecto", () => {
+  beforeEach(() => {
+    delete process.env.MODULOS_EN_DESARROLLO;
+  });
+
+  it.each(RUTAS_MODULO)("%s: Productividad liberada, Inteligencia en desarrollo", async (_ruta, requisito) => {
+    mockAuth.mockResolvedValue(sesion("admin"));
+    const { error } = await requirePermiso(requisito);
+    const soloInteligencia = requisito.secciones.every((s) => s === "inteligencia");
+    expect(error?.status ?? null).toBe(soloInteligencia ? 403 : null);
   });
 });
 
